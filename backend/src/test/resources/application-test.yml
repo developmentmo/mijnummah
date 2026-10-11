@@ -1,0 +1,22 @@
+# Test profile. Integration tests run against a real PostgreSQL (never H2):
+#   * TEST_DATABASE_URL set (e.g. a local PostgreSQL without Docker): that database is used and wiped per test;
+#   * otherwise a PostgreSQL Testcontainer (CI, or any machine with Docker), whose @ServiceConnection overrides the
+#     placeholders below.
+
+spring:
+  datasource:
+    url: ${TEST_DATABASE_URL:jdbc:postgresql://provided-by-testcontainers/unused}
+    username: ${TEST_DATABASE_USERNAME:provided-by-testcontainers}
+    password: ${TEST_DATABASE_PASSWORD:provided-by-testcontainers}
+
+mijnummah:
+  security:
+    jwt:
+      secret: test-secret-only-used-by-automated-tests-0123456789
+  # All integration tests come from 127.0.0.1; the per-account login throttle stays active.
+  rate-limit:
+    enabled: false
+  cors:
+    allowed-origins: https://beheer.mijnummah.example
+  api-docs:
+    enabled: true

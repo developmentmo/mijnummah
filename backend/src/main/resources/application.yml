@@ -1,0 +1,105 @@
+# Base configuration. Contains NO environment-specific values and NO secrets.
+# Connection settings come from environment variables; the app fails fast at startup if they are missing.
+# For local development, activate the `local` profile (see application-local.yml).
+
+spring:
+  application:
+    name: mijnummah
+
+  datasource:
+    url: ${DATABASE_URL}
+    username: ${DATABASE_USERNAME}
+    password: ${DATABASE_PASSWORD}
+    hikari:
+      pool-name: mijnummah-pool
+      maximum-pool-size: ${DATABASE_POOL_SIZE:10}
+
+  jpa:
+    # Never hold a DB connection for the whole web request; transactions live in application services.
+    open-in-view: false
+    hibernate:
+      # Flyway owns the schema. Hibernate only checks that entities match it.
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    # Guard against accidental data loss: `flyway clean` must never run against a real database.
+    clean-disabled: true
+
+  mvc:
+    problemdetails:
+      # We use our own ApiErrorResponse format (GlobalExceptionHandler), see D-016.
+      enabled: false
+
+server:
+  port: ${SERVER_PORT:8080}
+  # Behind a trusted reverse proxy set to `framework`, so rate limits see the real client IP (X-Forwarded-For).
+  forward-headers-strategy: ${FORWARD_HEADERS_STRATEGY:none}
+  error:
+    # Never leak stack traces or exception messages through Boot's fallback /error endpoint.
+    include-stacktrace: never
+    include-message: never
+
+mijnummah:
+  security:
+    jwt:
+      # HS256 signing secret, at least 32 bytes. Generate with: openssl rand -base64 48
+      secret: ${JWT_SECRET}
+      issuer: ${JWT_ISSUER:mijnummah}
+      access-token-ttl: ${JWT_ACCESS_TOKEN_TTL:15m}
+    refresh-token-ttl: ${REFRESH_TOKEN_TTL:30d}
+  rate-limit:
+    enabled: ${RATE_LIMIT_ENABLED:true}
+  cors:
+    # Comma-separated browser origins allowed to call the API (the admin portal). Empty = none.
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:}
+  # Optional first-start setup; see BootstrapProperties and MosqueBootstrapProperties.
+  bootstrap:
+    admin:
+      email: ${BOOTSTRAP_ADMIN_EMAIL:}
+      password: ${BOOTSTRAP_ADMIN_PASSWORD:}
+      display-name: ${BOOTSTRAP_ADMIN_DISPLAY_NAME:}
+    mosque:
+      slug: ${BOOTSTRAP_MOSQUE_SLUG:}
+      name: ${BOOTSTRAP_MOSQUE_NAME:}
+      city: ${BOOTSTRAP_MOSQUE_CITY:}
+      admin-email: ${BOOTSTRAP_MOSQUE_ADMIN_EMAIL:}
+  api-docs:
+    # OpenAPI document (/v3/api-docs) and Swagger UI (/swagger-ui.html). Off by default in real environments.
+    enabled: ${API_DOCS_ENABLED:false}
+
+springdoc:
+  api-docs:
+    enabled: ${mijnummah.api-docs.enabled}
+  swagger-ui:
+    enabled: ${mijnummah.api-docs.enabled}
+  paths-to-match: /api/**
+  default-produces-media-type: application/json
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      # Kubernetes-style liveness/readiness groups: /actuator/health/liveness and /actuator/health/readiness
+      probes:
+        enabled: true
+      show-details: never
+      group:
+        readiness:
+          include: readinessState,db
+  info:
+    env:
+      enabled: false
+
+logging:
+  level:
+    root: INFO
+    nl.mijnummah: INFO

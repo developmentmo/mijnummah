@@ -57,7 +57,7 @@ Belangrijke architectuur- en ontwerpbeslissingen. Status: **Voorgesteld** (wacht
 
 ## D-006 — Tenantisolatie vanaf de eerste migratie
 
-- **Status:** Voorgesteld
+- **Status:** Besloten (uitgevoerd in fase 3, zie D-017)
 - **Besluit:** Iedere moskeespecifieke tabel heeft een verplichte `mosque_id`. Beheerrechten zijn gekoppeld aan
   een moskee (`mosque_administrator`). Een `MosqueAccessService` controleert server-side bij elke
   beheeroperatie; een `mosqueId` uit de client wordt nooit zonder die controle vertrouwd. Publieke queries
@@ -83,7 +83,7 @@ Belangrijke architectuur- en ontwerpbeslissingen. Status: **Voorgesteld** (wacht
 
 ## D-009 — Video's via een providerinterface, nooit in PostgreSQL
 
-- **Status:** Voorgesteld
+- **Status:** Besloten (uitgevoerd in fase 3, zie D-021)
 - **Besluit:** Een media-item bewaart metadata plus een providerreferentie (`provider`, `external_id`).
   Een `VideoProvider`-interface met als eerste adapter YouTube. Video-opslag en streaming blijven buiten de
   backend. Live-streaming wordt niet gebouwd; het model laat later een `LIVE`-type toe.
@@ -91,7 +91,7 @@ Belangrijke architectuur- en ontwerpbeslissingen. Status: **Voorgesteld** (wacht
 
 ## D-010 — Authenticatie in de eigen backend
 
-- **Status:** Voorgesteld
+- **Status:** Besloten (uitgevoerd in fase 3 voor door de platformbeheerder aangemaakte accounts; zelf registreren in fase 5)
 - **Besluit:** Spring Security met korte JWT access tokens en roterende, gehashte refresh tokens; wachtwoorden
   met een standaard adaptieve hash (BCrypt/Argon2 via Spring Security). Beheerders loggen in fase 3/4 op
   dezelfde manier in; publieke accounts volgen in fase 5. Geen zelfgebouwde cryptografie.
@@ -137,3 +137,65 @@ Belangrijke architectuur- en ontwerpbeslissingen. Status: **Voorgesteld** (wacht
   verschillende schermformaten en tekstschalen, en toegankelijkheid. Visuele controle gebeurt via de
   designpreviews.
 - **Reden:** Fontrendering verschilt tussen macOS en Linux, waardoor goldens vals alarm geven.
+
+## D-016 — Eigen uniforme foutrespons in plaats van RFC 9457
+
+- **Status:** Besloten (fase 3)
+- **Context:** Het plan noemde RFC 9457 Problem Details. RepairTrack (D-002) gebruikt een eigen, eenvoudiger
+  formaat, en de app en het portaal hebben vooral een stabiele foutcode nodig.
+- **Besluit:** Elke fout heeft de vorm `{timestamp, status, code, message, path, fieldErrors?}`. Clients reageren
+  op `code`; `fieldErrors` geeft validatiefouten per veld voor formulieren. Spring's Problem Details staat uit.
+- **Gevolg:** Eén formaat voor alle endpoints, ook voor 401/403 uit de securityfilters. Overstappen op RFC 9457
+  kan later met behoud van `code` als extensieveld.
+
+## D-017 — Rechten per moskee in de moskeemodule
+
+- **Status:** Besloten (fase 3)
+- **Besluit:** Twee niveaus. Platformrol op het account (`PLATFORM_ADMIN` of `USER`) en een rol per moskee in
+  `mosque_administrator` (`ADMIN`: alles voor die moskee; `EDITOR`: alleen content, geen persoonsgegevens van
+  aanmeldingen en geen beheerders). De moskeemodule bezit deze rollen en biedt `MosqueAccessService` aan; elke
+  beheeractie roept die aan met de moskee uit de route en zoekt daarna objecten op met (id, moskee).
+- **Gevolg:** Een route van een andere moskee geeft `403 MOSQUE_ACCESS_DENIED`; een ID van een andere moskee in
+  de eigen route geeft `404`. De database dwingt bovendien af dat aanmeldingen en gerelateerde media niet naar een
+  activiteit van een andere moskee kunnen wijzen. Een moskee houdt altijd minstens één ADMIN.
+
+## D-018 — Volgen en meldingsvoorkeuren al in fase 3, pushmeldingen in fase 5
+
+- **Status:** Besloten (fase 3)
+- **Context:** Het masterprompt vraagt in fase 3 het datamodel en de API voor volgen en meldingsvoorkeuren; het
+  plan had beide in fase 5 gezet, samen met registratie en push.
+- **Besluit:** Tabellen en endpoints voor volgen/ontvolgen en voorkeuren per onderwerp zijn er nu, voor elk
+  ingelogd account. Accounts worden tot fase 5 door een platformbeheerder aangemaakt (geen zelfregistratie).
+  Pushmeldingen versturen blijft fase 5.
+- **Gevolg:** De app (fase 2) kan volgen en voorkeuren tegen de echte API bouwen; fase 5 voegt registratie,
+  wachtwoordherstel en verzending toe zonder schemawijziging van deze tabellen.
+
+## D-019 — Levenscyclus en zichtbaarheid van content
+
+- **Status:** Besloten (fase 3)
+- **Besluit:** Nieuwe content is altijd een concept; publiceren is een aparte actie. Zichtbaarheid `PUBLIC`
+  (iedereen) of `REGISTERED_USERS` (alleen ingelogd) op activiteiten en media is de toegangsinstelling.
+  Een geannuleerde activiteit blijft zichtbaar met haar status en is definitief; een activiteit met aanmeldingen kan
+  niet terug naar concept of verwijderd worden. Verlopen aankondigingen verdwijnen publiek. Een inactieve moskee
+  verbergt al haar content.
+- **Gevolg:** Wie zich heeft aangemeld, ziet altijd wat er met de activiteit gebeurt. Lidmaatschap als extra
+  zichtbaarheidsniveau blijft een uitbreidingspunt (D-011).
+
+## D-020 — Integratietests tegen echte PostgreSQL, met of zonder Docker
+
+- **Status:** Besloten (fase 3)
+- **Besluit:** Integratietests (`*IT`) draaien de volledige applicatie tegen PostgreSQL, nooit H2. Standaard via een
+  PostgreSQL 17-Testcontainer (CI en machines met Docker). Is `TEST_DATABASE_URL` gezet, dan wordt die bestaande
+  database gebruikt en per test geleegd.
+- **Reden:** De ontwikkelomgeving van deze sessie heeft geen Docker; zo zijn dezelfde tests lokaal (PostgreSQL 16)
+  en in CI (PostgreSQL 17) uit te voeren.
+
+## D-021 — YouTube zonder API-sleutel, embed in privacyvriendelijke modus
+
+- **Status:** Besloten (fase 3)
+- **Besluit:** De YouTube-adapter herkent links en video-ID's en bouwt de kijk-, embed- en thumbnail-URL's zelf.
+  Er worden geen YouTube-API's aangeroepen (geen sleutel, geen netwerkverkeer vanaf de backend). De embed-URL
+  gebruikt `youtube-nocookie.com`. Titel, spreker en duur vult de beheerder in.
+- **Gevolg:** Geen externe afhankelijkheid of quotum. Automatisch metadata ophalen kan later via een optionele
+  adapter met eigen sleutel.
+

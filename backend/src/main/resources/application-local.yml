@@ -1,0 +1,44 @@
+# Local development profile. Activate with SPRING_PROFILES_ACTIVE=local.
+# Defaults match docker-compose.yml. Environment variables still take precedence.
+# These are throwaway local credentials, never used outside a developer machine.
+
+# Port 8082 locally, so the backend can run next to other projects that use 8080/8081.
+server:
+  port: ${SERVER_PORT:8082}
+
+spring:
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5434/mijnummah}
+    username: ${DATABASE_USERNAME:mijnummah}
+    password: ${DATABASE_PASSWORD:mijnummah}
+
+mijnummah:
+  security:
+    jwt:
+      # Local development only. Any real environment MUST set JWT_SECRET.
+      secret: ${JWT_SECRET:local-development-secret-do-not-use-anywhere-else}
+  # The Angular admin portal in development (ng serve).
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:4200}
+  # Local first start: a platform admin and the Noeroel Islam mosque, so the API is usable right away.
+  bootstrap:
+    admin:
+      email: ${BOOTSTRAP_ADMIN_EMAIL:admin@mijnummah.local}
+      password: ${BOOTSTRAP_ADMIN_PASSWORD:lokaal-wachtwoord-123}
+      display-name: ${BOOTSTRAP_ADMIN_DISPLAY_NAME:Lokale beheerder}
+    mosque:
+      slug: ${BOOTSTRAP_MOSQUE_SLUG:noeroel-islam}
+      name: ${BOOTSTRAP_MOSQUE_NAME:Noeroel Islam}
+      city: ${BOOTSTRAP_MOSQUE_CITY:}
+      admin-email: ${BOOTSTRAP_MOSQUE_ADMIN_EMAIL:admin@mijnummah.local}
+  api-docs:
+    enabled: ${API_DOCS_ENABLED:true}
+
+management:
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    nl.mijnummah: DEBUG
