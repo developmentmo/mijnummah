@@ -6,7 +6,9 @@ in ontwikkelmodus op `/design`.
 
 ## Vereisten
 
-- Node.js 24 (zie `.nvmrc`); Angular 22 vereist minimaal Node 22.22.3.
+- Node.js 24.15 of nieuwer (zie `.nvmrc`). Oudere versies, zoals 24.13, weigert de Angular CLI met de melding
+  "The Angular CLI requires a minimum Node.js version". Controleer met `node -v`; bijwerken met
+  `brew upgrade node@24`, `nvm install 24` of via https://nodejs.org.
 
 ## Commando's
 
