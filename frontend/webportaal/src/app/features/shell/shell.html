@@ -1,0 +1,70 @@
+<a class="mu-skip-link" href="#inhoud">Naar de inhoud</a>
+<header class="topbar">
+  <a class="brand" routerLink="/" aria-label="Noeroel Islam beheer, naar het begin">
+    <mu-brand-logo [height]="36" />
+  </a>
+  <span class="product mu-label-large mu-muted">Beheer</span>
+  @if (context.current(); as mosque) {
+    <span class="mosque mu-title-small">
+      {{ mosque.name }}
+      @if (!mosque.active) {
+        <span class="inactive mu-label-small">inactief</span>
+      }
+    </span>
+    @if (canSwitchMosque()) {
+      <a class="switch mu-label-large" routerLink="/moskeeen" [queryParams]="{ kies: 1 }"
+        >Andere moskee</a
+      >
+    }
+  }
+  <div class="end">
+    <mu-theme-toggle class="theme" />
+    @if (auth.user(); as user) {
+      <button
+        matButton
+        type="button"
+        [matMenuTriggerFor]="accountMenu"
+        [attr.aria-label]="'Account van ' + user.displayName"
+      >
+        {{ user.displayName }}
+      </button>
+      <mat-menu #accountMenu="matMenu" xPosition="before">
+        <div class="account mu-body-medium">
+          <strong>{{ user.displayName }}</strong>
+          <span class="mu-muted">{{ user.email }}</span>
+          @if (roleLabel()) {
+            <span class="mu-muted">{{ roleLabel() }}</span>
+          }
+        </div>
+        @if (auth.isPlatformAdmin()) {
+          <a mat-menu-item routerLink="/accounts">Accounts beheren</a>
+        }
+        <button mat-menu-item type="button" (click)="logout()">Uitloggen</button>
+      </mat-menu>
+    }
+  </div>
+</header>
+
+<div class="layout" [class.with-nav]="navItems().length > 0">
+  @if (navItems().length > 0) {
+    <nav aria-label="Hoofdmenu">
+      <ul>
+        @for (item of navItems(); track item.path) {
+          <li>
+            <a
+              class="mu-label-large"
+              [routerLink]="item.path"
+              routerLinkActive="active"
+              [routerLinkActiveOptions]="{ exact: item.exact ?? false }"
+              ariaCurrentWhenActive="page"
+              >{{ item.label }}</a
+            >
+          </li>
+        }
+      </ul>
+    </nav>
+  }
+  <main id="inhoud" tabindex="-1">
+    <router-outlet />
+  </main>
+</div>

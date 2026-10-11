@@ -1,0 +1,250 @@
+<mu-page-header
+  [heading]="isNew() ? 'Nieuwe activiteit' : (event()?.title ?? 'Activiteit')"
+  [backLink]="listLink"
+  backLabel="Agenda"
+/>
+
+@if (loadError(); as message) {
+  <mu-status-message
+    kind="error"
+    [message]="message"
+    actionLabel="Opnieuw proberen"
+    (action)="load()"
+  />
+} @else if (!isNew() && !event()) {
+  <div class="mu-loading-rows" aria-busy="true" aria-label="Activiteit laden">
+    <mu-skeleton height="var(--mu-space-16)" />
+    <mu-skeleton height="var(--mu-space-16)" />
+  </div>
+} @else {
+  <div class="mu-edit-layout">
+    <form class="mu-form" [formGroup]="form" (ngSubmit)="save()" novalidate>
+      @if (event()?.status === 'CANCELLED') {
+        <mu-status-message
+          kind="warning"
+          message="Deze activiteit is geannuleerd. Hij blijft zichtbaar in de app, maar kan niet meer worden gewijzigd."
+        />
+      }
+
+      <fieldset class="mu-fieldset">
+        <legend>Over de activiteit</legend>
+        <mat-form-field appearance="outline" class="mu-field-full">
+          <mat-label>Titel</mat-label>
+          <input matInput formControlName="title" required maxlength="150" />
+          @if (form.controls.title.invalid) {
+            <mat-error>{{ controlError(form.controls.title) }}</mat-error>
+          }
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="mu-field-full">
+          <mat-label>Categorie</mat-label>
+          <mat-select formControlName="category" required>
+            @for (c of categories; track c.value) {
+              <mat-option [value]="c.value">{{ c.label }}</mat-option>
+            }
+          </mat-select>
+          @if (form.controls.category.invalid) {
+            <mat-error>Kies een categorie.</mat-error>
+          }
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="mu-field-full">
+          <mat-label>Beschrijving</mat-label>
+          <textarea matInput formControlName="description" rows="6" maxlength="10000"></textarea>
+          <mat-hint>Optioneel. Wat bezoekers moeten weten: onderwerp, spreker, doelgroep.</mat-hint>
+          @if (form.controls.description.invalid) {
+            <mat-error>{{ controlError(form.controls.description) }}</mat-error>
+          }
+        </mat-form-field>
+      </fieldset>
+
+      <fieldset class="mu-fieldset">
+        <legend>Wanneer en waar</legend>
+        <p class="mu-hint">Tijden in de tijdzone van de moskee ({{ context.timeZone() }}).</p>
+        <div class="mu-form-row">
+          <mat-form-field appearance="outline">
+            <mat-label>Begindatum</mat-label>
+            <input matInput type="date" formControlName="startDate" required />
+            @if (form.controls.startDate.invalid) {
+              <mat-error>{{ controlError(form.controls.startDate) }}</mat-error>
+            }
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Begintijd</mat-label>
+            <input matInput type="time" formControlName="startTime" required />
+            @if (form.controls.startTime.invalid) {
+              <mat-error>{{ controlError(form.controls.startTime) }}</mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <div class="mu-form-row">
+          <mat-form-field appearance="outline">
+            <mat-label>Einddatum</mat-label>
+            <input matInput type="date" formControlName="endDate" />
+            <mat-hint>Leeg = zelfde dag</mat-hint>
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Eindtijd</mat-label>
+            <input matInput type="time" formControlName="endTime" />
+            <mat-hint>Optioneel</mat-hint>
+            @if (form.controls.endTime.invalid) {
+              <mat-error>{{ controlError(form.controls.endTime) }}</mat-error>
+            }
+          </mat-form-field>
+        </div>
+        @if (form.hasError('endBeforeStart') && form.controls.endTime.touched) {
+          <p class="mu-body-small mu-field-error" role="alert">
+            Het einde moet na het begin liggen.
+          </p>
+        }
+        @if (form.hasError('endTimeMissing') && form.controls.endDate.touched) {
+          <p class="mu-body-small mu-field-error" role="alert">
+            Vul ook een eindtijd in, of maak de einddatum leeg.
+          </p>
+        }
+        <mat-form-field appearance="outline" class="mu-field-full">
+          <mat-label>Locatie</mat-label>
+          <input matInput formControlName="location" maxlength="200" />
+          <mat-hint>Optioneel, bijv. “Grote zaal” of een adres</mat-hint>
+          @if (form.controls.location.invalid) {
+            <mat-error>{{ controlError(form.controls.location) }}</mat-error>
+          }
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="mu-field-full">
+          <mat-label>Link naar afbeelding</mat-label>
+          <input matInput type="url" formControlName="imageUrl" maxlength="500" />
+          <mat-hint>Optioneel, een https-link. Uploaden kan nog niet.</mat-hint>
+          @if (form.controls.imageUrl.invalid) {
+            <mat-error>{{ controlError(form.controls.imageUrl) }}</mat-error>
+          }
+        </mat-form-field>
+      </fieldset>
+
+      <fieldset class="mu-fieldset">
+        <legend>Zichtbaarheid en aanmelden</legend>
+        <mat-radio-group
+          formControlName="visibility"
+          aria-label="Wie ziet deze activiteit?"
+          class="mu-radios"
+        >
+          @for (v of visibilities; track v.value) {
+            <mat-radio-button [value]="v.value">{{ v.label }}</mat-radio-button>
+          }
+        </mat-radio-group>
+        <mat-slide-toggle formControlName="registrationEnabled"
+          >Aanmelden via de app</mat-slide-toggle
+        >
+        @if (registrationEnabled()) {
+          <mat-form-field appearance="outline">
+            <mat-label>Maximum aantal plaatsen</mat-label>
+            <input matInput type="number" min="1" formControlName="capacity" />
+            <mat-hint>Leeg = geen maximum</mat-hint>
+            @if (form.controls.capacity.invalid) {
+              <mat-error>{{ controlError(form.controls.capacity) }}</mat-error>
+            }
+          </mat-form-field>
+        }
+      </fieldset>
+
+      @if (saveError(); as message) {
+        <mu-status-message kind="error" [message]="message" />
+      }
+      @if (event()?.status !== 'CANCELLED') {
+        <div class="mu-form-actions">
+          <button matButton="filled" type="submit" [disabled]="busy()">
+            {{ isNew() ? 'Opslaan als concept' : 'Wijzigingen opslaan' }}
+          </button>
+          <a matButton [routerLink]="listLink">Annuleren</a>
+          @if (isNew()) {
+            <p class="mu-hint">Na opslaan kun je de activiteit publiceren.</p>
+          }
+        </div>
+      }
+    </form>
+
+    @if (event(); as e) {
+      <aside class="mu-side-panel" aria-labelledby="status-titel">
+        <h2 id="status-titel" class="mu-title-medium">Status</h2>
+        <mu-status-badge [status]="e.status" [label]="statusLabels[e.status]" />
+        <dl>
+          @if (e.publishedAt) {
+            <div>
+              <dt>Gepubliceerd</dt>
+              <dd>{{ when(e.publishedAt) }}</dd>
+            </div>
+          }
+          @if (e.cancelledAt) {
+            <div>
+              <dt>Geannuleerd</dt>
+              <dd>{{ when(e.cancelledAt) }}</dd>
+            </div>
+          }
+          <div>
+            <dt>Aanmeldingen</dt>
+            <dd>
+              @if (e.registrationEnabled) {
+                {{ e.confirmedRegistrations }}{{ e.capacity ? ' van ' + e.capacity : '' }}
+              } @else {
+                Aanmelden staat uit
+              }
+            </dd>
+          </div>
+          <div>
+            <dt>Laatst gewijzigd</dt>
+            <dd>{{ when(e.updatedAt) }}</dd>
+          </div>
+        </dl>
+
+        @if (actionError(); as message) {
+          <mu-status-message kind="error" [message]="message" />
+        }
+        @if (form.dirty && e.status !== 'CANCELLED') {
+          <p class="mu-hint">Sla eerst je wijzigingen op.</p>
+        }
+        <div class="mu-side-actions">
+          @switch (e.status) {
+            @case ('DRAFT') {
+              <button
+                matButton="filled"
+                type="button"
+                [disabled]="busy() || form.dirty"
+                (click)="run('publish')"
+              >
+                Publiceren
+              </button>
+              <button
+                matButton="outlined"
+                class="mu-danger-button"
+                type="button"
+                [disabled]="busy()"
+                (click)="run('delete')"
+              >
+                Concept verwijderen
+              </button>
+            }
+            @case ('PUBLISHED') {
+              <button
+                matButton="outlined"
+                type="button"
+                [disabled]="busy() || form.dirty"
+                (click)="run('unpublish')"
+              >
+                Terug naar concept
+              </button>
+              <button
+                matButton="outlined"
+                class="mu-danger-button"
+                type="button"
+                [disabled]="busy()"
+                (click)="run('cancel')"
+              >
+                Activiteit annuleren
+              </button>
+            }
+          }
+          @if (context.isAdmin() && e.registrationEnabled) {
+            <a matButton [routerLink]="['aanmeldingen']">Aanmeldingen bekijken</a>
+          }
+        </div>
+      </aside>
+    }
+  </div>
+}

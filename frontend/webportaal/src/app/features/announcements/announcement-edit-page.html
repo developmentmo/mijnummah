@@ -1,0 +1,153 @@
+<mu-page-header
+  [heading]="isNew() ? 'Nieuwe aankondiging' : (announcement()?.title ?? 'Aankondiging')"
+  [backLink]="listLink"
+  backLabel="Aankondigingen"
+/>
+
+@if (loadError(); as message) {
+  <mu-status-message
+    kind="error"
+    [message]="message"
+    actionLabel="Opnieuw proberen"
+    (action)="load()"
+  />
+} @else if (!isNew() && !announcement()) {
+  <div class="mu-loading-rows" aria-busy="true" aria-label="Aankondiging laden">
+    <mu-skeleton height="var(--mu-space-16)" />
+  </div>
+} @else {
+  <div class="mu-edit-layout">
+    <form class="mu-form" [formGroup]="form" (ngSubmit)="save()" novalidate>
+      <fieldset class="mu-fieldset">
+        <legend>Bericht</legend>
+        <mat-form-field appearance="outline" class="mu-field-full">
+          <mat-label>Titel</mat-label>
+          <input matInput formControlName="title" required maxlength="150" />
+          @if (form.controls.title.invalid) {
+            <mat-error>{{ controlError(form.controls.title) }}</mat-error>
+          }
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="mu-field-full">
+          <mat-label>Tekst</mat-label>
+          <textarea matInput formControlName="body" rows="8" required maxlength="5000"></textarea>
+          <mat-hint align="end">{{ form.controls.body.value.length }} / 5000</mat-hint>
+          @if (form.controls.body.invalid) {
+            <mat-error>{{ controlError(form.controls.body) }}</mat-error>
+          }
+        </mat-form-field>
+        <mat-slide-toggle formControlName="featured"
+          >Uitlichten op de startpagina van de app</mat-slide-toggle
+        >
+      </fieldset>
+
+      <fieldset class="mu-fieldset">
+        <legend>Verlopen</legend>
+        <p class="mu-hint">
+          Optioneel. Na dit moment verdwijnt de aankondiging uit de app. Zonder tijd: einde van de
+          dag ({{ context.timeZone() }}).
+        </p>
+        <div class="mu-form-row">
+          <mat-form-field appearance="outline">
+            <mat-label>Verloopt op</mat-label>
+            <input matInput type="date" formControlName="expiresDate" />
+            @if (form.controls.expiresDate.invalid) {
+              <mat-error>{{ controlError(form.controls.expiresDate) }}</mat-error>
+            }
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Om</mat-label>
+            <input matInput type="time" formControlName="expiresTime" />
+          </mat-form-field>
+        </div>
+        @if (form.hasError('expiryDateMissing') && form.controls.expiresTime.touched) {
+          <p class="mu-body-small mu-field-error" role="alert">
+            Vul ook een datum in, of maak de tijd leeg.
+          </p>
+        }
+      </fieldset>
+
+      @if (saveError(); as message) {
+        <mu-status-message kind="error" [message]="message" />
+      }
+      <div class="mu-form-actions">
+        <button matButton="filled" type="submit" [disabled]="busy()">
+          {{ isNew() ? 'Opslaan als concept' : 'Wijzigingen opslaan' }}
+        </button>
+        <a matButton [routerLink]="listLink">Annuleren</a>
+      </div>
+    </form>
+
+    <aside class="mu-side-panel" aria-labelledby="status-titel">
+      @if (announcement(); as a) {
+        <h2 id="status-titel" class="mu-title-medium">In de app</h2>
+        @if (a.status === 'PUBLISHED' && a.expired) {
+          <mu-status-badge status="EXPIRED" label="Verlopen" />
+        } @else {
+          <mu-status-badge [status]="a.status" [label]="statusLabels[a.status]" />
+        }
+        <dl>
+          @if (a.publishedAt) {
+            <div>
+              <dt>Gepubliceerd</dt>
+              <dd>{{ when(a.publishedAt) }}</dd>
+            </div>
+          }
+          <div>
+            <dt>Verloopt</dt>
+            <dd>{{ a.expiresAt ? when(a.expiresAt) : 'Niet' }}</dd>
+          </div>
+          <div>
+            <dt>Laatst gewijzigd</dt>
+            <dd>{{ when(a.updatedAt) }}</dd>
+          </div>
+        </dl>
+        @if (actionError(); as message) {
+          <mu-status-message kind="error" [message]="message" />
+        }
+        @if (form.dirty) {
+          <p class="mu-hint">Sla eerst je wijzigingen op.</p>
+        }
+        <div class="mu-side-actions">
+          @if (a.status === 'DRAFT') {
+            <button
+              matButton="filled"
+              type="button"
+              [disabled]="busy() || form.dirty"
+              (click)="run('publish')"
+            >
+              Publiceren in de app
+            </button>
+          } @else {
+            <button
+              matButton="outlined"
+              type="button"
+              [disabled]="busy() || form.dirty"
+              (click)="run('unpublish')"
+            >
+              Terug naar concept
+            </button>
+          }
+          <button
+            matButton="outlined"
+            class="mu-danger-button"
+            type="button"
+            [disabled]="busy()"
+            (click)="run('delete')"
+          >
+            Verwijderen
+          </button>
+        </div>
+      } @else {
+        <h2 id="status-titel" class="mu-title-medium">In de app</h2>
+        <p class="mu-body-medium">
+          Sla de aankondiging eerst op als concept. Daarna kun je hem publiceren.
+        </p>
+      }
+      <h2 class="mu-title-medium">Pushmelding</h2>
+      <p class="mu-body-medium">
+        Publiceren verstuurt nooit een pushmelding. Een pushmelding versturen wordt een aparte actie
+        en is nog niet beschikbaar.
+      </p>
+    </aside>
+  </div>
+}

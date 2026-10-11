@@ -1,0 +1,95 @@
+<mu-page-header
+  heading="Moskeegegevens"
+  subtitle="Zo staat de moskee in de app, op het tabblad Ontdekken."
+/>
+
+<form class="mu-form" [formGroup]="form" (ngSubmit)="save()" novalidate>
+  <fieldset class="mu-fieldset">
+    <legend>Profiel</legend>
+    <mat-form-field appearance="outline" class="mu-field-full">
+      <mat-label>Naam</mat-label>
+      <input matInput formControlName="name" required maxlength="150" />
+      @if (form.controls.name.invalid) {
+        <mat-error>{{ controlError(form.controls.name) }}</mat-error>
+      }
+    </mat-form-field>
+    <mat-form-field appearance="outline" class="mu-field-full">
+      <mat-label>Over de moskee</mat-label>
+      <textarea matInput formControlName="description" rows="6" maxlength="4000"></textarea>
+      @if (form.controls.description.invalid) {
+        <mat-error>{{ controlError(form.controls.description) }}</mat-error>
+      }
+    </mat-form-field>
+  </fieldset>
+
+  <fieldset class="mu-fieldset">
+    <legend>Adres</legend>
+    <mat-form-field appearance="outline" class="mu-field-full">
+      <mat-label>Straat en huisnummer</mat-label>
+      <input matInput formControlName="street" autocomplete="street-address" maxlength="150" />
+    </mat-form-field>
+    <div class="mu-form-row">
+      <mat-form-field appearance="outline">
+        <mat-label>Postcode</mat-label>
+        <input matInput formControlName="postalCode" autocomplete="postal-code" maxlength="20" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Plaats</mat-label>
+        <input matInput formControlName="city" autocomplete="address-level2" maxlength="100" />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Land</mat-label>
+        <input matInput formControlName="countryCode" maxlength="2" />
+        <mat-hint>Landcode, bijv. NL</mat-hint>
+        @if (form.controls.countryCode.invalid) {
+          <mat-error>{{ controlError(form.controls.countryCode) }}</mat-error>
+        }
+      </mat-form-field>
+    </div>
+  </fieldset>
+
+  <fieldset class="mu-fieldset">
+    <legend>Contact</legend>
+    <div class="mu-form-row">
+      <mat-form-field appearance="outline">
+        <mat-label>E-mailadres</mat-label>
+        <input matInput type="email" formControlName="email" maxlength="254" />
+        @if (form.controls.email.invalid) {
+          <mat-error>{{ controlError(form.controls.email) }}</mat-error>
+        }
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Telefoon</mat-label>
+        <input matInput type="tel" formControlName="phone" maxlength="30" />
+      </mat-form-field>
+    </div>
+    <mat-form-field appearance="outline" class="mu-field-full">
+      <mat-label>Website</mat-label>
+      <input matInput type="url" formControlName="websiteUrl" maxlength="500" />
+      @if (form.controls.websiteUrl.invalid) {
+        <mat-error>{{ controlError(form.controls.websiteUrl) }}</mat-error>
+      }
+    </mat-form-field>
+    <mat-form-field appearance="outline" class="mu-field-full">
+      <mat-label>Tijdzone</mat-label>
+      <input matInput formControlName="timeZone" maxlength="50" />
+      <mat-hint
+        >Alle tijden in het portaal en de app gebruiken deze tijdzone, bijv.
+        Europe/Amsterdam.</mat-hint
+      >
+      @if (form.controls.timeZone.invalid) {
+        <mat-error>{{ controlError(form.controls.timeZone) }}</mat-error>
+      }
+    </mat-form-field>
+  </fieldset>
+
+  @if (saveError(); as message) {
+    <mu-status-message kind="error" [message]="message" />
+  }
+  <div class="mu-form-actions">
+    <button matButton="filled" type="submit" [disabled]="busy() || form.pristine">Opslaan</button>
+    @if (form.dirty) {
+      <button matButton type="button" (click)="undo()">Wijzigingen ongedaan maken</button>
+    }
+  </div>
+</form>

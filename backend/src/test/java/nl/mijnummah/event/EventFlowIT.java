@@ -132,6 +132,21 @@ class EventFlowIT extends AbstractIntegrationTest {
         assertThat(api.get(adminPath(mosqueId, "events")).status()).isEqualTo(401);
     }
 
+    @Test
+    void adminListFromAMomentIsSoonestFirst() {
+        publishedEvent(mosqueId, eventBody("Later", inDays(10)), admin.token());
+        publishedEvent(mosqueId, eventBody("Binnenkort", inDays(2)), admin.token());
+        publishedEvent(mosqueId, eventBody("Voorbij", inDays(-5)), admin.token());
+
+        var all = api.get(adminPath(mosqueId, "events"), editor.token()).body().get("items");
+        assertThat(all.get(0).get("title").asText()).isEqualTo("Later");
+
+        var upcoming = api.get(adminPath(mosqueId, "events?from=" + Instant.now()), editor.token()).body().get("items");
+        assertThat(upcoming).hasSize(2);
+        assertThat(upcoming.get(0).get("title").asText()).isEqualTo("Binnenkort");
+        assertThat(upcoming.get(1).get("title").asText()).isEqualTo("Later");
+    }
+
     // ---------- registrations
 
     @Test

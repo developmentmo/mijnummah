@@ -1,0 +1,116 @@
+<mu-page-header heading="Beheerders" subtitle="Wie deze moskee in het portaal mag beheren." />
+
+<section aria-labelledby="rollen">
+  <h2 id="rollen" class="mu-title-medium">Rollen</h2>
+  <ul class="roles mu-body-medium">
+    @for (r of roles; track r.value) {
+      <li>
+        <strong>{{ r.label }}:</strong> {{ roleDescriptions[r.value] }}.
+      </li>
+    }
+  </ul>
+</section>
+
+<section aria-labelledby="huidig">
+  <h2 id="huidig" class="mu-title-medium">Huidige beheerders</h2>
+  @if (rowError(); as message) {
+    <mu-status-message kind="error" [message]="message" />
+  }
+  @if (administrators.error(); as message) {
+    <mu-status-message
+      kind="error"
+      [message]="message"
+      actionLabel="Opnieuw proberen"
+      (action)="administrators.load()"
+    />
+  } @else if (administrators.value(); as list) {
+    <div class="mu-table-wrap">
+      <table class="mu-table">
+        <caption class="mu-visually-hidden">
+          Beheerders en redacteuren
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">Naam</th>
+            <th scope="col">E-mailadres</th>
+            <th scope="col">Rol</th>
+            <th scope="col">Sinds</th>
+            <th scope="col"><span class="mu-visually-hidden">Acties</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (a of list; track a.id) {
+            <tr>
+              <td>
+                {{ a.displayName }}
+                @if (a.userId === myUserId()) {
+                  <span class="mu-muted">(jij)</span>
+                }
+              </td>
+              <td>{{ a.email }}</td>
+              <td>
+                <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                  <mat-select
+                    [aria-label]="'Rol van ' + a.displayName"
+                    [value]="a.role"
+                    [disabled]="busy()"
+                    (selectionChange)="changeRole(a, $event.value, $event.source)"
+                  >
+                    @for (r of roles; track r.value) {
+                      <mat-option [value]="r.value">{{ r.label }}</mat-option>
+                    }
+                  </mat-select>
+                </mat-form-field>
+              </td>
+              <td class="nowrap">{{ since(a.createdAt) }}</td>
+              <td>
+                <button
+                  matButton
+                  class="mu-danger-button"
+                  type="button"
+                  [disabled]="busy()"
+                  (click)="remove(a)"
+                >
+                  Intrekken
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  } @else {
+    <div class="mu-loading-rows" aria-busy="true" aria-label="Beheerders laden">
+      <mu-skeleton height="var(--mu-space-12)" />
+      <mu-skeleton height="var(--mu-space-12)" />
+    </div>
+  }
+</section>
+
+<section aria-labelledby="toevoegen">
+  <h2 id="toevoegen" class="mu-title-medium">Iemand toevoegen</h2>
+  <p class="mu-hint">
+    De persoon moet al een account hebben. Accounts worden aangemaakt door een platformbeheerder.
+  </p>
+  <form class="add" [formGroup]="form" (ngSubmit)="add()" novalidate>
+    <mat-form-field appearance="outline">
+      <mat-label>E-mailadres van het account</mat-label>
+      <input matInput type="email" formControlName="email" required maxlength="254" />
+      @if (form.controls.email.invalid) {
+        <mat-error>{{ controlError(form.controls.email) }}</mat-error>
+      }
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>Rol</mat-label>
+      <mat-select formControlName="role">
+        @for (r of roles; track r.value) {
+          <mat-option [value]="r.value">{{ r.label }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+    <button matButton="filled" type="submit" [disabled]="busy()">Toevoegen</button>
+  </form>
+  @if (addError(); as message) {
+    <mu-status-message kind="error" [message]="message" />
+  }
+</section>

@@ -1,0 +1,89 @@
+<header class="intro">
+  <h1 class="mu-headline-medium">{{ greeting() }}</h1>
+  <p class="mu-body-large mu-muted">Overzicht van {{ context.current()?.name }}.</p>
+</header>
+
+<section aria-labelledby="snel">
+  <h2 id="snel" class="mu-visually-hidden">Snel aan de slag</h2>
+  <div class="quick">
+    <a matButton="filled" [routerLink]="[...base, 'agenda', 'nieuw']">Nieuwe activiteit</a>
+    <a matButton="tonal" [routerLink]="[...base, 'media', 'nieuw']">Nieuwe video</a>
+    <a matButton="tonal" [routerLink]="[...base, 'aankondigingen', 'nieuw']">Nieuwe aankondiging</a>
+  </div>
+</section>
+
+<section aria-labelledby="komend" class="panel">
+  <div class="panel__head">
+    <h2 id="komend" class="mu-title-large">Eerstvolgende activiteiten</h2>
+    <a class="mu-label-large" [routerLink]="[...base, 'agenda']">Hele agenda</a>
+  </div>
+  @if (upcoming.error(); as message) {
+    <mu-status-message
+      kind="error"
+      [message]="message"
+      actionLabel="Opnieuw proberen"
+      (action)="upcoming.load()"
+    />
+  } @else if (upcoming.value(); as page) {
+    @if (page.items.length === 0) {
+      <mu-state-placeholder
+        heading="Geen komende activiteiten"
+        message="Er staan geen gepubliceerde activiteiten gepland. Maak een activiteit aan en publiceer hem."
+      />
+    } @else {
+      <p class="mu-body-medium mu-muted">
+        {{ page.totalItems }}
+        {{ page.totalItems === 1 ? 'gepubliceerde activiteit' : 'gepubliceerde activiteiten' }}
+        gepland.
+      </p>
+      <ul class="events">
+        @for (event of page.items; track event.id) {
+          <li>
+            <a [routerLink]="[...base, 'agenda', event.id]" class="event">
+              <span class="mu-label-large when">{{ when(event) }}</span>
+              <span class="mu-title-medium">{{ event.title }}</span>
+              <span class="mu-body-medium mu-muted">
+                {{ categoryLabels[event.category] }} · {{ registrations(event) }}
+                @if (event.visibility === 'REGISTERED_USERS') {
+                  · alleen voor ingelogde gebruikers
+                }
+              </span>
+            </a>
+          </li>
+        }
+      </ul>
+    }
+  } @else {
+    <div class="events" aria-busy="true" aria-label="Activiteiten laden">
+      <mu-skeleton height="var(--mu-space-12)" />
+      <mu-skeleton height="var(--mu-space-12)" />
+      <mu-skeleton height="var(--mu-space-12)" />
+    </div>
+  }
+</section>
+
+<section aria-labelledby="cijfers">
+  <h2 id="cijfers" class="mu-title-large">Content</h2>
+  <ul class="tiles">
+    @for (tile of tiles; track tile.label) {
+      <li class="tile">
+        <a [routerLink]="tile.link" [queryParams]="tile.query">
+          @if (tile.loadable.error()) {
+            <span class="mu-body-medium">Niet geladen</span>
+          } @else if (tile.loadable.value() !== null) {
+            <span class="mu-display-medium count">{{ tile.loadable.value() }}</span>
+          } @else {
+            <mu-skeleton width="var(--mu-space-12)" height="var(--mu-space-10)" />
+          }
+          <span class="mu-title-small">{{ tile.label }}</span>
+          <span class="mu-body-small mu-muted">{{ tile.hint }}</span>
+        </a>
+        @if (tile.loadable.error()) {
+          <button type="button" class="retry mu-label-large" (click)="tile.loadable.load()">
+            Opnieuw proberen
+          </button>
+        }
+      </li>
+    }
+  </ul>
+</section>
