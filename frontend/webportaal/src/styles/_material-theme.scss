@@ -1,0 +1,117 @@
+// Angular Material (M3) op basis van de design tokens.
+// mat.theme levert de structuur; daarna worden de systeemkleuren, typografie en vormen gekoppeld aan
+// de --mu-* variabelen uit tokens.generated.css. Licht/donker wisselt daardoor automatisch mee.
+@use '@angular/material' as mat;
+
+html {
+  @include mat.theme(
+    (
+      color: (
+        theme-type: light,
+        primary: mat.$green-palette,
+      ),
+      typography: Inter,
+      density: 0,
+    )
+  );
+
+  // Kleuren
+  --mat-sys-primary: var(--mu-color-primary);
+  --mat-sys-on-primary: var(--mu-color-on-primary);
+  --mat-sys-primary-container: var(--mu-color-primary-container);
+  --mat-sys-on-primary-container: var(--mu-color-on-primary-container);
+  --mat-sys-secondary: var(--mu-color-secondary);
+  --mat-sys-on-secondary: var(--mu-color-on-secondary);
+  --mat-sys-secondary-container: var(--mu-color-primary-container);
+  --mat-sys-on-secondary-container: var(--mu-color-on-primary-container);
+  --mat-sys-tertiary: var(--mu-color-accent);
+  --mat-sys-tertiary-container: var(--mu-color-accent-container);
+  --mat-sys-on-tertiary-container: var(--mu-color-on-accent-container);
+  --mat-sys-error: var(--mu-color-error);
+  --mat-sys-error-container: var(--mu-color-error-container);
+  --mat-sys-on-error-container: var(--mu-color-on-error-container);
+  --mat-sys-background: var(--mu-color-background);
+  --mat-sys-on-background: var(--mu-color-on-background);
+  --mat-sys-surface: var(--mu-color-surface);
+  --mat-sys-on-surface: var(--mu-color-on-surface);
+  --mat-sys-surface-variant: var(--mu-color-surface-muted);
+  --mat-sys-on-surface-variant: var(--mu-color-on-surface-muted);
+  --mat-sys-surface-container-lowest: var(--mu-color-surface);
+  --mat-sys-surface-container-low: var(--mu-color-surface);
+  --mat-sys-surface-container: var(--mu-color-surface-raised);
+  --mat-sys-surface-container-high: var(--mu-color-surface-raised);
+  --mat-sys-surface-container-highest: var(--mu-color-surface-muted);
+  --mat-sys-inverse-surface: var(--mu-color-surface-inverse);
+  --mat-sys-inverse-on-surface: var(--mu-color-on-surface-inverse);
+  --mat-sys-outline: var(--mu-color-border-strong);
+  --mat-sys-outline-variant: var(--mu-color-border);
+  --mat-sys-scrim: var(--mu-color-scrim);
+
+  // Typografie
+  --mat-sys-body-large-font: var(--mu-font-body);
+  --mat-sys-body-medium-font: var(--mu-font-body);
+  --mat-sys-body-small-font: var(--mu-font-body);
+  --mat-sys-label-large-font: var(--mu-font-body);
+  --mat-sys-label-medium-font: var(--mu-font-body);
+  --mat-sys-label-small-font: var(--mu-font-body);
+  --mat-sys-title-large-font: var(--mu-font-body);
+  --mat-sys-title-medium-font: var(--mu-font-body);
+  --mat-sys-title-small-font: var(--mu-font-body);
+  --mat-sys-headline-large-font: var(--mu-font-display);
+  --mat-sys-headline-medium-font: var(--mu-font-display);
+  --mat-sys-headline-small-font: var(--mu-font-display);
+  --mat-sys-display-large-font: var(--mu-font-display);
+  --mat-sys-display-medium-font: var(--mu-font-display);
+  --mat-sys-display-small-font: var(--mu-font-display);
+
+  // Vormen
+  --mat-sys-corner-extra-small: var(--mu-radius-xs);
+  --mat-sys-corner-small: var(--mu-radius-sm);
+  --mat-sys-corner-medium: var(--mu-radius-md);
+  --mat-sys-corner-large: var(--mu-radius-lg);
+  --mat-sys-corner-extra-large: var(--mu-radius-xl);
+  --mat-sys-corner-full: var(--mu-radius-full);
+
+  // Componenten die van de M3-standaard afwijken
+  @include mat.button-overrides(
+    (
+      filled-container-shape: var(--mu-button-radius),
+      outlined-container-shape: var(--mu-button-radius),
+      text-container-shape: var(--mu-button-radius),
+      protected-container-shape: var(--mu-button-radius),
+      filled-container-height: var(--mu-button-height-md),
+      outlined-container-height: var(--mu-button-height-md),
+      text-container-height: var(--mu-button-height-md),
+      protected-container-height: var(--mu-button-height-md),
+      filled-label-text-weight: var(--mu-font-weight-semibold),
+      outlined-label-text-weight: var(--mu-font-weight-semibold),
+      text-label-text-weight: var(--mu-font-weight-semibold),
+      outlined-outline-color: var(--mu-color-border-strong),
+    )
+  );
+  @include mat.card-overrides(
+    (
+      outlined-container-shape: var(--mu-card-radius),
+      outlined-outline-color: var(--mu-color-border),
+      elevated-container-shape: var(--mu-card-radius),
+    )
+  );
+  @include mat.form-field-overrides(
+    (
+      outlined-container-shape: var(--mu-input-radius),
+      outlined-outline-color: var(--mu-color-border-strong),
+      outlined-focus-outline-color: var(--mu-color-focus),
+      outlined-focus-outline-width: var(--mu-input-focus-border-width),
+    )
+  );
+  @include mat.dialog-overrides(
+    (
+      container-shape: var(--mu-modal-radius),
+    )
+  );
+  @include mat.snack-bar-overrides(
+    (
+      container-shape: var(--mu-notification-radius),
+    )
+  );
+}

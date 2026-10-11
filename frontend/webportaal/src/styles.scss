@@ -1,0 +1,4 @@
+// Globale stijlen van het webportaal. Kleuren, maten en typografie komen uit de design tokens
+// (styles/tokens.generated.css, gegenereerd uit design/tokens/tokens.json).
+@use 'styles/material-theme';
+@use 'styles/base';

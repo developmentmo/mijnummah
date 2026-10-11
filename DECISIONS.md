@@ -45,7 +45,7 @@ Belangrijke architectuur- en ontwerpbeslissingen. Status: **Voorgesteld** (wacht
 
 ## D-005 — Eén bron voor design tokens, gegenereerd naar Flutter en Angular
 
-- **Status:** Voorgesteld
+- **Status:** Besloten (fase 1)
 - **Context:** Het ontwerp moet in Flutter en Angular identiek en centraal zijn, en later per moskee
   verwisselbaar.
 - **Besluit:** `design/tokens/tokens.json` in het W3C Design Tokens-formaat is de enige bron. Een eigen
@@ -66,7 +66,7 @@ Belangrijke architectuur- en ontwerpbeslissingen. Status: **Voorgesteld** (wacht
 
 ## D-007 — Typografie: Fraunces + Inter, lokaal gebundeld
 
-- **Status:** Voorgesteld
+- **Status:** Besloten (fase 1)
 - **Besluit:** Fraunces voor koppen (warm, eigentijds, spaarzaam gebruikt), Inter voor tekst en UI (zeer
   leesbaar, ook op kleine maten en voor ouderen), Noto Naskh Arabic voor Arabische tekst. Alle drie SIL Open
   Font License 1.1. De fontbestanden worden in de app en het portaal meegeleverd, met de licentie ernaast.
@@ -74,7 +74,7 @@ Belangrijke architectuur- en ontwerpbeslissingen. Status: **Voorgesteld** (wacht
 
 ## D-008 — Gebruik van goud en contrastregels
 
-- **Status:** Voorgesteld
+- **Status:** Besloten (fase 1)
 - **Context:** Gemeten contrast: goud op ivoor 2,14:1, goud op wit 2,37:1, goud op donkergroen 5,16:1,
   jade op ivoor 4,69:1, jade op wit 5,19:1, donkergroen op ivoor 11,03:1.
 - **Besluit:** Goud nooit als tekst- of iconkleur op lichte achtergronden; wel als decoratief accent of op
@@ -104,3 +104,36 @@ Belangrijke architectuur- en ontwerpbeslissingen. Status: **Voorgesteld** (wacht
 - **Besluit:** Volgen (`mosque_follow`) en lidmaatschap blijven gescheiden concepten zodat lidmaatschap later
   een eigen module wordt. Media-items krijgen een type zodat livestreams later passen. Er worden nu geen
   lege modules of abstracties voor lidmaatschap, live-streaming of betalingen gebouwd.
+
+## D-012 — Fonts: statische instanties voor Flutter, variabele WOFF2 voor het web
+
+- **Status:** Besloten (fase 1)
+- **Context:** Flutter koppelt `FontWeight` niet automatisch aan de gewichtsas van een variabel font.
+- **Besluit:** `design/fonts/build_fonts.py` maakt uit de variabele bronfonts statische TTF's per gewicht voor
+  Flutter, en WOFF2-bestanden van de variabele fonts voor het portaal. Fraunces staat vast op SOFT 50 en WONK 0
+  (rustige vorm). De bronfonts komen uit de officiële Google Fonts-repository.
+
+## D-013 — App-ID's en projectnamen
+
+- **Status:** Besloten (fase 1), definitief te bevestigen vóór de eerste store-release
+- **Besluit:** Android `applicationId` en iOS bundle identifier `nl.mijnummah.noeroelislam`, weergavenaam
+  "Noeroel Islam". De Dart-package heet generiek `mijnummah_app` (D-003). De Android-`namespace` blijft
+  `nl.mijnummah.mijnummah_app`; die is intern en niet zichtbaar voor gebruikers.
+
+## D-014 — Angular Material als componentbibliotheek van het portaal
+
+- **Status:** Besloten (fase 1)
+- **Besluit:** Angular Material (M3) voor formulieren, knoppen, dialogen en tabellen, met alle systeemkleuren,
+  typografie en vormen gekoppeld aan de `--mu-*` tokens. Eigen componenten alleen waar Material niets passends
+  heeft (melding, skeleton, lege toestand). Unit tests met Vitest (standaard in Angular 22), linting met
+  angular-eslint.
+- **Reden:** Toegankelijke, beproefde componenten voor bestuurders zonder technische kennis, zonder een eigen
+  componentbibliotheek te hoeven onderhouden.
+
+## D-015 — Geen golden tests
+
+- **Status:** Besloten (fase 1)
+- **Besluit:** Geen pixelvergelijkingen in CI. Widgettests controleren structuur, thema, overflow bij
+  verschillende schermformaten en tekstschalen, en toegankelijkheid. Visuele controle gebeurt via de
+  designpreviews.
+- **Reden:** Fontrendering verschilt tussen macOS en Linux, waardoor goldens vals alarm geven.

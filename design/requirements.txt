@@ -1,0 +1,6 @@
+# Hulpmiddelen voor design/fonts/build_fonts.py en design/branding/build_branding.py.
+# Alleen nodig om fonts en logo's opnieuw te genereren, niet om de apps te bouwen.
+fonttools==4.66.1
+brotli==1.2.0
+uharfbuzz==0.56.3
+cairosvg==2.9.1

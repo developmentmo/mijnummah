@@ -1,0 +1,124 @@
+<header class="intro">
+  <h1 class="mu-display-medium">Designpreview</h1>
+  <p class="mu-body-large mu-muted">
+    Interne overzichtspagina van het design system. Alle teksten en voorbeelden op deze pagina zijn
+    voorbeeldcontent.
+  </p>
+</header>
+
+<section aria-labelledby="logos">
+  <h2 id="logos" class="mu-headline-medium">Logo's</h2>
+  <div class="row align-end">
+    <mu-brand-logo [height]="48" />
+    <mu-brand-logo variant="compact" [height]="48" />
+    <mu-brand-logo variant="compact" [height]="24" />
+  </div>
+</section>
+
+<section aria-labelledby="kleuren">
+  <h2 id="kleuren" class="mu-headline-medium">Kleuren</h2>
+  <ul class="swatches">
+    @for (swatch of swatches; track swatch.token) {
+      <li
+        class="swatch mu-label-medium"
+        [style.background]="'var(--mu-color-' + swatch.token + ')'"
+        [style.color]="'var(--mu-color-' + swatch.on + ')'"
+      >
+        {{ swatch.name }}
+      </li>
+    }
+  </ul>
+</section>
+
+<section aria-labelledby="typografie">
+  <h2 id="typografie" class="mu-headline-medium">Typografie</h2>
+  <p class="mu-display-large">Welkom bij de moskee</p>
+  <p class="mu-headline-large">Aankomende evenementen</p>
+  <p class="mu-headline-small">Lezing over geduld</p>
+  <p class="mu-title-large">Titel van een card</p>
+  <p class="mu-title-medium">Ondertitel en sprekers</p>
+  <p class="mu-body-large">
+    Broodtekst is goed leesbaar, ook voor bestuurders die niet dagelijks met computers werken. De
+    regelafstand is ruim en de tekst schaalt mee met de lettergrootte van de browser.
+  </p>
+  <p class="mu-body-small mu-muted">Kleinere tekst voor toelichting en metadata.</p>
+  <p class="mu-label-medium">LABEL · VRIJDAG 18:30</p>
+  <p class="mu-arabic" dir="rtl" lang="ar">بِسْمِ ٱللَّٰهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ</p>
+</section>
+
+<section aria-labelledby="knoppen">
+  <h2 id="knoppen" class="mu-headline-medium">Knoppen</h2>
+  <div class="row">
+    <button matButton="filled" type="button" (click)="showExample()">Publiceren</button>
+    <button matButton="outlined" type="button" (click)="showExample()">Concept opslaan</button>
+    <button matButton type="button" (click)="showExample()">Annuleren</button>
+    <button matButton="filled" type="button" disabled>Uitgeschakeld</button>
+  </div>
+</section>
+
+<section aria-labelledby="invoer">
+  <h2 id="invoer" class="mu-headline-medium">Invoervelden</h2>
+  <div class="form">
+    <mat-form-field appearance="outline">
+      <mat-label>Titel van het evenement</mat-label>
+      <input matInput placeholder="Bijvoorbeeld: Lezing over geduld" />
+      <mat-hint>Maximaal 80 tekens.</mat-hint>
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>E-mailadres</mat-label>
+      <input matInput type="email" [formControl]="email" />
+      @if (email.hasError('email')) {
+        <mat-error>Vul een geldig e-mailadres in, bijvoorbeeld naam&#64;voorbeeld.nl.</mat-error>
+      }
+    </mat-form-field>
+  </div>
+</section>
+
+<section aria-labelledby="cards">
+  <h2 id="cards" class="mu-headline-medium">Cards</h2>
+  <mat-card appearance="outlined" class="card">
+    <div class="card__image mu-label-medium" aria-hidden="true">Voorbeeldafbeelding</div>
+    <mat-card-content>
+      <p class="mu-label-small accent">VOORBEELD · LEZING</p>
+      <h3 class="mu-title-large">Titel van een voorbeeldlezing</h3>
+      <p class="mu-body-small mu-muted">Vrijdag 18:30 · Grote zaal</p>
+    </mat-card-content>
+  </mat-card>
+</section>
+
+<section aria-labelledby="meldingen">
+  <h2 id="meldingen" class="mu-headline-medium">Meldingen</h2>
+  <div class="stack">
+    <mu-status-message
+      kind="info"
+      message="Wijzigingen zijn pas zichtbaar in de app nadat je publiceert."
+    />
+    <mu-status-message
+      kind="success"
+      heading="Gepubliceerd"
+      message="Het evenement staat nu in de app."
+    />
+    <mu-status-message kind="warning" message="Dit evenement heeft nog geen locatie." />
+    <mu-status-message
+      kind="error"
+      message="Opslaan is mislukt. Je wijzigingen staan nog in het formulier."
+      actionLabel="Opnieuw proberen"
+      (action)="showExample()"
+    />
+  </div>
+</section>
+
+<section aria-labelledby="toestanden">
+  <h2 id="toestanden" class="mu-headline-medium">Laden, leeg en fout</h2>
+  <div class="stack">
+    <mu-skeleton height="140px" radius="var(--mu-radius-lg)" />
+    <mu-skeleton width="220px" height="20px" />
+    <mu-skeleton width="140px" />
+    <mu-state-placeholder
+      heading="Nog geen evenementen"
+      message="Maak het eerste evenement aan om het in de app te tonen."
+      actionLabel="Evenement aanmaken"
+      (action)="showExample()"
+    />
+  </div>
+</section>

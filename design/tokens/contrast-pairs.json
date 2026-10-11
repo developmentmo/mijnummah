@@ -1,0 +1,666 @@
+{
+  "$description": "Kleurparen die WCAG 2.2 AA moeten halen. Gecontroleerd door contrast.mjs.",
+  "pairs": [
+    {
+      "theme": "light",
+      "foreground": "onSurface",
+      "background": "background",
+      "min": 4.5
+    },
+    {
+      "theme": "light",
+      "foreground": "onSurfaceMuted",
+      "background": "background",
+      "min": 4.5
+    },
+    {
+      "theme": "light",
+      "foreground": "link",
+      "background": "background",
+      "min": 4.5
+    },
+    {
+      "theme": "light",
+      "foreground": "error",
+      "background": "background",
+      "min": 4.5
+    },
+    {
+      "theme": "light",
+      "foreground": "success",
+      "background": "background",
+      "min": 4.5
+    },
+    {
+      "theme": "light",
+      "foreground": "warning",
+      "background": "background",
+      "min": 4.5
+    },
+    {
+      "theme": "light",
+      "foreground": "info",
+      "background": "background",
+      "min": 4.5
+    },
+    {
+      "theme": "light",
+      "foreground": "accentText",
+      "background": "background",
+      "min": 4.5
+    },
+    {
+      "theme": "light",
+      "foreground": "focus",
+      "background": "background",
+      "min": 3,
+      "note": "Focusring, niet-tekstueel contrast (WCAG 1.4.11)"
+    },
+    {
+      "theme": "light",
+      "foreground": "borderStrong",
+      "background": "background",
+      "min": 3,
+      "note": "Rand van invoervelden (WCAG 1.4.11)"
+    },
+    {
+      "theme": "light",
+      "foreground": "onSurface",
+      "background": "surface",
+      "min": 4.5
+    },
+    {
+      "theme": "light",
+      "foreground": "onSurfaceMuted",
+      "background": "surface",
+      "min": 4.5
+    },
+    {
+      "theme": "light",
+      "foreground": "link",
+      "background": "surface",
+      "min": 4.5
+    },
+    {
+      "theme": "light",
+      "foreground": "error",
+      "background": "surface",
+      "min": 4.5
+    },
+    {
+      "theme": "light",
+      "foreground": "success",
+      "background": "surface",
+      "min": 4.5
+    },
+    {
+      "theme": "light",
+      "foreground": "warning",
+      "background": "surface",
+      "min": 4.5
+    },
+    {
+      "theme": "light",
+      "foreground": "info",
+      "background": "surface",
+      "min": 4.5
+    },
+    {
+      "theme": "light",
+      "foreground": "accentText",
+      "background": "surface",
+      "min": 4.5
+    },
+    {
+      "theme": "light",
+      "foreground": "focus",
+      "background": "surface",
+      "min": 3,
+      "note": "Focusring, niet-tekstueel contrast (WCAG 1.4.11)"
+    },
+    {
+      "theme": "light",
+      "foreground": "borderStrong",
+      "background": "surface",
+      "min": 3,
+      "note": "Rand van invoervelden (WCAG 1.4.11)"
+    },
+    {
+      "theme": "light",
+      "foreground": "onSurface",
+      "background": "surfaceMuted",
+      "min": 4.5
+    },
+    {
+      "theme": "light",
+      "foreground": "onSurfaceMuted",
+      "background": "surfaceMuted",
+      "min": 4.5
+    },
+    {
+      "theme": "light",
+      "foreground": "link",
+      "background": "surfaceMuted",
+      "min": 4.5
+    },
+    {
+      "theme": "light",
+      "foreground": "error",
+      "background": "surfaceMuted",
+      "min": 4.5
+    },
+    {
+      "theme": "light",
+      "foreground": "success",
+      "background": "surfaceMuted",
+      "min": 4.5
+    },
+    {
+      "theme": "light",
+      "foreground": "warning",
+      "background": "surfaceMuted",
+      "min": 4.5
+    },
+    {
+      "theme": "light",
+      "foreground": "info",
+      "background": "surfaceMuted",
+      "min": 4.5
+    },
+    {
+      "theme": "light",
+      "foreground": "accentText",
+      "background": "surfaceMuted",
+      "min": 4.5
+    },
+    {
+      "theme": "light",
+      "foreground": "focus",
+      "background": "surfaceMuted",
+      "min": 3,
+      "note": "Focusring, niet-tekstueel contrast (WCAG 1.4.11)"
+    },
+    {
+      "theme": "light",
+      "foreground": "borderStrong",
+      "background": "surfaceMuted",
+      "min": 3,
+      "note": "Rand van invoervelden (WCAG 1.4.11)"
+    },
+    {
+      "theme": "light",
+      "foreground": "onSurface",
+      "background": "surfaceRaised",
+      "min": 4.5
+    },
+    {
+      "theme": "light",
+      "foreground": "onSurfaceMuted",
+      "background": "surfaceRaised",
+      "min": 4.5
+    },
+    {
+      "theme": "light",
+      "foreground": "link",
+      "background": "surfaceRaised",
+      "min": 4.5
+    },
+    {
+      "theme": "light",
+      "foreground": "error",
+      "background": "surfaceRaised",
+      "min": 4.5
+    },
+    {
+      "theme": "light",
+      "foreground": "success",
+      "background": "surfaceRaised",
+      "min": 4.5
+    },
+    {
+      "theme": "light",
+      "foreground": "warning",
+      "background": "surfaceRaised",
+      "min": 4.5
+    },
+    {
+      "theme": "light",
+      "foreground": "info",
+      "background": "surfaceRaised",
+      "min": 4.5
+    },
+    {
+      "theme": "light",
+      "foreground": "accentText",
+      "background": "surfaceRaised",
+      "min": 4.5
+    },
+    {
+      "theme": "light",
+      "foreground": "focus",
+      "background": "surfaceRaised",
+      "min": 3,
+      "note": "Focusring, niet-tekstueel contrast (WCAG 1.4.11)"
+    },
+    {
+      "theme": "light",
+      "foreground": "borderStrong",
+      "background": "surfaceRaised",
+      "min": 3,
+      "note": "Rand van invoervelden (WCAG 1.4.11)"
+    },
+    {
+      "theme": "light",
+      "foreground": "onPrimary",
+      "background": "primary",
+      "min": 4.5
+    },
+    {
+      "theme": "light",
+      "foreground": "onPrimary",
+      "background": "primaryHover",
+      "min": 4.5
+    },
+    {
+      "theme": "light",
+      "foreground": "onPrimary",
+      "background": "primaryPressed",
+      "min": 4.5
+    },
+    {
+      "theme": "light",
+      "foreground": "onSecondary",
+      "background": "secondary",
+      "min": 4.5
+    },
+    {
+      "theme": "light",
+      "foreground": "onSecondary",
+      "background": "secondaryHover",
+      "min": 4.5
+    },
+    {
+      "theme": "light",
+      "foreground": "onPrimaryContainer",
+      "background": "primaryContainer",
+      "min": 4.5
+    },
+    {
+      "theme": "light",
+      "foreground": "onAccentContainer",
+      "background": "accentContainer",
+      "min": 4.5
+    },
+    {
+      "theme": "light",
+      "foreground": "onSuccessContainer",
+      "background": "successContainer",
+      "min": 4.5
+    },
+    {
+      "theme": "light",
+      "foreground": "onWarningContainer",
+      "background": "warningContainer",
+      "min": 4.5
+    },
+    {
+      "theme": "light",
+      "foreground": "onErrorContainer",
+      "background": "errorContainer",
+      "min": 4.5
+    },
+    {
+      "theme": "light",
+      "foreground": "onInfoContainer",
+      "background": "infoContainer",
+      "min": 4.5
+    },
+    {
+      "theme": "light",
+      "foreground": "onSurfaceInverse",
+      "background": "surfaceInverse",
+      "min": 4.5
+    },
+    {
+      "theme": "light",
+      "foreground": "accent",
+      "background": "surfaceInverse",
+      "min": 3,
+      "note": "Goud als accent op donkergroen"
+    },
+    {
+      "theme": "light",
+      "foreground": "onDisabled",
+      "background": "disabled",
+      "min": 3,
+      "note": "Uitgeschakelde elementen zijn vrijgesteld, maar moeten herkenbaar blijven"
+    },
+    {
+      "theme": "dark",
+      "foreground": "onSurface",
+      "background": "background",
+      "min": 4.5
+    },
+    {
+      "theme": "dark",
+      "foreground": "onSurfaceMuted",
+      "background": "background",
+      "min": 4.5
+    },
+    {
+      "theme": "dark",
+      "foreground": "link",
+      "background": "background",
+      "min": 4.5
+    },
+    {
+      "theme": "dark",
+      "foreground": "error",
+      "background": "background",
+      "min": 4.5
+    },
+    {
+      "theme": "dark",
+      "foreground": "success",
+      "background": "background",
+      "min": 4.5
+    },
+    {
+      "theme": "dark",
+      "foreground": "warning",
+      "background": "background",
+      "min": 4.5
+    },
+    {
+      "theme": "dark",
+      "foreground": "info",
+      "background": "background",
+      "min": 4.5
+    },
+    {
+      "theme": "dark",
+      "foreground": "accentText",
+      "background": "background",
+      "min": 4.5
+    },
+    {
+      "theme": "dark",
+      "foreground": "focus",
+      "background": "background",
+      "min": 3,
+      "note": "Focusring, niet-tekstueel contrast (WCAG 1.4.11)"
+    },
+    {
+      "theme": "dark",
+      "foreground": "borderStrong",
+      "background": "background",
+      "min": 3,
+      "note": "Rand van invoervelden (WCAG 1.4.11)"
+    },
+    {
+      "theme": "dark",
+      "foreground": "onSurface",
+      "background": "surface",
+      "min": 4.5
+    },
+    {
+      "theme": "dark",
+      "foreground": "onSurfaceMuted",
+      "background": "surface",
+      "min": 4.5
+    },
+    {
+      "theme": "dark",
+      "foreground": "link",
+      "background": "surface",
+      "min": 4.5
+    },
+    {
+      "theme": "dark",
+      "foreground": "error",
+      "background": "surface",
+      "min": 4.5
+    },
+    {
+      "theme": "dark",
+      "foreground": "success",
+      "background": "surface",
+      "min": 4.5
+    },
+    {
+      "theme": "dark",
+      "foreground": "warning",
+      "background": "surface",
+      "min": 4.5
+    },
+    {
+      "theme": "dark",
+      "foreground": "info",
+      "background": "surface",
+      "min": 4.5
+    },
+    {
+      "theme": "dark",
+      "foreground": "accentText",
+      "background": "surface",
+      "min": 4.5
+    },
+    {
+      "theme": "dark",
+      "foreground": "focus",
+      "background": "surface",
+      "min": 3,
+      "note": "Focusring, niet-tekstueel contrast (WCAG 1.4.11)"
+    },
+    {
+      "theme": "dark",
+      "foreground": "borderStrong",
+      "background": "surface",
+      "min": 3,
+      "note": "Rand van invoervelden (WCAG 1.4.11)"
+    },
+    {
+      "theme": "dark",
+      "foreground": "onSurface",
+      "background": "surfaceMuted",
+      "min": 4.5
+    },
+    {
+      "theme": "dark",
+      "foreground": "onSurfaceMuted",
+      "background": "surfaceMuted",
+      "min": 4.5
+    },
+    {
+      "theme": "dark",
+      "foreground": "link",
+      "background": "surfaceMuted",
+      "min": 4.5
+    },
+    {
+      "theme": "dark",
+      "foreground": "error",
+      "background": "surfaceMuted",
+      "min": 4.5
+    },
+    {
+      "theme": "dark",
+      "foreground": "success",
+      "background": "surfaceMuted",
+      "min": 4.5
+    },
+    {
+      "theme": "dark",
+      "foreground": "warning",
+      "background": "surfaceMuted",
+      "min": 4.5
+    },
+    {
+      "theme": "dark",
+      "foreground": "info",
+      "background": "surfaceMuted",
+      "min": 4.5
+    },
+    {
+      "theme": "dark",
+      "foreground": "accentText",
+      "background": "surfaceMuted",
+      "min": 4.5
+    },
+    {
+      "theme": "dark",
+      "foreground": "focus",
+      "background": "surfaceMuted",
+      "min": 3,
+      "note": "Focusring, niet-tekstueel contrast (WCAG 1.4.11)"
+    },
+    {
+      "theme": "dark",
+      "foreground": "borderStrong",
+      "background": "surfaceMuted",
+      "min": 3,
+      "note": "Rand van invoervelden (WCAG 1.4.11)"
+    },
+    {
+      "theme": "dark",
+      "foreground": "onSurface",
+      "background": "surfaceRaised",
+      "min": 4.5
+    },
+    {
+      "theme": "dark",
+      "foreground": "onSurfaceMuted",
+      "background": "surfaceRaised",
+      "min": 4.5
+    },
+    {
+      "theme": "dark",
+      "foreground": "link",
+      "background": "surfaceRaised",
+      "min": 4.5
+    },
+    {
+      "theme": "dark",
+      "foreground": "error",
+      "background": "surfaceRaised",
+      "min": 4.5
+    },
+    {
+      "theme": "dark",
+      "foreground": "success",
+      "background": "surfaceRaised",
+      "min": 4.5
+    },
+    {
+      "theme": "dark",
+      "foreground": "warning",
+      "background": "surfaceRaised",
+      "min": 4.5
+    },
+    {
+      "theme": "dark",
+      "foreground": "info",
+      "background": "surfaceRaised",
+      "min": 4.5
+    },
+    {
+      "theme": "dark",
+      "foreground": "accentText",
+      "background": "surfaceRaised",
+      "min": 4.5
+    },
+    {
+      "theme": "dark",
+      "foreground": "focus",
+      "background": "surfaceRaised",
+      "min": 3,
+      "note": "Focusring, niet-tekstueel contrast (WCAG 1.4.11)"
+    },
+    {
+      "theme": "dark",
+      "foreground": "borderStrong",
+      "background": "surfaceRaised",
+      "min": 3,
+      "note": "Rand van invoervelden (WCAG 1.4.11)"
+    },
+    {
+      "theme": "dark",
+      "foreground": "onPrimary",
+      "background": "primary",
+      "min": 4.5
+    },
+    {
+      "theme": "dark",
+      "foreground": "onPrimary",
+      "background": "primaryHover",
+      "min": 4.5
+    },
+    {
+      "theme": "dark",
+      "foreground": "onPrimary",
+      "background": "primaryPressed",
+      "min": 4.5
+    },
+    {
+      "theme": "dark",
+      "foreground": "onSecondary",
+      "background": "secondary",
+      "min": 4.5
+    },
+    {
+      "theme": "dark",
+      "foreground": "onSecondary",
+      "background": "secondaryHover",
+      "min": 4.5
+    },
+    {
+      "theme": "dark",
+      "foreground": "onPrimaryContainer",
+      "background": "primaryContainer",
+      "min": 4.5
+    },
+    {
+      "theme": "dark",
+      "foreground": "onAccentContainer",
+      "background": "accentContainer",
+      "min": 4.5
+    },
+    {
+      "theme": "dark",
+      "foreground": "onSuccessContainer",
+      "background": "successContainer",
+      "min": 4.5
+    },
+    {
+      "theme": "dark",
+      "foreground": "onWarningContainer",
+      "background": "warningContainer",
+      "min": 4.5
+    },
+    {
+      "theme": "dark",
+      "foreground": "onErrorContainer",
+      "background": "errorContainer",
+      "min": 4.5
+    },
+    {
+      "theme": "dark",
+      "foreground": "onInfoContainer",
+      "background": "infoContainer",
+      "min": 4.5
+    },
+    {
+      "theme": "dark",
+      "foreground": "onSurfaceInverse",
+      "background": "surfaceInverse",
+      "min": 4.5
+    },
+    {
+      "theme": "dark",
+      "foreground": "onDisabled",
+      "background": "disabled",
+      "min": 3,
+      "note": "Uitgeschakelde elementen zijn vrijgesteld, maar moeten herkenbaar blijven"
+    }
+  ]
+}
