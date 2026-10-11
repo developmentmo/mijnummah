@@ -199,3 +199,58 @@ Belangrijke architectuur- en ontwerpbeslissingen. Status: **Voorgesteld** (wacht
 - **Gevolg:** Geen externe afhankelijkheid of quotum. Automatisch metadata ophalen kan later via een optionele
   adapter met eigen sleutel.
 
+## D-022 — Riverpod, go_router en `http` in de app
+
+- **Status:** Besloten (fase 2)
+- **Besluit:** Riverpod 3 voor state en afhankelijkheden, go_router voor navigatie met een eigen geschiedenis per
+  tabblad, en het `http`-pakket voor de API-client. Modellen zijn handgeschreven op basis van de backend-DTO's; geen
+  codegeneratie.
+- **Waarom:** Dio was in het plan genoemd, maar `http` met een eigen client van ongeveer 150 regels dekt wat nodig is
+  (fouten, 401 en verversen, offline-cache) met een kleinere afhankelijkheid. De API is klein genoeg om de modellen
+  met de hand bij te houden; codegeneratie uit OpenAPI kan later als de API groeit.
+- **Gevolg:** Riverpod herhaalt mislukte verzoeken standaard automatisch; dat staat uit, zodat de gebruiker direct een
+  melding met "Opnieuw proberen" ziet.
+
+## D-023 — Tokens in de beveiligde opslag, één verversing tegelijk
+
+- **Status:** Besloten (fase 2)
+- **Besluit:** Access en refresh token staan in de Keychain (iOS) of versleuteld met de Android Keystore
+  (`flutter_secure_storage`), nooit in gewone voorkeuren. Verloopt het access token bijna, of geeft de server `401`,
+  dan ververst de app de sessie; gelijktijdige verzoeken wachten op dezelfde verversing.
+- **Waarom:** Refresh tokens roteren en hergebruik trekt de hele sessie in (D-010). Twee gelijktijdige verversingen
+  zouden de gebruiker daardoor uitloggen.
+- **Gevolg:** Mislukt verversen met `401`, dan wordt de gebruiker bezoeker en blijft publieke content zichtbaar.
+
+## D-024 — Offline: laatst opgehaalde publieke gegevens
+
+- **Status:** Besloten (fase 2)
+- **Besluit:** Elk publiek antwoord wordt bewaard (`shared_preferences`, per URL). Zonder verbinding toont de app die
+  versie met de melding "Je bent offline" en het tijdstip van ophalen. Antwoorden voor de ingelogde gebruiker worden
+  niet bewaard, en bij uitloggen wordt de cache gewist.
+- **Waarom:** Het masterprompt vraagt om offline gebruik waar passend; een eenvoudige cache volstaat voor de pilot en
+  er komen geen persoonsgegevens in.
+- **Gevolg:** Alleen eerder geopende schermen werken offline. Aanmelden en volgen vereisen verbinding.
+
+## D-025 — Video's afspelen met youtube_player_iframe
+
+- **Status:** Besloten (fase 2)
+- **Besluit:** De app speelt video's af met `youtube_player_iframe` (WebView met de officiële iFrame-speler) in de
+  privacyvriendelijke modus. Bij een fout van de speler, of als hij na 15 seconden nog niet geladen is, verschijnt
+  "Video niet beschikbaar" met een knop om de video bij YouTube te openen.
+- **Waarom:** Geen API-sleutel nodig, de bediening van YouTube zelf (afspelen, volume, volledig scherm) en het past bij
+  D-021. De speler zit achter een eigen widget, zodat een andere provider later kan worden toegevoegd.
+- **Gevolg:** Video's die niet ingesloten mogen worden, spelen alleen bij YouTube af.
+
+## D-026 — Afwijkingen en invullingen in de app
+
+- **Status:** Besloten (fase 2)
+- **Besluit:**
+  - Detailpagina's en inloggen openen over de tabbladen heen (zonder onderbalk), zodat terug altijd naar het juiste
+    tabblad gaat. Een direct geopende detailpagina heeft een knop naar Home.
+  - "Aanbevolen lezingen" op Home zijn de recentste items in de categorie Lezing; "Nieuw toegevoegd" toont de
+    recentste overige video's. Er is nog geen veld om content handmatig aan te bevelen.
+  - `Europe/Amsterdam` is sinds tzdata 2022b een verwijzing naar `Europe/Brussels`. De compacte tijdzonedatabase in de
+    app bevat geen verwijzingen; de app valt daarom terug op `Europe/Brussels` (sinds 1970 dezelfde regels).
+  - De designpreview uit fase 1 blijft bereikbaar in debug-builds via Profiel > Ontwikkeling (`/design`).
+- **Gevolg:** Een aanbevelingsveld kan later in de backend en het portaal worden toegevoegd zonder de app-structuur te
+  wijzigen.

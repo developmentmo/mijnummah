@@ -13,8 +13,8 @@ uit het masterprompt (code, tests, build, regressies, documentatie, beperkingen,
 |---|---|---|
 | 0 | Repositoryanalyse en technisch plan | Voltooid en goedgekeurd |
 | 1 | Branding en design system | Voltooid en goedgekeurd (PR #3 gemerged) |
-| 3 | Backend, database en API (vóór fase 2, zie D-004) | Getest en geslaagd (lokaal en in CI); wacht op beoordeling |
-| 2 | UX/UI en Flutter-app | Nog niet begonnen |
+| 3 | Backend, database en API (vóór fase 2, zie D-004) | Voltooid en goedgekeurd (PR #4 gemerged) |
+| 2 | UX/UI en Flutter-app | Getest en geslaagd (lokaal en CI, PR #5); wacht op beoordeling |
 | 4 | Beheerportaal (Angular) | Nog niet begonnen |
 | 5 | Accounts, volgen en notificaties | Nog niet begonnen |
 | 6 | Testen, privacy, beveiliging, productievoorbereiding | Nog niet begonnen |
@@ -201,17 +201,89 @@ verschillende schermformaten en tekstschalen, en zijn de previews handmatig visu
 
 ## Fase 2 — UX/UI en Flutter-app
 
-**Afhankelijkheden:** fase 1 en fase 3 (fase 3 wordt eerst uitgevoerd, D-004).
+**Afhankelijkheden:** fase 1 en fase 3 (fase 3 is eerst uitgevoerd, D-004).
 
-- Navigatie met vijf tabs (Home, Agenda, Lezingen, Ontdekken, Profiel) via `go_router` met `StatefulShellRoute`.
-- Home, Agenda + detail, Lezingen + zoeken/categorieën + detail met videospeler, Ontdekken, Profiel.
-- Riverpod voor state, Dio met een gegenereerde of handgeschreven API-client op basis van de OpenAPI-spec.
-- Toestanden voor laden (skeletons), leeg, fout met opnieuw proberen, offline (cache van laatst geladen data).
-- Datum/tijd in het Nederlands en `Europe/Amsterdam` (`intl` + `timezone`).
-- Toegankelijkheid: `Semantics`-labels, tekstschaal tot 200%, focusstatussen, contrast.
+### Aanpak
 
-**Acceptatiecriteria:** alle geïmplementeerde schermen zijn doorloopbaar tegen de echte backend; widgettests
-voor kernschermen en toestanden; geen dode knoppen of mockdata in productieflows; Android-build groen.
+- Vijf tabbladen (Home, Agenda, Lezingen, Ontdekken, Profiel) met `go_router` en `StatefulShellRoute`; elk tabblad
+  houdt zijn eigen geschiedenis. Detailpagina's en inloggen openen over de tabbladen heen (D-026).
+- Riverpod voor state, `http` voor de API-client met handgeschreven modellen op basis van de backend-DTO's (D-022).
+- Tokens in de beveiligde opslag van het toestel; verversen loopt altijd één keer tegelijk (D-023).
+- Offline: de laatst opgehaalde publieke gegevens worden bewaard en zonder verbinding getoond met een melding (D-024).
+- Video's met `youtube_player_iframe` in de privacyvriendelijke modus, met een melding en "Bekijken op YouTube" als
+  afspelen niet lukt (D-025).
+- Datums in het Nederlands en in `Europe/Amsterdam`, ongeacht de tijdzone van het toestel.
+
+### Opgeleverd
+
+```text
+frontend/app/lib/
+  app.dart, main.dart          MaterialApp.router, ProviderScope, geen automatische herhaling bij fouten
+  core/api/                    ApiClient (fouten, 401 + verversen, offline-cache), ApiException/NetworkException
+  core/auth/                   AuthService (inloggen, uitloggen, verversen), SecureTokenStore
+  core/config/                 AppConfig (--dart-define API_BASE_URL, MOSQUE_SLUG)
+  core/format/dates.dart       Nederlandse notaties in Europe/Amsterdam
+  core/routing/                router (5 tabbladen + details), AppShell (onderbalk of zijbalk)
+  core/widgets/                laad/fout/leeg (AsyncView), offline-melding, labels, chips, infoRegels
+  data/                        modellen, repositories (publiek en "mijn"), paginering
+  features/home/               startpagina met losse secties per lijst
+  features/agenda/             agenda met categoriefilter en "meer laden", detail, aanmelden
+  features/lectures/           bibliotheek met zoeken en categorieën, detail met speler en gerelateerde content
+  features/announcements/      aankondiging in detail
+  features/discover/           profiel van de moskee, kennismaken, adres en contact, activiteitensoorten
+  features/profile/            bezoeker of account, volgen met meldingsvoorkeuren, aanmeldingen, weergave
+  features/auth/               inloggen
+frontend/app/test/             unit-, widget- en schermtests met een nep-backend (alleen in tests)
+android/app/src/main/AndroidManifest.xml  INTERNET-permissie, link-queries; http alleen in debug (src/debug)
+ios/Runner/Info.plist          http alleen naar het lokale netwerk (ontwikkeling)
+```
+
+Schermen en wat ze doen:
+
+| Scherm | Inhoud |
+|---|---|
+| Home | Logo, welkom (met naam als je bent ingelogd), uitgelichte aankondigingen, de eerstvolgende drie activiteiten met link naar de hele agenda, recente lezingen, nieuw toegevoegde video's, uitnodiging om te volgen. Een lege sectie verdwijnt; een mislukte sectie toont een herstelknop zonder de rest te blokkeren |
+| Agenda | Aankomende activiteiten met datumblok, categorie, tijd en locatie; filter per categorie (ook via link, bijvoorbeeld vanuit Ontdekken); "meer laden"; geannuleerd zichtbaar |
+| Activiteit | Afbeelding (als die er is), categorie, voor iedereen of alleen ingelogd, datum, tijd, locatie, beschrijving, aanmelden met vrije plaatsen, annuleren na bevestiging |
+| Lezingen | Zoeken op titel en spreker (na een korte pauze in het typen), categorieën, kaarten met thumbnail, spreker, datum en duur |
+| Lezing | Speler, titel, spreker, publicatie- en opnamedatum, duur, beschrijving, link naar de bijbehorende activiteit, "Meer zoals dit" |
+| Ontdekken | Naam en beschrijving van de moskee, kennismaken, adres (opent de kaart), telefoon, e-mail, website, activiteitensoorten die de agenda gefilterd openen |
+| Profiel | Bezoeker: uitleg en inloggen. Ingelogd: account, volgen en meldingsvoorkeuren, eigen komende aanmeldingen. Voor iedereen: uitleg bezoeker, account, volger en lid, en de keuze voor licht of donker |
+| Inloggen | E-mail en wachtwoord met controle vooraf en begrijpelijke foutmeldingen (onjuist, geblokkeerd, te veel pogingen met wachttijd, geen verbinding) |
+
+### Tests en controles
+
+| Controle | Commando | Resultaat (11 okt 2026) |
+|---|---|---|
+| Formattering | `dart format --set-exit-if-changed …` | Geslaagd lokaal |
+| Analyse | `flutter analyze` | Geslaagd lokaal, geen meldingen |
+| Unit- en widgettests: datums (zomer- en wintertijd, middernacht), API-client (fouten, 401 en verversen, offline-cache), authenticatie (één verversing tegelijk, ingetrokken sessie, uitloggen offline), modellen, alle schermen en toestanden, aanmelden zonder dubbele aanmelding, inloggen, volgen en voorkeuren, navigatie, overflow op een kleine telefoon met 200% tekst en op een tablet | `flutter test` | Geslaagd lokaal, 116 tests |
+| Geen losse kleuren of fonts | `node design/tokens/check-hardcoded.mjs` | Geslaagd lokaal |
+| Doorlopen tegen de echte backend | Webversie van de app (alleen in een tijdelijke map, niet in de repository) met Playwright tegen de backend met profiel `local` en testcontent | Geslaagd lokaal: home, agenda en filter, activiteit, inloggen (fout en goed), aanmelden, volgen en voorkeuren, lezingen, lezing (melding bij onbereikbare video), ontdekken. Alleen de verwachte API-fouten (401 bij het foute wachtwoord, 404 `NOT_FOLLOWING` voor het volgen) |
+| Android-build | `flutter build apk --debug` | Geslaagd in CI (GitHub Actions, PR #5); lokaal niet mogelijk omdat de Android SDK hier niet te downloaden is |
+
+### Beperkingen en open punten
+
+- Niet getest op een echt Android- of iOS-toestel of emulator; die zijn in deze omgeving niet beschikbaar. De
+  YouTube-speler is daardoor alleen in de webversie gecontroleerd, en daar was YouTube onbereikbaar (de melding met
+  "Bekijken op YouTube" verscheen na 15 seconden, zoals bedoeld). iOS-builds kunnen alleen op macOS.
+- "Aanbevolen lezingen" op Home zijn de recentste items in de categorie Lezing; de backend heeft nog geen veld om
+  content handmatig aan te bevelen (D-026).
+- Zelf een account aanmaken en wachtwoordherstel volgen in fase 5; de app zegt dat eerlijk en verwijst naar de moskee.
+- Meldingsvoorkeuren worden opgeslagen, maar pushmeldingen worden nog niet verstuurd (fase 5); de app zegt dat erbij.
+- Officieel lidmaatschap bestaat niet in de app (fase 8); Profiel legt het verschil met volgen uit.
+- Offline zijn alleen eerder geopende publieke schermen beschikbaar; aanmelden en volgen vereisen verbinding.
+- De contactgegevens en het adres in de testcontent zijn voorbeelden; de echte gegevens vult de beheerder in (fase 4).
+
+### Acceptatiecriteria fase 2
+
+- [x] Alle geïmplementeerde schermen zijn doorlopen tegen de echte backend (webversie, zie hierboven).
+- [x] Widgettests voor kernschermen en toestanden (laden, leeg, fout met opnieuw proberen, offline).
+- [x] Geen dode knoppen of mockdata in productieflows: elke knop doet iets echts of de functie is weggelaten met uitleg.
+- [x] Nederlandse datums en tijden in `Europe/Amsterdam`.
+- [x] Toegankelijkheid: labels voor screenreaders, tekst tot 200% zonder overflow, focus- en drukstatussen uit het thema,
+  contrast uit de tokens.
+- [x] Android-build groen in CI (PR #5).
 
 ## Fase 3 — Backend, database en API
 
