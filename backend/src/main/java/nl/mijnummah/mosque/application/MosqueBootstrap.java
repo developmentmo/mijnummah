@@ -46,7 +46,7 @@ class MosqueBootstrap implements ApplicationRunner {
         log.info("Created mosque '{}' ({})", mosque.getName(), mosque.getSlug());
         userDirectory.findActiveByEmail(properties.adminEmail()).ifPresent(user -> {
             administratorService.grantUnchecked(mosque.getId(), user.id(), MosqueRole.ADMIN);
-            log.info("Made {} administrator of '{}'", user.email(), mosque.getSlug());
+            log.info("Made BOOTSTRAP_MOSQUE_ADMIN_EMAIL administrator of '{}'", mosque.getSlug());
         });
     }
 }

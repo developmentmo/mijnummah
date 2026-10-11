@@ -30,8 +30,8 @@ class PasswordResetMailer {
         try {
             mailer.send(new MailMessage(issued.email(), "Je code om je wachtwoord te herstellen", text(issued)));
         } catch (RuntimeException ex) {
-            // no address or code in the log
-            log.warn("Password reset email could not be sent: {}", ex.getMessage());
+            // no address or code in the log; SMTP error messages often contain the address, so only the type
+            log.warn("Password reset email could not be sent: {}", ex.getClass().getSimpleName());
         }
     }
 

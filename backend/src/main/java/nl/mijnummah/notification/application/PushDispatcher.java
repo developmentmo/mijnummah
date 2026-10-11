@@ -20,8 +20,8 @@ import nl.mijnummah.notification.infrastructure.PushNotificationRepository;
  * Delivers an accepted notification to every device, after the notification was committed and outside the request
  * thread. Records the counts and deletes devices whose token the push service no longer accepts.
  * <p>
- * Limitation (pilot scale): delivery state lives in memory until it is written; if the application stops halfway,
- * the notification stays {@code SENDING}. See D-034.
+ * Delivery state lives in memory until it is written; if the application stops halfway, the notification stays
+ * {@code SENDING} until {@link PushRetention} marks it failed (D-034, D-041).
  */
 @Component
 class PushDispatcher {

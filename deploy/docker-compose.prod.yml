@@ -1,0 +1,87 @@
+# Production stack on one server: PostgreSQL, backend and admin portal.
+# A TLS reverse proxy on the host (Caddy, nginx, Traefik) terminates HTTPS and forwards to the ports below,
+# which are bound to 127.0.0.1 only. Everything is explained in DEPLOYMENT.md.
+#
+#   cp .env.example .env            # fill in, never commit
+#   docker compose -f docker-compose.prod.yml up -d --build
+
+name: mijnummah
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-mijnummah}
+      POSTGRES_USER: ${POSTGRES_USER:-mijnummah}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      TZ: UTC
+      PGTZ: UTC
+    # No published port: only the backend (and the backup script, via docker compose exec) reach the database.
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  backend:
+    image: mijnummah-backend:${IMAGE_TAG:-latest}
+    build: ../backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-mijnummah}
+      DATABASE_USERNAME: ${POSTGRES_USER:-mijnummah}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      CORS_ALLOWED_ORIGINS: ${PORTAL_ORIGIN:?PORTAL_ORIGIN is required}
+      # The reverse proxy sets X-Forwarded-For; rate limits then see the real client address.
+      FORWARD_HEADERS_STRATEGY: framework
+      MAIL_PROVIDER: ${MAIL_PROVIDER:-none}
+      MAIL_FROM: ${MAIL_FROM:-}
+      SPRING_MAIL_HOST: ${SPRING_MAIL_HOST:-}
+      SPRING_MAIL_PORT: ${SPRING_MAIL_PORT:-587}
+      SPRING_MAIL_USERNAME: ${SPRING_MAIL_USERNAME:-}
+      SPRING_MAIL_PASSWORD: ${SPRING_MAIL_PASSWORD:-}
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE: "true"
+      PUSH_PROVIDER: ${PUSH_PROVIDER:-none}
+      FCM_PROJECT_ID: ${FCM_PROJECT_ID:-}
+      FCM_CREDENTIALS_FILE: ${FCM_CREDENTIALS_FILE:-}
+      BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL:-}
+      BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD:-}
+      BOOTSTRAP_MOSQUE_SLUG: ${BOOTSTRAP_MOSQUE_SLUG:-}
+      BOOTSTRAP_MOSQUE_NAME: ${BOOTSTRAP_MOSQUE_NAME:-}
+      BOOTSTRAP_MOSQUE_ADMIN_EMAIL: ${BOOTSTRAP_MOSQUE_ADMIN_EMAIL:-}
+      # One JSON object per log line (Elastic Common Schema), ready for a log collector.
+      LOGGING_STRUCTURED_FORMAT_CONSOLE: ${LOG_FORMAT:-ecs}
+    volumes:
+      # Firebase service-account key (only with PUSH_PROVIDER=fcm), read-only, outside the repository.
+      - ${SECRETS_DIR:-./secrets}:/run/secrets:ro
+    ports:
+      - "127.0.0.1:${BACKEND_PORT:-8080}:8080"
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "5"
+
+  webportaal:
+    image: mijnummah-webportaal:${IMAGE_TAG:-latest}
+    build: ../frontend/webportaal
+    environment:
+      API_BASE_URL: ${API_BASE_URL:?API_BASE_URL is required}
+    ports:
+      - "127.0.0.1:${PORTAL_PORT:-8081}:8080"
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "5"
+
+volumes:
+  postgres-data:

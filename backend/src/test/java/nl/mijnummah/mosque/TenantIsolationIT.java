@@ -61,7 +61,12 @@ class TenantIsolationIT extends AbstractIntegrationTest {
                 api.get(adminPath(mosqueB, "announcements"), token),
                 api.get(adminPath(mosqueB, "announcements/" + announcementB), token),
                 api.post(adminPath(mosqueB, "announcements/" + announcementB + "/publish"), null, token),
-                api.delete(adminPath(mosqueB, "announcements/" + announcementB), token));
+                api.delete(adminPath(mosqueB, "announcements/" + announcementB), token),
+                api.get(adminPath(mosqueB, "notifications"), token),
+                api.get(adminPath(mosqueB, "notifications/audience?contentType=EVENT"), token),
+                api.post(adminPath(mosqueB, "events/" + eventB + "/push"), null, token),
+                api.post(adminPath(mosqueB, "media/" + mediaB + "/push"), null, token),
+                api.post(adminPath(mosqueB, "announcements/" + announcementB + "/push"), null, token));
         for (ApiResponse attempt : attempts) {
             assertThat(attempt.status()).as(attempt.body().toString()).isEqualTo(403);
             assertThat(attempt.field("code")).isEqualTo("MOSQUE_ACCESS_DENIED");
@@ -83,10 +88,12 @@ class TenantIsolationIT extends AbstractIntegrationTest {
                 api.delete(adminPath(mosqueA, "media/" + mediaB), token),
                 api.get(adminPath(mosqueA, "announcements/" + announcementB), token),
                 api.post(adminPath(mosqueA, "announcements/" + announcementB + "/publish"), null, token),
-                api.delete(adminPath(mosqueA, "announcements/" + announcementB), token));
+                api.delete(adminPath(mosqueA, "announcements/" + announcementB), token),
+                api.post(adminPath(mosqueA, "events/" + eventB + "/push"), null, token));
         for (ApiResponse attempt : attempts) {
             assertThat(attempt.status()).as(attempt.body().toString()).isEqualTo(404);
         }
+        assertThat(jdbc.queryForObject("select count(*) from push_notification", Integer.class)).isZero();
         // nothing of B changed
         ApiResponse event = api.get(adminPath(mosqueB, "events/" + eventB), adminB.token());
         assertThat(event.field("status")).isEqualTo("PUBLISHED");

@@ -31,6 +31,19 @@ Vervang dit bestand per omgeving; er horen geen geheimen in. De backend moet de 
 (`CORS_ALLOWED_ORIGINS`). Lokaal draaien met testcontent: start de backend met profiel `local` (zie
 `backend/README.md`) en daarna `npm start`.
 
+## Productie
+
+`Dockerfile` bouwt de app en serveert hem met `nginx-unprivileged` op poort 8080:
+
+```sh
+docker build -t mijnummah-webportaal .
+docker run -e API_BASE_URL=https://api.example.nl -p 8081:8080 mijnummah-webportaal
+```
+
+nginx levert `config.json` uit `API_BASE_URL`, zet beveiligingsheaders en een Content-Security-Policy met een nonce
+per verzoek (de placeholder `CSP_NONCE_PLACEHOLDER` in `src/index.html`), en stuurt onbekende paden naar de app.
+Configuratie in `docker/`; de volledige productieopzet staat in [DEPLOYMENT.md](../../DEPLOYMENT.md).
+
 ## Structuur
 
 | Pad | Inhoud |

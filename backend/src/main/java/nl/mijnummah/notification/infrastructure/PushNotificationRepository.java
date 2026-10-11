@@ -1,5 +1,7 @@
 package nl.mijnummah.notification.infrastructure;
 
+import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -8,6 +10,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import nl.mijnummah.notification.PushContentType;
+import nl.mijnummah.notification.PushStatus;
 import nl.mijnummah.notification.domain.PushNotification;
 
 public interface PushNotificationRepository extends JpaRepository<PushNotification, UUID> {
@@ -18,4 +21,6 @@ public interface PushNotificationRepository extends JpaRepository<PushNotificati
                                                                         UUID contentId);
 
     boolean existsByContentTypeAndContentId(PushContentType contentType, UUID contentId);
+
+    List<PushNotification> findByStatusAndCreatedAtBefore(PushStatus status, Instant cutoff);
 }

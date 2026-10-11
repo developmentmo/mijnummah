@@ -31,6 +31,17 @@ describe('MediaEditPage', () => {
 
   afterEach(() => http().verify());
 
+  it('wijst bij de videolink op publicatierechten en toestemming', async () => {
+    const fixture = TestBed.createComponent(MediaEditPage);
+    await fixture.whenStable();
+    await respond((r) => r.url === `${BASE}/events`, page([]));
+    await fixture.whenStable();
+    const note = (fixture.nativeElement as HTMLElement).querySelector(
+      '[data-testid="publicatierechten"]',
+    );
+    expect(note?.textContent).toContain('toestemming');
+  });
+
   it('zet een afgewezen YouTube-link bij het linkveld', async () => {
     const fixture = TestBed.createComponent(MediaEditPage);
     await fixture.whenStable();

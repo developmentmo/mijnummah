@@ -34,6 +34,6 @@ class PlatformAdminBootstrap implements ApplicationRunner {
         }
         userAdminService.createUnchecked(properties.email(), properties.displayNameOrDefault(), properties.password(),
                 PlatformRole.PLATFORM_ADMIN);
-        log.info("Created the first platform administrator ({})", properties.email());
+        log.info("Created the first platform administrator (BOOTSTRAP_ADMIN_EMAIL)");
     }
 }

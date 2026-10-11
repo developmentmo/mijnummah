@@ -68,6 +68,12 @@ Alles via omgevingsvariabelen; er staan geen geheimen in de repository. Zie [.en
 | `PUSH_PROVIDER` | nee | `none` (standaard: verzenden geeft `503`), `fcm`, of `log` (alleen lokaal: meldingen naar het log) |
 | `FCM_PROJECT_ID` | bij `fcm` | Project-ID van het Firebase-project |
 | `FCM_CREDENTIALS_FILE` | bij `fcm` | Pad naar het JSON-sleutelbestand van een serviceaccount met de rol "Firebase Cloud Messaging API Admin"; buiten de repository bewaren |
+| `RETENTION_ENABLED`, `RETENTION_CRON` | nee | Nachtelijke opschoning, standaard aan om 03:30 (Europe/Amsterdam) |
+| `RETENTION_EXPIRED_SESSIONS`, `RETENTION_EXPIRED_RESET_CODES`, `RETENTION_EVENT_REGISTRATIONS`, `RETENTION_INACTIVE_PUSH_DEVICES` | nee | Bewaartermijnen als ISO-8601-duur, standaard `P7D`, `P1D`, `P365D`, `P270D`; uitleg in [PRIVACY.md](../PRIVACY.md) |
+| `RETENTION_PUSH_SENDING_TIMEOUT` | nee | Na deze tijd (standaard `PT30M`) wordt een melding die nog "wordt verstuurd" als mislukt gemarkeerd |
+| `LOGGING_STRUCTURED_FORMAT_CONSOLE` | nee | `ecs` voor JSON-logs per regel (zo staat het in de productie-compose) |
+
+Productie (Docker-image, compose, back-ups): zie [DEPLOYMENT.md](../DEPLOYMENT.md).
 
 ## Structuur
 

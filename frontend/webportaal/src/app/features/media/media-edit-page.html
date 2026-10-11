@@ -29,6 +29,10 @@
             <mat-error>{{ controlError(form.controls.videoUrl) }}</mat-error>
           }
         </mat-form-field>
+        <p class="mu-body-small mu-muted" data-testid="publicatierechten">
+          Publiceer alleen video's die de moskee zelf heeft opgenomen of mag delen, en waarvoor de
+          spreker en herkenbare mensen toestemming hebben gegeven.
+        </p>
         <mat-form-field appearance="outline" class="mu-field-full">
           <mat-label>Titel</mat-label>
           <input matInput formControlName="title" required maxlength="150" />

@@ -26,4 +26,9 @@ public interface PasswordResetCodeRepository extends JpaRepository<PasswordReset
             update PasswordResetCode c set c.invalidatedAt = :now
             where c.userId = :userId and c.usedAt is null and c.invalidatedAt is null""")
     int invalidateOpenCodes(@Param("userId") UUID userId, @Param("now") Instant now);
+
+    /** Clean-up: used, invalidated and unused codes alike, once they have expired. */
+    @Modifying
+    @Query("delete from PasswordResetCode c where c.expiresAt < :cutoff")
+    int deleteExpiredBefore(@Param("cutoff") Instant cutoff);
 }

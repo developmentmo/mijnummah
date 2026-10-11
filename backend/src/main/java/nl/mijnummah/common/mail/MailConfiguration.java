@@ -6,9 +6,12 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
 import org.springframework.mail.MailException;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+
+import nl.mijnummah.common.profile.LocalOnly;
 
 @Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties(MailProperties.class)
@@ -17,10 +20,11 @@ class MailConfiguration {
     private static final Logger log = LoggerFactory.getLogger(MailConfiguration.class);
 
     @Bean
-    Mailer mailer(MailProperties properties, ObjectProvider<JavaMailSender> javaMailSender) {
+    Mailer mailer(MailProperties properties, ObjectProvider<JavaMailSender> javaMailSender, Environment environment) {
         return switch (properties.provider()) {
             case NONE -> new UnavailableMailer();
             case LOG -> {
+                LocalOnly.require(environment, "MAIL_PROVIDER=log");
                 log.warn("MAIL_PROVIDER=log: emails are written to the log and NOT sent. Local development only.");
                 yield new LoggingMailer();
             }

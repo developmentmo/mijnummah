@@ -329,7 +329,7 @@ Belangrijke architectuur- en ontwerpbeslissingen. Status: **Voorgesteld** (wacht
 
 ## D-034 — Een melding die halverwege stopt, blijft "wordt verstuurd"
 
-- **Status:** Besloten (fase 5); bekende beperking
+- **Status:** Besloten (fase 5); in fase 6 opgelost door D-041
 - **Besluit:** Verzenden gebeurt na de commit, op de achtergrond. Stopt de backend precies tijdens het verzenden, dan
   blijft de melding op SENDING staan en kan hij (door D-033) niet opnieuw worden verstuurd.
 - **Waarom:** Automatisch opnieuw versturen kan dubbele meldingen geven; dat is erger dan een gemiste melding. Een
@@ -398,3 +398,73 @@ Belangrijke architectuur- en ontwerpbeslissingen. Status: **Voorgesteld** (wacht
   dat toestel (het token gaat dan naar de nieuwe gebruiker) of tot FCM het token ongeldig meldt. Voor iOS moeten in
   Xcode de capability Push Notifications en een APNs-sleutel in Firebase worden ingesteld; dat kan alleen met een
   Apple Developer-account en is niet gedaan.
+
+## D-040 — Bewaartermijnen worden automatisch toegepast
+
+- **Status:** Besloten (fase 6); termijnen voor aanmeldingen en pushtokens zijn een voorstel aan de moskee
+- **Besluit:** De backend ruimt elke nacht om 03:30 (Europe/Amsterdam) op: verlopen sessies 7 dagen na verlopen,
+  herstelcodes 1 dag na verlopen, aanmeldingen 365 dagen na afloop van de activiteit (de activiteit zelf blijft),
+  pushtokens die 270 dagen niet zijn gezien. Alle termijnen zijn instelbaar (`RETENTION_*`); opschonen kan uit.
+- **Waarom:** De AVG vraagt om niet langer te bewaren dan nodig. Een geplande taak in de backend werkt zonder extra
+  infrastructuur. De korte marge na verlopen helpt bij het uitzoeken van een melding over een sessie.
+- **Gevolg:** De periodes staan met hun reden in PRIVACY.md. De termijnen van 365 en 270 dagen zijn gekozen
+  standaarden die de moskee moet bevestigen. Draaien meerdere backends tegelijk, dan ruimen ze dubbel op; dat is
+  onschuldig (een tweede delete vindt niets).
+
+## D-041 — Een melding die blijft hangen, wordt na 30 minuten mislukt
+
+- **Status:** Besloten (fase 6); lost D-034 op
+- **Besluit:** Elke 5 minuten zoekt de backend meldingen die langer dan 30 minuten (`RETENTION_PUSH_SENDING_TIMEOUT`)
+  op SENDING staan, en markeert ze als FAILED. Alle nog niet afgeleverde toestellen tellen als mislukt. Ze worden niet
+  automatisch opnieuw verstuurd.
+- **Waarom:** Opnieuw versturen kan dubbele meldingen geven (zie D-033); een eerlijke status "mislukt" laat de
+  beheerder zelf beslissen, bijvoorbeeld met een nieuwe aankondiging. Verzenden duurt bij pilotaantallen seconden, dus
+  30 minuten is ruim.
+- **Gevolg:** Het portaal toont na een herstart van de backend binnen 35 minuten "mislukt" in plaats van eeuwig
+  "wordt verstuurd".
+
+## D-042 — Beveiligingsheaders en Content-Security-Policy
+
+- **Status:** Besloten (fase 6)
+- **Besluit:** De API stuurt naast de standaardheaders van Spring Security (`nosniff`, `X-Frame-Options: DENY`,
+  `no-store`, HSTS over HTTPS) `Content-Security-Policy: default-src 'none'; frame-ancestors 'none'` en
+  `Referrer-Policy: no-referrer`; Swagger UI (alleen lokaal) is uitgezonderd. Het portaal (nginx) stuurt een CSP die
+  alleen eigen scripts en stijlen toestaat met een nonce per verzoek (`ngCspNonce`, nginx `$request_id`), API-verkeer
+  alleen naar `API_BASE_URL`, afbeeldingen ook via https (thumbnails), geen frames en geen plugins.
+- **Waarom:** Een CSP zonder `unsafe-inline` maakt XSS veel moeilijker. Angular voegt component-stijlen in met de nonce
+  en de build zet de nonce ook op de kritieke CSS, dus er is geen `unsafe-inline` nodig.
+- **Gevolg:** `EndpointSecurityIT` controleert de API-headers; de portaalheaders zijn met Playwright tegen de container
+  gecontroleerd (geen CSP-fouten). Komt er een externe bron bij (bijvoorbeeld een kaart), dan moet de CSP in
+  `frontend/webportaal/docker/security-headers.inc.template` mee.
+
+## D-043 — Ontwikkelinstellingen weigeren buiten `local` en `test`
+
+- **Status:** Besloten (fase 6)
+- **Besluit:** `MAIL_PROVIDER=log` en `PUSH_PROVIDER=log` schrijven herstelcodes en meldingen naar het log. Buiten de
+  profielen `local` en `test` weigert de backend te starten met deze instellingen (`LocalOnly`).
+- **Waarom:** Een herstelcode in een productielog is een lek; een vergeten instelling mag dat niet veroorzaken.
+- **Gevolg:** Fout instellen valt direct op bij het starten in plaats van later in de logs.
+
+## D-044 — Containers en één server voor de pilot
+
+- **Status:** Besloten (fase 6)
+- **Besluit:** Backend en portaal krijgen elk een Docker-image (meertraps, draaiend zonder rootrechten, met
+  healthcheck). `deploy/docker-compose.prod.yml` draait PostgreSQL, backend en portaal op één server achter een
+  TLS-reverse proxy op de host; poorten alleen op 127.0.0.1. Back-ups met `pg_dump` (custom-formaat) en rotatie;
+  herstel altijd eerst in een nieuwe database. Rollback via de vorige image-tag, of bij een nieuwe migratie via een
+  forward fix of herstel van de back-up (Flyway gaat alleen vooruit).
+- **Waarom:** Voor één moskee is Kubernetes of een managed platform onnodig complex en duur. Docker Compose is bekend,
+  herhaalbaar en verhuist later zonder wijzigingen in de images. Eén portaalimage voor elke omgeving omdat
+  `config.json` bij het starten wordt gemaakt.
+- **Gevolg:** De mailhealthcheck staat uit, zodat een SMTP-storing de API niet als `DOWN` meldt. CI bouwt beide images
+  en test de stack. Hosting zelf is nog niet gekozen (productieblokkade, DEPLOYMENT.md).
+
+## D-045 — Pushtoken pas na toestemming
+
+- **Status:** Besloten (fase 6); niet op een echt toestel getest
+- **Besluit:** Automatisch initialiseren van Firebase Messaging staat uit in het Android-manifest en `Info.plist`. De
+  app zet het aan op het moment dat ze een token ophaalt, en dat doet ze alleen na toestemming.
+- **Waarom:** Standaard maakt Firebase Messaging al bij het starten een token en praat het met Google, ook als de
+  gebruiker nooit meldingen wil. Dat past niet bij "alleen wat nodig is".
+- **Gevolg:** Te controleren zodra er een Firebase-project is (fase 6 open punt, zie het implementatieplan).
+

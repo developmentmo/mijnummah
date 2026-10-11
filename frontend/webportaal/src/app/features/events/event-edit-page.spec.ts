@@ -52,6 +52,15 @@ describe('EventEditPage', () => {
     return fixture;
   }
 
+  it('wijst bij de afbeelding op beeldrechten en toestemming', async () => {
+    const fixture = await render();
+    const note = (fixture.nativeElement as HTMLElement).querySelector(
+      '[data-testid="beeldrechten"]',
+    );
+    expect(note?.textContent).toContain('rechten');
+    expect(note?.textContent).toContain('toestemming');
+  });
+
   it('maakt een concept aan met tijden in UTC en opent het daarna', async () => {
     const fixture = await render();
     const page: EventEditPage = fixture.componentInstance;
