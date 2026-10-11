@@ -12,8 +12,8 @@ uit het masterprompt (code, tests, build, regressies, documentatie, beperkingen,
 | Fase | Onderwerp | Status |
 |---|---|---|
 | 0 | Repositoryanalyse en technisch plan | Voltooid en goedgekeurd |
-| 1 | Branding en design system | Getest en geslaagd (lokaal en CI); wacht op beoordeling |
-| 3 | Backend, database en API (vóór fase 2, zie D-004) | Nog niet begonnen |
+| 1 | Branding en design system | Voltooid en goedgekeurd (PR #3 gemerged) |
+| 3 | Backend, database en API (vóór fase 2, zie D-004) | Getest en geslaagd (lokaal en in CI); wacht op beoordeling |
 | 2 | UX/UI en Flutter-app | Nog niet begonnen |
 | 4 | Beheerportaal (Angular) | Nog niet begonnen |
 | 5 | Accounts, volgen en notificaties | Nog niet begonnen |
@@ -217,17 +217,69 @@ voor kernschermen en toestanden; geen dode knoppen of mockdata in productieflows
 
 **Afhankelijkheden:** fase 0. Geen externe accounts.
 
-- Spring Boot 4, Java 21, Maven, Spring Modulith (modulaire monoliet), Flyway, PostgreSQL 17, springdoc OpenAPI.
-- Modules: `common`, `mosque`, `identity` (gebruikers, rollen, beheerders per moskee), `event`
-  (+ registraties), `media`, `announcement`, later `follow` en `notification` (fase 5).
-- Tabellen met UUID-sleutels, `mosque_id` als verplichte foreign key op alle moskeespecifieke data, indexen,
-  unieke constraint tegen dubbele aanmeldingen, publicatiestatus en audit-kolommen.
-- Publieke endpoints (alleen gepubliceerde content) en beheerendpoints met server-side autorisatie via een
-  `MosqueAccessService`; de moskee wordt bepaald uit de route en gecontroleerd tegen de rechten van de gebruiker.
-- DTO's als Java records, uniforme foutrespons (RFC 9457 Problem Details), Bean Validation.
+### Aanpak
 
-**Acceptatiecriteria:** unit- en integratietests (Testcontainers in CI) groen, inclusief autorisatie- en
-isolatietests; migraties reproduceerbaar op een lege database; OpenAPI-documentatie gegenereerd.
+- Spring Boot 4.1, Java 21, Maven, Spring Modulith (modulaire monoliet), Flyway, PostgreSQL 17, springdoc OpenAPI.
+- Modules: `common`, `identity` (accounts, platformrollen, authenticatie), `mosque` (tenant, beheerders per moskee,
+  `MosqueAccessService`), `event` (+ aanmeldingen), `media`, `announcement`, `follow` (volgen en
+  meldingsvoorkeuren, D-018).
+- Tabellen met UUID-sleutels, `mosque_id` als verplichte foreign key op alle moskeespecifieke data, indexen,
+  unieke constraint tegen dubbele aanmeldingen, publicatiestatus, zichtbaarheid en audit-kolommen.
+- Publieke endpoints (alleen gepubliceerde content van actieve moskeeën) en beheerendpoints met server-side
+  autorisatie via `MosqueAccessService`; de moskee komt uit de route en wordt gecontroleerd tegen de rechten van
+  de gebruiker (D-017).
+- DTO's als Java records, uniforme foutrespons met stabiele codes (D-016), Bean Validation.
+- Video's alleen als verwijzing via de `VideoProvider`-interface, YouTube eerst (D-009, D-021). Geen livestreaming.
+
+### Opgeleverd
+
+```text
+backend/
+  pom.xml, mvnw, docker-compose.yml (PostgreSQL 17), .env.example
+  README.md, API.md, DATABASE.md
+  src/main/java/nl/mijnummah/
+    common/        foutmodel, klok (microseconden), rate limiter, paginering, OpenAPI-metadata
+    identity/      accounts, JWT + roterende refresh tokens, login-throttle, beveiligingsconfiguratie, bootstrap
+    mosque/        moskeeën, ADMIN/EDITOR per moskee, MosqueAccessService, MosqueDirectory, bootstrap
+    event/         agenda, levenscyclus (concept, gepubliceerd, geannuleerd), aanmeldingen met capaciteit
+    media/         media-items, VideoProvider + YouTube-adapter, zoeken, gerelateerde items
+    announcement/  aankondigingen met vervaldatum en uitgelicht
+    follow/        volgen, meldingsvoorkeuren per onderwerp
+  src/main/resources/db/migration/V1..V9  (10 tabellen)
+  src/test/java/…  9 unit-testklassen, ModularityTest, 9 integratietestklassen
+.github/workflows/ci.yml  nieuwe job "Backend" (./mvnw verify met Testcontainers)
+```
+
+58 endpoints: 9 publiek, 3 voor inloggen/verversen/uitloggen, 9 voor ingelogde gebruikers en 37 voor beheer. Overzicht in `backend/API.md`.
+
+### Tests en controles
+
+| Controle | Commando | Resultaat (11 okt 2026) |
+|---|---|---|
+| Unit tests (YouTube-parser, rechtenmatrix, MosqueAccessService, levenscyclus activiteit en aankondiging, rate limiter, paginering, foutmapping) | `./mvnw test` | Geslaagd lokaal, 49 tests |
+| Modulegrenzen en geen cycli | `ModularityTest` (in `./mvnw test`) | Geslaagd lokaal |
+| Integratietests: authenticatie (rotatie, hergebruik, blokkeren, throttle), moskeebeheer, tenantisolatie A/B (30 pogingen), agenda en aanmeldingen (duplicaat, capaciteit, regels), media, aankondigingen, volgen, databaseconstraints, OpenAPI | `./mvnw verify` met `TEST_DATABASE_URL` | Geslaagd lokaal tegen PostgreSQL 16, 55 tests |
+| Migraties reproduceerbaar op een lege database | `DatabaseConstraintsIT`, applicatiestart | Geslaagd lokaal: V1 t/m V9 op een lege database, Hibernate-validatie akkoord |
+| Applicatie start, bootstrap en OpenAPI | `java -jar …` met profiel `local` | Geslaagd lokaal: health UP, platformbeheerder en Noeroel Islam aangemaakt, `/v3/api-docs` en Swagger UI bereikbaar |
+| Integratietests met Testcontainers (PostgreSQL 17) | CI-job "Backend" | Geslaagd in CI (55 integratietests, PR #4); lokaal niet uitgevoerd omdat Docker ontbreekt |
+
+### Beperkingen en open punten
+
+- Accounts maakt een platformbeheerder aan; zelfregistratie en wachtwoordherstel volgen in fase 5 (D-018).
+- Meldingsvoorkeuren worden opgeslagen, maar er worden nog geen pushmeldingen verstuurd (fase 5).
+- Rate limiting en login-throttle zijn in-memory per instantie; bij meerdere instanties is een gedeelde opslag nodig.
+- Verlopen refresh tokens worden nog niet automatisch opgeruimd (gepland voor fase 6, productievoorbereiding).
+- Titel en duur van een YouTube-video worden niet automatisch opgehaald (D-021).
+- Uploaden van afbeeldingen is er niet; activiteiten en media gebruiken een https-URL voor de afbeelding.
+
+### Acceptatiecriteria fase 3
+
+- [x] API's getest: 55 integratietests via HTTP tegen de echte applicatie, plus 49 unit tests.
+- [x] Migraties reproduceerbaar: elke testrun bouwt het schema op een lege database op; Hibernate valideert.
+- [x] Autorisatie server-side afgedwongen: `MosqueAccessService` bij elke beheeractie, lookups op (id, moskee),
+  isolatietests A/B, en foreign keys op (id, mosque_id) in de database.
+- [x] Video's niet in PostgreSQL; geen livestreaming.
+- [x] CI-job "Backend" groen (PR #4, inclusief Testcontainers).
 
 ## Fase 4 — Beheerportaal
 
@@ -246,7 +298,8 @@ componenten, services, guards en formulieren; build groen.
 **Afhankelijkheden:** fase 3 en 4; Firebase-project en Apple Developer-account voor echte pushmeldingen.
 
 - Registratie, inloggen/uitloggen, JWT met roterende refresh tokens, wachtwoordherstel via e-mail.
-- Volgen/ontvolgen (geen lidmaatschap), meldingsvoorkeuren per onderwerp.
+- Volgen/ontvolgen en meldingsvoorkeuren per onderwerp: datamodel en API al in fase 3 (D-018); hier de koppeling
+  aan registratie en verzending.
 - FCM (Android, en iOS via APNs) met topics per moskee en onderwerp; server-side verzending.
 
 **Acceptatiecriteria:** autorisatieregels getest; pushdoelgroepen afgeschermd per moskee en voorkeur; zonder

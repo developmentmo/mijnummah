@@ -13,6 +13,24 @@ permissions:
   contents: read
 
 jobs:
+  backend:
+    name: Backend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      # Unit tests, module boundaries (Spring Modulith) and integration tests (*IT) against PostgreSQL 17 in a
+      # Testcontainer; Docker is available on GitHub-hosted runners.
+      - name: Build en tests
+        run: ./mvnw -B -ntp verify
+
   design:
     name: Design tokens en merkassets
     runs-on: ubuntu-latest
