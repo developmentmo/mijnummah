@@ -46,7 +46,7 @@ Vervang dit bestand per omgeving; er horen geen geheimen in. De backend moet de 
 | `src/app/core/mosque/` | Gekozen moskee en rol, guards voor `/m/:mosqueId` (D-031) |
 | `src/app/core/format/` | Labels, datums en duur in de tijdzone van de moskee |
 | `src/app/shared/` | Bevestigingsdialoog, meldingen, formulierhulpen, niet-opgeslagen-guard |
-| `src/app/features/` | De schermen, één map per onderdeel |
+| `src/app/features/` | De schermen, één map per onderdeel; `notifications/` is het paneel Pushmelding (alleen beheerders, D-033) |
 | `src/app/testing/` | Testhulpen (niet in de build) |
 | `src/app/design-preview/` | Interne designpreview |
 

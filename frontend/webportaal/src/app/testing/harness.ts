@@ -16,6 +16,8 @@ import {
   AdminMosque,
   CurrentUser,
   Page,
+  PushAudience,
+  PushNotification,
 } from '../core/api/models';
 import { authInterceptor } from '../core/auth/auth.interceptor';
 import { APP_CONFIG } from '../core/config/app-config';
@@ -104,6 +106,46 @@ export async function selectMosque(mosque: AdminMosque = MOSQUE): Promise<void> 
   const selecting = TestBed.inject(MosqueContext).select(mosque.id);
   await respond(`${V1}/admin/mosques`, [mosque]);
   await selecting;
+}
+
+export const AUDIENCE: PushAudience = {
+  configured: true,
+  simulated: false,
+  followers: 12,
+  devices: 15,
+};
+
+export function aPushNotification(overrides: Partial<PushNotification> = {}): PushNotification {
+  return {
+    id: 'p-1',
+    mosqueId: MOSQUE.id,
+    contentType: 'ANNOUNCEMENT',
+    contentId: 'a-1',
+    title: 'Iftar vrijdag',
+    body: 'Iedereen is welkom.',
+    status: 'SENT',
+    recipientCount: 15,
+    deliveredCount: 14,
+    failedCount: 1,
+    createdAt: '2026-10-11T10:00:00Z',
+    completedAt: '2026-10-11T10:00:05Z',
+    ...overrides,
+  };
+}
+
+/** Beantwoordt de verzoeken van een pushpaneel: het bereik en de eventueel al verstuurde melding. */
+export async function respondPushPanel(
+  audience: PushAudience = AUDIENCE,
+  sent: PushNotification | null = null,
+): Promise<void> {
+  await settle();
+  for (const request of http().match((r) => r.url.endsWith('/notifications/audience'))) {
+    request.flush(audience);
+  }
+  for (const request of http().match((r) => r.url.endsWith('/notifications'))) {
+    request.flush(page(sent ? [sent] : []));
+  }
+  await settle();
 }
 
 export function page<T>(items: T[], totalItems = items.length, pageIndex = 0): Page<T> {

@@ -12,6 +12,7 @@ import {
   http,
   page,
   respond,
+  respondPushPanel,
   selectMosque,
   spyOnRouter,
   text,
@@ -56,6 +57,8 @@ describe('MediaEditPage', () => {
     fixture.componentRef.setInput('mediaId', 'v-1');
     await fixture.whenStable();
     await settleRequests();
+    await fixture.whenStable();
+    await respondPushPanel();
     await fixture.whenStable();
     buttonByText(fixture.nativeElement, 'Publiceren').click();
     await respond(`${BASE}/media/v-1/publish`, aMedia({ status: 'PUBLISHED' }));

@@ -5,6 +5,7 @@ import 'package:mijnummah_app/app.dart';
 import 'package:mijnummah_app/core/auth/token_store.dart';
 import 'package:mijnummah_app/core/config/app_config.dart';
 import 'package:mijnummah_app/core/providers.dart';
+import 'package:mijnummah_app/core/push/push_messaging.dart';
 import 'package:mijnummah_app/features/lectures/video_player.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -78,6 +79,7 @@ Future<void> pumpApp(
   Size size = const Size(390, 844),
   double textScale = 1,
   Map<String, Object> preferences = const {},
+  PushMessaging? push,
 }) async {
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1;
@@ -97,6 +99,7 @@ Future<void> pumpApp(
         appConfigProvider.overrideWithValue(const AppConfig(apiBaseUrl: FakeBackend.baseUrl, mosqueSlug: slug)),
         httpClientProvider.overrideWithValue(fake.client),
         tokenStoreProvider.overrideWithValue(tokenStore ?? InMemoryTokenStore()),
+        if (push != null) pushMessagingProvider.overrideWithValue(push),
         videoPlayerBuilderProvider.overrideWithValue(
           (videoId, onUnavailable) => FakeVideoPlayer(videoId: videoId, onUnavailable: onUnavailable),
         ),

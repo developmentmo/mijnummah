@@ -30,6 +30,7 @@ import { MosqueContext } from '../../core/mosque/mosque-context';
 import { Loadable } from '../../shared/data/loadable';
 import { applyServerErrors, controlError } from '../../shared/forms/form-errors';
 import { HasUnsavedChanges } from '../../shared/forms/unsaved-changes.guard';
+import { PushPanel } from '../notifications/push-panel';
 import { Confirm } from '../../shared/ui/confirm-dialog';
 import { Notifier } from '../../shared/ui/notifier';
 import { PageHeader } from '../../shared/ui/page-header';
@@ -63,6 +64,7 @@ type Action = 'publish' | 'unpublish' | 'delete';
     MatRadioModule,
     MatSelectModule,
     PageHeader,
+    PushPanel,
     ReactiveFormsModule,
     RouterLink,
     Skeleton,

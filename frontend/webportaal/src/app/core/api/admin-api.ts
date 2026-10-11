@@ -20,8 +20,18 @@ import {
   MosqueDetailsRequest,
   MosqueRole,
   Page,
+  PushAudience,
+  PushContentType,
+  PushNotification,
+  PushText,
   Registrant,
 } from './models';
+
+const PUSH_PATHS: Record<PushContentType, string> = {
+  ANNOUNCEMENT: 'announcements',
+  EVENT: 'events',
+  MEDIA: 'media',
+};
 
 type Query = Record<string, string | number | null | undefined>;
 
@@ -224,5 +234,35 @@ export class AdminApi {
       `${this.base}/users/${userId}/${blocked ? 'block' : 'unblock'}`,
       null,
     );
+  }
+
+  /** Verstuurt de pushmelding over een gepubliceerd item; los van publiceren (alleen ADMIN). */
+  sendPush(
+    mosqueId: string,
+    contentType: PushContentType,
+    contentId: string,
+    text: PushText,
+  ): Observable<PushNotification> {
+    return this.http.post<PushNotification>(
+      this.mosque(mosqueId, `/${PUSH_PATHS[contentType]}/${contentId}/push`),
+      text,
+    );
+  }
+
+  /** De pushmelding over één item (hooguit één). */
+  pushFor(
+    mosqueId: string,
+    contentType: PushContentType,
+    contentId: string,
+  ): Observable<Page<PushNotification>> {
+    return this.http.get<Page<PushNotification>>(this.mosque(mosqueId, '/notifications'), {
+      params: params({ contentType, contentId }),
+    });
+  }
+
+  pushAudience(mosqueId: string, contentType: PushContentType): Observable<PushAudience> {
+    return this.http.get<PushAudience>(this.mosque(mosqueId, '/notifications/audience'), {
+      params: params({ contentType }),
+    });
   }
 }

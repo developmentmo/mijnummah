@@ -7,12 +7,15 @@ import '../../data/models.dart';
 import '../../features/agenda/agenda_page.dart';
 import '../../features/agenda/event_detail_page.dart';
 import '../../features/announcements/announcement_detail_page.dart';
+import '../../features/auth/forgot_password_page.dart';
 import '../../features/auth/login_page.dart';
+import '../../features/auth/register_page.dart';
 import '../../features/design_preview/design_preview_page.dart';
 import '../../features/discover/discover_page.dart';
 import '../../features/home/home_page.dart';
 import '../../features/lectures/lectures_page.dart';
 import '../../features/lectures/media_detail_page.dart';
+import '../../features/profile/account_page.dart';
 import '../../features/profile/profile_page.dart';
 import '../providers.dart';
 import 'app_shell.dart';
@@ -23,7 +26,8 @@ import 'app_shell.dart';
 /// |---|---|
 /// | `/`, `/agenda`, `/lezingen`, `/ontdekken`, `/profiel` | De vijf tabbladen; `/agenda?categorie=YOUTH` filtert |
 /// | `/activiteit/:id`, `/lezing/:id`, `/aankondiging/:id` | Details |
-/// | `/inloggen` | Inloggen |
+/// | `/inloggen`, `/account-aanmaken`, `/wachtwoord-vergeten` | Inloggen, registreren, wachtwoord herstellen |
+/// | `/account` | Wachtwoord wijzigen en account verwijderen |
 /// | `/design` | Designpreview (alleen debug) |
 GoRouter buildRouter({String initialLocation = '/'}) {
   final rootKey = GlobalKey<NavigatorState>(debugLabel: 'root');
@@ -83,6 +87,22 @@ GoRouter buildRouter({String initialLocation = '/'}) {
         parentNavigatorKey: rootKey,
         pageBuilder: (context, state) => const MaterialPage(fullscreenDialog: true, child: LoginPage()),
       ),
+      GoRoute(
+        path: '/account-aanmaken',
+        parentNavigatorKey: rootKey,
+        builder: (context, state) => const RegisterPage(),
+      ),
+      GoRoute(
+        path: '/wachtwoord-vergeten',
+        parentNavigatorKey: rootKey,
+        builder: (context, state) => ForgotPasswordPage(
+          initialEmail: switch (state.extra) {
+            final String email => email,
+            _ => null,
+          },
+        ),
+      ),
+      GoRoute(path: '/account', parentNavigatorKey: rootKey, builder: (context, state) => const AccountPage()),
       if (kDebugMode)
         GoRoute(
           path: '/design',

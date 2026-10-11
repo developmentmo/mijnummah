@@ -114,4 +114,96 @@ void main() {
     expect(store.session, isNull);
     expect(prefs.getKeys().where((k) => k.startsWith('response-cache:')), isEmpty);
   });
+
+  group('account', () {
+    test('registreert en logt direct in', () async {
+      backend
+        ..on('POST', '/auth/register', tokensJson(), status: 201)
+        ..on('GET', '/auth/me', userJson());
+      final profile = await auth.register(
+        email: ' fatima@example.org ',
+        displayName: ' Fatima ',
+        password: 'lang wachtwoord',
+      );
+      expect(profile.displayName, 'Fatima');
+      expect(store.session?.accessToken, 'access-1');
+      expect(jsonDecode(backend.requestsTo('POST', '/auth/register').single.body), {
+        'email': 'fatima@example.org',
+        'displayName': 'Fatima',
+        'password': 'lang wachtwoord',
+      });
+      expect(backend.requestsTo('POST', '/auth/register').single.headers['Authorization'], isNull);
+    });
+
+    test('geeft EMAIL_ALREADY_REGISTERED door zonder sessie', () async {
+      backend.fail('POST', '/auth/register', 409, 'EMAIL_ALREADY_REGISTERED');
+      await expectLater(
+        auth.register(email: 'a@b.nl', displayName: 'A', password: 'lang wachtwoord'),
+        throwsA(isA<ApiException>().having((e) => e.code, 'code', 'EMAIL_ALREADY_REGISTERED')),
+      );
+      expect(auth.hasSession, isFalse);
+    });
+
+    test('vraagt een herstelcode aan en logt in met de code', () async {
+      backend
+        ..on('POST', '/auth/password-reset', null, status: 202)
+        ..on('POST', '/auth/password-reset/confirm', tokensJson(access: 'access-2'))
+        ..on('GET', '/auth/me', userJson());
+      await auth.requestPasswordReset(' fatima@example.org ');
+      expect(jsonDecode(backend.requestsTo('POST', '/auth/password-reset').single.body), {
+        'email': 'fatima@example.org',
+      });
+
+      await auth.confirmPasswordReset(
+        email: 'fatima@example.org',
+        code: ' abcd-efgh ',
+        newPassword: 'nieuw wachtwoord',
+      );
+      expect(jsonDecode(backend.requestsTo('POST', '/auth/password-reset/confirm').single.body), {
+        'email': 'fatima@example.org',
+        'code': 'abcd-efgh',
+        'newPassword': 'nieuw wachtwoord',
+      });
+      expect(store.session?.accessToken, 'access-2');
+    });
+
+    test('vervangt de sessie na het wijzigen van het wachtwoord', () async {
+      backend
+        ..on('POST', '/auth/login', tokensJson())
+        ..on('GET', '/auth/me', userJson())
+        ..on('PUT', '/me/password', tokensJson(access: 'access-2', refresh: 'refresh-2'));
+      await auth.login('fatima@example.org', 'oud wachtwoord');
+      await auth.changePassword(currentPassword: 'oud wachtwoord', newPassword: 'nieuw wachtwoord');
+
+      final request = backend.requestsTo('PUT', '/me/password').single;
+      expect(request.headers['Authorization'], 'Bearer access-1');
+      expect(jsonDecode(request.body), {'currentPassword': 'oud wachtwoord', 'newPassword': 'nieuw wachtwoord'});
+      expect(store.session?.refreshToken, 'refresh-2');
+      expect(store.profile?['email'], 'fatima@example.org');
+      expect(await auth.currentAccessToken(), 'access-2');
+    });
+
+    test('verwijdert het account en beëindigt de sessie', () async {
+      backend
+        ..on('POST', '/auth/login', tokensJson())
+        ..on('GET', '/auth/me', userJson())
+        ..on('POST', '/me/deletion', null, status: 204);
+      await auth.login('fatima@example.org', 'wachtwoord');
+      await auth.deleteAccount('wachtwoord');
+      expect(jsonDecode(backend.requestsTo('POST', '/me/deletion').single.body), {'password': 'wachtwoord'});
+      expect(auth.hasSession, isFalse);
+      expect(store.session, isNull);
+    });
+
+    test('houdt de sessie als verwijderen wordt geweigerd', () async {
+      backend
+        ..on('POST', '/auth/login', tokensJson())
+        ..on('GET', '/auth/me', userJson())
+        ..fail('POST', '/me/deletion', 409, 'ACCOUNT_DELETION_BLOCKED');
+      await auth.login('fatima@example.org', 'wachtwoord');
+      await expectLater(auth.deleteAccount('wachtwoord'), throwsA(isA<ApiException>()));
+      expect(auth.hasSession, isTrue);
+      expect(store.session, isNotNull);
+    });
+  });
 }

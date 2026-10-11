@@ -113,6 +113,9 @@
 .mu-side-panel {
   position: sticky;
   top: calc(var(--mu-space-16) + var(--mu-space-4));
+  // with the push panel it can be taller than the window: scroll inside instead of being cut off
+  max-height: calc(100vh - var(--mu-space-16) - var(--mu-space-8));
+  overflow-y: auto;
   display: grid;
   gap: var(--mu-space-3);
   padding: var(--mu-card-padding);
@@ -148,6 +151,7 @@
 
   .mu-side-panel {
     position: static;
+    max-height: none;
     order: -1;
   }
 }

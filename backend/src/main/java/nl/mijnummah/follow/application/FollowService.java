@@ -15,16 +15,20 @@ import org.springframework.transaction.annotation.Transactional;
 import nl.mijnummah.common.error.NotFoundException;
 import nl.mijnummah.follow.domain.MosqueFollow;
 import nl.mijnummah.follow.domain.NotificationPreference;
-import nl.mijnummah.follow.domain.NotificationTopic;
+import nl.mijnummah.follow.FollowerDirectory;
+import nl.mijnummah.follow.NotificationTopic;
 import nl.mijnummah.follow.infrastructure.MosqueFollowRepository;
 import nl.mijnummah.follow.infrastructure.NotificationPreferenceRepository;
 import nl.mijnummah.identity.AuthenticatedUser;
 import nl.mijnummah.mosque.MosqueDirectory;
 import nl.mijnummah.mosque.MosqueRef;
 
-/** Follow and unfollow mosques, and per-topic notification preferences. Always about the caller's own data. */
+/**
+ * Follow and unfollow mosques, and per-topic notification preferences. Always about the caller's own data, except
+ * {@link #followersToNotify}, which other modules use to address push notifications.
+ */
 @Service
-public class FollowService {
+public class FollowService implements FollowerDirectory {
 
     private final MosqueFollowRepository follows;
     private final NotificationPreferenceRepository preferences;
@@ -88,6 +92,12 @@ public class FollowService {
         });
         preferences.flush();
         return view(follow, mosque, preferencesOf(actor.id(), List.of(mosqueId)).get(mosqueId));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<UUID> followersToNotify(UUID mosqueId, NotificationTopic topic) {
+        return follows.findUserIdsToNotify(mosqueId, topic);
     }
 
     private MosqueFollow requireFollow(AuthenticatedUser actor, UUID mosqueId) {

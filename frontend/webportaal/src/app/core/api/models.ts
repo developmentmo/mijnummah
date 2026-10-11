@@ -205,3 +205,34 @@ export interface CreateUserRequest {
   password: string;
   platformRole: PlatformRole;
 }
+
+export type PushContentType = 'ANNOUNCEMENT' | 'EVENT' | 'MEDIA';
+export type PushStatus = 'SENDING' | 'SENT' | 'FAILED';
+
+export interface PushNotification {
+  id: string;
+  mosqueId: string;
+  contentType: PushContentType;
+  contentId: string;
+  title: string;
+  body: string;
+  status: PushStatus;
+  recipientCount: number;
+  deliveredCount: number;
+  failedCount: number;
+  createdAt: string;
+  completedAt: string | null;
+}
+
+export interface PushAudience {
+  configured: boolean;
+  simulated: boolean;
+  followers: number;
+  devices: number;
+}
+
+/** Leeg of weggelaten: de backend stelt de tekst samen uit het item. */
+export interface PushText {
+  title: string | null;
+  body: string | null;
+}

@@ -1,6 +1,7 @@
 package nl.mijnummah.identity.api;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
@@ -18,6 +19,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 import nl.mijnummah.identity.AuthenticatedUser;
 import nl.mijnummah.identity.application.AuthService;
+import nl.mijnummah.identity.application.PasswordResetService;
 import nl.mijnummah.identity.application.UserAdminService;
 
 @RestController
@@ -27,10 +29,37 @@ class AuthController {
 
     private final AuthService authService;
     private final UserAdminService userAdminService;
+    private final PasswordResetService passwordResetService;
 
-    AuthController(AuthService authService, UserAdminService userAdminService) {
+    AuthController(AuthService authService, UserAdminService userAdminService,
+                   PasswordResetService passwordResetService) {
         this.authService = authService;
         this.userAdminService = userAdminService;
+        this.passwordResetService = passwordResetService;
+    }
+
+    @PostMapping("/register")
+    @ResponseStatus(HttpStatus.CREATED)
+    @Operation(summary = "Account aanmaken in de app en direct inloggen",
+            description = "Een nieuw account heeft geen beheerrechten. 409 EMAIL_ALREADY_REGISTERED als het adres al "
+                    + "in gebruik is.")
+    TokenResponse register(@Valid @RequestBody RegisterRequest request) {
+        return TokenResponse.from(authService.register(request.email(), request.displayName(), request.password()));
+    }
+
+    @PostMapping("/password-reset")
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    @Operation(summary = "Code aanvragen om het wachtwoord te herstellen",
+            description = "Altijd 202, ook als er geen account met dit adres is. 503 PASSWORD_RESET_UNAVAILABLE als "
+                    + "e-mail niet is ingesteld.")
+    void requestPasswordReset(@Valid @RequestBody PasswordResetRequest request) {
+        passwordResetService.request(request.email());
+    }
+
+    @PostMapping("/password-reset/confirm")
+    @Operation(summary = "Nieuw wachtwoord instellen met de code uit de e-mail; logt in en beëindigt andere sessies")
+    TokenResponse confirmPasswordReset(@Valid @RequestBody PasswordResetConfirmRequest request) {
+        return TokenResponse.from(passwordResetService.confirm(request.email(), request.code(), request.newPassword()));
     }
 
     @PostMapping("/login")
@@ -64,6 +93,29 @@ class AuthController {
         @Override
         public String toString() {
             return "LoginRequest[email=" + email + "]";
+        }
+    }
+
+    record RegisterRequest(@NotBlank @Email @Size(max = 254) String email,
+                           @NotBlank @Size(max = 100) String displayName,
+                           @NotBlank @Size(max = 200) String password) {
+
+        @Override
+        public String toString() {
+            return "RegisterRequest[email=" + email + "]";
+        }
+    }
+
+    record PasswordResetRequest(@NotBlank @Email @Size(max = 254) String email) {
+    }
+
+    record PasswordResetConfirmRequest(@NotBlank @Size(max = 254) String email,
+                                       @NotBlank @Size(max = 20) String code,
+                                       @NotBlank @Size(max = 200) String newPassword) {
+
+        @Override
+        public String toString() {
+            return "PasswordResetConfirmRequest[email=" + email + "]";
         }
     }
 

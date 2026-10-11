@@ -24,6 +24,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import nl.mijnummah.common.web.PageRequests;
 import nl.mijnummah.common.web.PageResponse;
 import nl.mijnummah.identity.AuthenticatedUser;
+import nl.mijnummah.notification.PushNotificationView;
+import nl.mijnummah.notification.PushText;
 import nl.mijnummah.media.application.MediaAdminService;
 import nl.mijnummah.media.domain.MediaStatus;
 
@@ -84,6 +86,15 @@ class AdminMediaController {
     MediaResponse.Admin unpublish(@AuthenticationPrincipal AuthenticatedUser actor, @PathVariable UUID mosqueId,
                                   @PathVariable UUID mediaId) {
         return MediaResponse.Admin.from(mediaService.unpublish(actor, mosqueId, mediaId));
+    }
+
+    @PostMapping("/{mediaId}/push")
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    @Operation(summary = "Pushmelding versturen naar volgers (alleen ADMIN, één keer per video)",
+            description = "Los van publiceren. Titel en tekst zijn optioneel; standaard samengesteld uit de video.")
+    PushNotificationView push(@AuthenticationPrincipal AuthenticatedUser actor, @PathVariable UUID mosqueId,
+                              @PathVariable UUID mediaId, @Valid @RequestBody(required = false) PushText text) {
+        return mediaService.sendPush(actor, mosqueId, mediaId, text == null ? PushText.DEFAULT : text);
     }
 
     @DeleteMapping("/{mediaId}")

@@ -23,6 +23,7 @@ import { CONTENT_STATUS_LABELS } from '../../core/format/labels';
 import { MosqueContext } from '../../core/mosque/mosque-context';
 import { applyServerErrors, controlError } from '../../shared/forms/form-errors';
 import { HasUnsavedChanges } from '../../shared/forms/unsaved-changes.guard';
+import { PushPanel } from '../notifications/push-panel';
 import { Confirm } from '../../shared/ui/confirm-dialog';
 import { Notifier } from '../../shared/ui/notifier';
 import { PageHeader } from '../../shared/ui/page-header';
@@ -44,8 +45,8 @@ type Action = 'publish' | 'unpublish' | 'delete';
 
 /**
  * Aankondiging opstellen en publiceren. Publiceren zet het bericht in de app; een pushmelding is een aparte
- * actie die (nog) niet bestaat. Het scherm zegt dat expliciet, zodat niemand denkt dat volgers een melding
- * krijgen.
+ * actie in het paneel ernaast (D-029). Het scherm zegt dat expliciet, zodat niemand denkt dat volgers bij
+ * publiceren een melding krijgen.
  */
 @Component({
   selector: 'mu-announcement-edit-page',
@@ -56,6 +57,7 @@ type Action = 'publish' | 'unpublish' | 'delete';
     MatInput,
     MatSlideToggle,
     PageHeader,
+    PushPanel,
     ReactiveFormsModule,
     RouterLink,
     Skeleton,
@@ -182,7 +184,7 @@ export class AnnouncementEditPage implements OnInit, HasUnsavedChanges {
         return this.confirm.ask({
           title: 'Aankondiging publiceren in de app?',
           message: `“${announcement.title}” verschijnt in de app${announcement.featured ? ', uitgelicht op de startpagina' : ''}.`,
-          note: 'Publiceren verstuurt géén pushmelding. Volgers zien de aankondiging pas als ze de app openen.',
+          note: 'Publiceren verstuurt géén pushmelding. Dat is een aparte actie die je daarna kunt kiezen.',
           confirmLabel: 'Publiceren in de app',
         });
       case 'unpublish':

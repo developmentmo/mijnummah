@@ -26,6 +26,12 @@ import nl.mijnummah.media.infrastructure.MediaItemRepository;
 import nl.mijnummah.media.infrastructure.MediaSpecifications;
 import nl.mijnummah.mosque.MosqueAccessService;
 import nl.mijnummah.mosque.MosquePermission;
+import nl.mijnummah.notification.PushContentNotPublishedException;
+import nl.mijnummah.notification.PushContentType;
+import nl.mijnummah.notification.PushNotificationView;
+import nl.mijnummah.notification.PushNotifications;
+import nl.mijnummah.notification.PushRequest;
+import nl.mijnummah.notification.PushText;
 
 /** Media management for a mosque's administrators and editors ({@link MosquePermission#MANAGE_CONTENT}). */
 @Service
@@ -36,15 +42,17 @@ public class MediaAdminService {
     private final VideoProviders providers;
     private final EventDirectory events;
     private final MosqueAccessService access;
+    private final PushNotifications push;
     private final Clock clock;
 
     public MediaAdminService(MediaItemRepository items, MediaViews views, VideoProviders providers,
-                             EventDirectory events, MosqueAccessService access, Clock clock) {
+                             EventDirectory events, MosqueAccessService access, PushNotifications push, Clock clock) {
         this.items = items;
         this.views = views;
         this.providers = providers;
         this.events = events;
         this.access = access;
+        this.push = push;
         this.clock = clock;
     }
 
@@ -99,6 +107,34 @@ public class MediaAdminService {
     }
 
     /** Deletes only the reference; the video at the provider is not touched. */
+    /**
+     * Sends a push notification about a published item to the followers who want lectures and videos. By default
+     * the title, and "Lezing van Imam X" (or the kind of video when there is no speaker).
+     */
+    @Transactional
+    public PushNotificationView sendPush(AuthenticatedUser actor, UUID mosqueId, UUID mediaId, PushText text) {
+        access.require(actor, mosqueId, MosquePermission.MANAGE_CONTENT);
+        MediaItem item = load(mosqueId, mediaId);
+        if (item.getStatus() != MediaStatus.PUBLISHED) {
+            throw new PushContentNotPublishedException("Only a published video can be sent as a push notification.");
+        }
+        MediaDetails details = item.details();
+        return push.send(actor, new PushRequest(mosqueId, PushContentType.MEDIA, mediaId,
+                text.titleOr(details.title()), text.bodyOr(defaultPushBody(details))));
+    }
+
+    static String defaultPushBody(MediaDetails details) {
+        String kind = switch (details.category()) {
+            case LECTURE -> "Lezing";
+            case KHUTBAH -> "Vrijdagpreek";
+            case QURAN -> "Koranrecitatie";
+            case COURSE -> "Les";
+            case YOUTH -> "Video voor jongeren";
+            case OTHER -> "Video";
+        };
+        return details.speaker() == null ? kind + " nu te bekijken in de app" : kind + " van " + details.speaker();
+    }
+
     @Transactional
     public void delete(AuthenticatedUser actor, UUID mosqueId, UUID mediaId) {
         access.require(actor, mosqueId, MosquePermission.MANAGE_CONTENT);

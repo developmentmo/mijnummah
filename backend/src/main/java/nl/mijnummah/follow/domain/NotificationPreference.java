@@ -13,6 +13,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.IdClass;
 import jakarta.persistence.Table;
 
+import nl.mijnummah.follow.NotificationTopic;
+
 /** A follower's choice for one topic of one mosque. A missing row means "enabled". */
 @Entity
 @Table(name = "notification_preference")

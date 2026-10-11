@@ -3,6 +3,7 @@ package nl.mijnummah.identity.application;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -13,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import nl.mijnummah.identity.UserDirectory;
 import nl.mijnummah.identity.UserSummary;
 import nl.mijnummah.identity.domain.User;
+import nl.mijnummah.identity.domain.UserStatus;
 import nl.mijnummah.identity.infrastructure.UserRepository;
 
 @Service
@@ -39,6 +41,12 @@ class UserDirectoryService implements UserDirectory {
         return users.findAllById(ids).stream()
                 .map(UserDirectoryService::summary)
                 .collect(Collectors.toUnmodifiableMap(UserSummary::id, Function.identity()));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Set<UUID> activeAmong(Collection<UUID> ids) {
+        return ids.isEmpty() ? Set.of() : Set.copyOf(users.findIdsByIdInAndStatus(ids, UserStatus.ACTIVE));
     }
 
     private static UserSummary summary(User user) {

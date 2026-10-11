@@ -7,6 +7,7 @@ import '../../core/design/design.dart';
 import '../../core/providers.dart';
 import '../../data/models.dart';
 import 'follow_providers.dart';
+import 'push_permission_notice.dart';
 
 /// Uitnodiging om de moskee te volgen. Verdwijnt zodra de gebruiker volgt; de voorkeuren staan bij Profiel.
 class FollowInvitation extends ConsumerStatefulWidget {
@@ -22,10 +23,12 @@ class _FollowInvitationState extends ConsumerState<FollowInvitation> {
   Future<void> _follow(Mosque mosque) async {
     setState(() => _busy = true);
     final messenger = ScaffoldMessenger.of(context);
+    final container = ProviderScope.containerOf(context, listen: false);
     try {
       await ref.read(meRepositoryProvider).follow(mosque.id);
       ref.invalidate(followStatusProvider);
       messenger.showSnackBar(SnackBar(content: Text('Je volgt nu ${mosque.name}.')));
+      await enablePush(container);
     } on AppFailure {
       messenger.showSnackBar(const SnackBar(content: Text('Volgen is niet gelukt. Probeer het later opnieuw.')));
     } finally {

@@ -25,5 +25,8 @@ public enum ErrorCategory {
     BUSINESS_RULE_VIOLATION,
 
     /** Too many attempts; the client should wait (429, with {@code Retry-After} when known). */
-    TOO_MANY_REQUESTS
+    TOO_MANY_REQUESTS,
+
+    /** A feature that depends on an external service that is not configured or not reachable (503). */
+    UNAVAILABLE
 }

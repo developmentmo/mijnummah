@@ -30,6 +30,8 @@ import nl.mijnummah.event.application.RegistrantView;
 import nl.mijnummah.event.application.RegistrationService;
 import nl.mijnummah.event.domain.EventStatus;
 import nl.mijnummah.identity.AuthenticatedUser;
+import nl.mijnummah.notification.PushNotificationView;
+import nl.mijnummah.notification.PushText;
 
 @RestController
 @RequestMapping("/api/v1/admin/mosques/{mosqueId}/events")
@@ -100,6 +102,15 @@ class AdminEventController {
     EventResponse.Admin cancel(@AuthenticationPrincipal AuthenticatedUser actor, @PathVariable UUID mosqueId,
                                @PathVariable UUID eventId) {
         return EventResponse.Admin.from(eventService.cancel(actor, mosqueId, eventId));
+    }
+
+    @PostMapping("/{eventId}/push")
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    @Operation(summary = "Pushmelding versturen naar volgers (alleen ADMIN, één keer per activiteit)",
+            description = "Los van publiceren. Titel en tekst zijn optioneel; standaard samengesteld uit de activiteit.")
+    PushNotificationView push(@AuthenticationPrincipal AuthenticatedUser actor, @PathVariable UUID mosqueId,
+                              @PathVariable UUID eventId, @Valid @RequestBody(required = false) PushText text) {
+        return eventService.sendPush(actor, mosqueId, eventId, text == null ? PushText.DEFAULT : text);
     }
 
     @DeleteMapping("/{eventId}")

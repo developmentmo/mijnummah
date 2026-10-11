@@ -11,6 +11,7 @@ import {
   configureTesting,
   http,
   respond,
+  respondPushPanel,
   selectMosque,
   spyOnRouter,
   text,
@@ -38,6 +39,8 @@ describe('AnnouncementEditPage', () => {
     await fixture.whenStable();
     await respond(`${BASE}/${announcement.id}`, announcement);
     await fixture.whenStable();
+    await respondPushPanel();
+    await fixture.whenStable();
     return fixture;
   }
 
@@ -45,9 +48,19 @@ describe('AnnouncementEditPage', () => {
     const fixture = await open();
     const panel = text(fixture.nativeElement.querySelector('aside'));
     expect(panel).toContain('Publiceren verstuurt nooit een pushmelding');
-    expect(panel).toContain('nog niet beschikbaar');
-    // Geen knop die een pushmelding belooft.
+    // Een concept kan nog niet als pushmelding worden verstuurd.
+    expect(panel).toContain('Publiceer de aankondiging eerst');
     expect(() => buttonByText(fixture.nativeElement, 'Pushmelding versturen')).toThrow();
+  });
+
+  it('biedt na publiceren een aparte pushmelding aan', async () => {
+    const fixture = await open(
+      anAnnouncement({ status: 'PUBLISHED', publishedAt: '2026-10-11T10:00:00Z' }),
+    );
+    expect(buttonByText(fixture.nativeElement, 'Pushmelding versturen')).toBeTruthy();
+    expect(text(fixture.nativeElement.querySelector('aside'))).toContain(
+      '12 volgers op 15 apparaten',
+    );
   });
 
   it('vraagt bevestiging met de expliciete melding dat er geen push gaat', async () => {
