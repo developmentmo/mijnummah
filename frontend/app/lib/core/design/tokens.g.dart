@@ -10,12 +10,10 @@ abstract final class TokPalette {
   static const green200 = Color(0xFFADCFC2);
   static const green300 = Color(0xFF7FB2A0);
   static const green400 = Color(0xFF4F927D);
-
   /// Jadegroen
   static const green500 = Color(0xFF2F7965);
   static const green600 = Color(0xFF24614F);
   static const green700 = Color(0xFF1A4D3F);
-
   /// Donkergroen, primaire merkkleur
   static const green800 = Color(0xFF123C32);
   static const green900 = Color(0xFF0B2820);
@@ -24,7 +22,6 @@ abstract final class TokPalette {
   static const gold100 = Color(0xFFF4E9CC);
   static const gold200 = Color(0xFFE9D49E);
   static const gold300 = Color(0xFFDCBD77);
-
   /// Gedempt goud, alleen als accent
   static const gold400 = Color(0xFFC6A45A);
   static const gold500 = Color(0xFFAD8A40);
@@ -34,7 +31,6 @@ abstract final class TokPalette {
   static const gold900 = Color(0xFF3B2E17);
   static const neutral0 = Color(0xFFFFFFFF);
   static const neutral25 = Color(0xFFFBF9F4);
-
   /// Warm ivoor
   static const neutral50 = Color(0xFFF7F3E9);
   static const neutral100 = Color(0xFFEFEAE0);
@@ -45,7 +41,6 @@ abstract final class TokPalette {
   static const neutral600 = Color(0xFF5D5E58);
   static const neutral700 = Color(0xFF454945);
   static const neutral800 = Color(0xFF333834);
-
   /// Donkergrijs
   static const neutral900 = Color(0xFF242A27);
   static const neutral950 = Color(0xFF161A18);
