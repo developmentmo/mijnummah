@@ -74,6 +74,12 @@ public class User {
         return requireText(email, "email").toLowerCase(Locale.ROOT);
     }
 
+    /** Sets a new password hash (the caller validated the password against {@link PasswordPolicy}). */
+    public void changePassword(String passwordHash, Instant now) {
+        this.passwordHash = Objects.requireNonNull(passwordHash, "passwordHash");
+        updatedAt = now;
+    }
+
     public void block(Instant now) {
         status = UserStatus.BLOCKED;
         updatedAt = now;

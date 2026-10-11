@@ -37,8 +37,8 @@ class DatabaseConstraintsIT extends AbstractIntegrationTest {
                 "select count(*) from flyway_schema_history where success and version is not null", Integer.class);
         String latest = jdbc.queryForObject(
                 "select version from flyway_schema_history order by installed_rank desc limit 1", String.class);
-        assertThat(applied).isEqualTo(9);
-        assertThat(latest).isEqualTo("9");
+        assertThat(applied).isEqualTo(12);
+        assertThat(latest).isEqualTo("12");
     }
 
     @Test

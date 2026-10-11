@@ -6,6 +6,7 @@ import '../../core/api/api_exception.dart';
 import '../../core/design/design.dart';
 import '../../core/providers.dart';
 import '../../core/widgets/content_width.dart';
+import 'auth_form.dart';
 
 /// Inloggen met e-mailadres en wachtwoord. Na het inloggen gaat de gebruiker terug naar waar hij was.
 class LoginPage extends ConsumerStatefulWidget {
@@ -19,7 +20,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   final _form = GlobalKey<FormState>();
   final _email = TextEditingController();
   final _password = TextEditingController();
-  bool _obscure = true;
   bool _busy = false;
   String? _error;
 
@@ -43,27 +43,21 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text(name == null ? 'Je bent ingelogd.' : 'Welkom, $name.')));
       context.canPop() ? context.pop() : context.go('/profiel');
-    } on ApiException catch (e) {
-      setState(() => _error = _message(e));
-    } on NetworkException {
-      setState(() => _error = 'Geen verbinding met de moskee. Controleer je internet en probeer het opnieuw.');
+    } on AppFailure catch (e) {
+      setState(
+        () => _error = AuthForm.message(
+          e,
+          codes: const {
+            'INVALID_CREDENTIALS': 'Het e-mailadres of wachtwoord klopt niet.',
+            'VALIDATION_FAILED': 'Het e-mailadres of wachtwoord klopt niet.',
+            'ACCOUNT_BLOCKED': 'Dit account is geblokkeerd. Neem contact op met de moskee.',
+          },
+          fallback: 'Inloggen is niet gelukt. Probeer het later opnieuw.',
+        ),
+      );
     } finally {
       if (mounted) setState(() => _busy = false);
     }
-  }
-
-  static String _message(ApiException e) => switch (e.code) {
-    'INVALID_CREDENTIALS' || 'VALIDATION_FAILED' => 'Het e-mailadres of wachtwoord klopt niet.',
-    'ACCOUNT_BLOCKED' => 'Dit account is geblokkeerd. Neem contact op met de moskee.',
-    'TOO_MANY_LOGIN_ATTEMPTS' || 'RATE_LIMITED' => _tooMany(e.retryAfter),
-    _ => 'Inloggen is niet gelukt. Probeer het later opnieuw.',
-  };
-
-  static String _tooMany(Duration? retryAfter) {
-    final minutes = retryAfter == null ? null : (retryAfter.inSeconds / 60).ceil();
-    return minutes == null || minutes <= 1
-        ? 'Te veel pogingen. Wacht even en probeer het dan opnieuw.'
-        : 'Te veel pogingen. Probeer het over $minutes minuten opnieuw.';
   }
 
   @override
@@ -102,48 +96,25 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         textInputAction: TextInputAction.next,
                         autofillHints: const [AutofillHints.email, AutofillHints.username],
                         autocorrect: false,
-                        validator: (value) {
-                          final email = value?.trim() ?? '';
-                          if (email.isEmpty) return 'Vul je e-mailadres in.';
-                          if (!email.contains('@') || email.startsWith('@') || email.endsWith('@')) {
-                            return 'Vul een geldig e-mailadres in.';
-                          }
-                          return null;
-                        },
+                        validator: AuthForm.email,
                       ),
                       const SizedBox(height: TokSpace.s4),
-                      TextFormField(
-                        controller: _password,
-                        decoration: InputDecoration(
-                          labelText: 'Wachtwoord',
-                          suffixIcon: IconButton(
-                            tooltip: _obscure ? 'Wachtwoord tonen' : 'Wachtwoord verbergen',
-                            icon: Icon(_obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined),
-                            onPressed: () => setState(() => _obscure = !_obscure),
-                          ),
+                      PasswordField(controller: _password, onSubmitted: (_) => _submit()),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton(
+                          onPressed: () => context.push('/wachtwoord-vergeten', extra: _email.text.trim()),
+                          child: const Text('Wachtwoord vergeten?'),
                         ),
-                        obscureText: _obscure,
-                        textInputAction: TextInputAction.done,
-                        autofillHints: const [AutofillHints.password],
-                        onFieldSubmitted: (_) => _submit(),
-                        validator: (value) => (value ?? '').isEmpty ? 'Vul je wachtwoord in.' : null,
                       ),
+                      const SizedBox(height: TokSpace.s2),
+                      BusyButton(label: 'Inloggen', busy: _busy, onPressed: _submit),
                       const SizedBox(height: TokSpace.s6),
-                      FilledButton(
-                        onPressed: _busy ? null : _submit,
-                        child: _busy
-                            ? const SizedBox.square(
-                                dimension: TokIconSize.md,
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              )
-                            : const Text('Inloggen'),
-                      ),
-                      const SizedBox(height: TokSpace.s4),
-                      Text(
-                        'Nog geen account? Zelf een account aanmaken kan nog niet in deze versie van de app; vraag er '
-                        'een aan bij de moskee.',
-                        style: text.bodySmall,
-                        textAlign: TextAlign.center,
+                      Text('Nog geen account?', style: text.bodyMedium, textAlign: TextAlign.center),
+                      const SizedBox(height: TokSpace.s2),
+                      OutlinedButton(
+                        onPressed: () => context.push('/account-aanmaken'),
+                        child: const Text('Account aanmaken'),
                       ),
                     ],
                   ),

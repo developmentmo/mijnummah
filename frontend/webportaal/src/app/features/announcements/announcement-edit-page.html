@@ -143,11 +143,27 @@
           Sla de aankondiging eerst op als concept. Daarna kun je hem publiceren.
         </p>
       }
-      <h2 class="mu-title-medium">Pushmelding</h2>
-      <p class="mu-body-medium">
-        Publiceren verstuurt nooit een pushmelding. Een pushmelding versturen wordt een aparte actie
-        en is nog niet beschikbaar.
-      </p>
+      @if (announcement(); as a) {
+        <mu-push-panel
+          contentType="ANNOUNCEMENT"
+          [contentId]="a.id"
+          [eligible]="a.status === 'PUBLISHED' && !a.expired"
+          [ineligibleReason]="
+            a.expired
+              ? 'Deze aankondiging is verlopen en staat niet meer in de app.'
+              : 'Publiceer de aankondiging eerst. Daarna kun je een pushmelding versturen.'
+          "
+          [blocked]="form.dirty"
+          defaultTitleHint="de titel van de aankondiging"
+          defaultBodyHint="de tekst van de aankondiging (ingekort)"
+        />
+      } @else {
+        <h2 class="mu-title-medium">Pushmelding</h2>
+        <p class="mu-body-medium">
+          Publiceren verstuurt nooit een pushmelding. Na publiceren kun je apart een pushmelding
+          versturen.
+        </p>
+      }
     </aside>
   </div>
 }

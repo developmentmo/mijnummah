@@ -15,8 +15,8 @@ uit het masterprompt (code, tests, build, regressies, documentatie, beperkingen,
 | 1 | Branding en design system | Voltooid en goedgekeurd (PR #3 gemerged) |
 | 3 | Backend, database en API (vóór fase 2, zie D-004) | Voltooid en goedgekeurd (PR #4 gemerged) |
 | 2 | UX/UI en Flutter-app | Voltooid en goedgekeurd (PR #5 gemerged) |
-| 4 | Beheerportaal (Angular) | Getest en geslaagd (lokaal); wacht op CI en beoordeling |
-| 5 | Accounts, volgen en notificaties | Nog niet begonnen |
+| 4 | Beheerportaal (Angular) | Voltooid en goedgekeurd (PR #6 gemerged) |
+| 5 | Accounts, volgen en notificaties | Getest en geslaagd (lokaal); echte e-mail en push niet getest (geen credentials); wacht op CI en beoordeling |
 | 6 | Testen, privacy, beveiliging, productievoorbereiding | Nog niet begonnen |
 | 7 | Voorbereiding white-label automatisering | Nog niet begonnen |
 | 8 | Latere uitbreidingen (niet implementeren) | Alleen documentatie |
@@ -424,7 +424,7 @@ Schermen en wat ze doen:
 
 - Afbeeldingen uploaden kan nog niet; een activiteit heeft een veld voor een afbeelding-URL. Opslag voor uploads hoort
   bij fase 6.
-- Pushmeldingen versturen bestaat nog niet (fase 5); het portaal zegt dat expliciet.
+- Pushmeldingen versturen bestaat nog niet (fase 5); het portaal zegt dat expliciet. Inmiddels opgelost in fase 5.
 - De weergave van datumvelden (dag-maand of maand-dag) hangt af van de taalinstelling van de browser.
 - Niet getest op echte apparaten; wel in Chromium op desktop- en telefoonformaat.
 - De teller "Gepubliceerde aankondigingen" telt ook verlopen aankondigingen mee.
@@ -444,13 +444,65 @@ Schermen en wat ze doen:
 
 **Afhankelijkheden:** fase 3 en 4; Firebase-project en Apple Developer-account voor echte pushmeldingen.
 
-- Registratie, inloggen/uitloggen, JWT met roterende refresh tokens, wachtwoordherstel via e-mail.
-- Volgen/ontvolgen en meldingsvoorkeuren per onderwerp: datamodel en API al in fase 3 (D-018); hier de koppeling
-  aan registratie en verzending.
-- FCM (Android, en iOS via APNs) met topics per moskee en onderwerp; server-side verzending.
+**Status:** Getest en geslaagd lokaal. Echte e-mail (SMTP) en echte pushmeldingen (FCM en APNs) zijn niet getest:
+daarvoor ontbreken credentials. Ze zijn getest tegen lokale testdubbels en met de `log`-providers.
 
-**Acceptatiecriteria:** autorisatieregels getest; pushdoelgroepen afgeschermd per moskee en voorkeur; zonder
-credentials alleen lokaal getest en zo gerapporteerd.
+### Aanpak
+
+- Registratie in de app maakt een gewoon account (rol USER) en logt direct in. Bestaande regels blijven: wachtwoord
+  minimaal 12 tekens, roterende refresh tokens, limieten per IP.
+- Wachtwoordherstel met een code per e-mail (D-036); wachtwoord wijzigen en account verwijderen in de app (D-037).
+- Pushdoelgroep wordt op de server bepaald uit volgen, voorkeuren, moskee en actieve accounts, niet met FCM-topics
+  (D-032). Alleen beheerders versturen, één keer per item, alleen over gepubliceerde content (D-033).
+- E-mail en push hebben een provider `none`, een echte (`smtp`, `fcm`) en `log` voor lokaal (D-035). FCM zonder
+  Admin SDK (D-038).
+- App: Firebase-instellingen via `--dart-define`; toestemming pas bij volgen of een onderwerp aanzetten (D-039).
+
+### Opgeleverd
+
+| Onderdeel | Wat |
+|---|---|
+| Backend `identity` | `POST /auth/register`, `POST /auth/password-reset`, `POST /auth/password-reset/confirm`, `PUT /me/password`, `POST /me/deletion`; herstelcodes (V10), limieten per IP en per adres |
+| Backend `common/mail` | `Mailer` met SMTP, log en "niet ingesteld"; Nederlandse herstel-e-mail, asynchroon na de commit |
+| Backend `notification` (nieuwe module) | Toestellen (`PUT /me/devices`, `POST /me/devices/remove`), verzenden per content (`POST /admin/mosques/{m}/{announcements,events,media}/{id}/push`), bereik vooraf (`GET .../notifications/audience`), status (`GET .../notifications`); FCM HTTP v1 met serviceaccount; ongeldige tokens worden opgeruimd (V11) |
+| Backend overig | `FollowerDirectory` (volgers met onderwerp aan), `Event.isOver`, aanmeldingen verdwijnen met het account (V12), fout `503` voor diensten die niet zijn ingesteld |
+| Portaal | Paneel "Pushmelding" bij aankondiging, activiteit en video: bereik, waarschuwing "Testomgeving" bij de log-provider, optionele titel en tekst, bevestiging, resultaat en status; alleen voor beheerders en alleen bij gepubliceerde content |
+| App | Schermen Account aanmaken, Wachtwoord vergeten (code aanvragen en bevestigen) en Account (wachtwoord wijzigen, account verwijderen); links vanaf inloggen en profiel; pushmeldingen: toestemming, aan- en afmelden van het toestel, tikken opent het juiste scherm, melding onderin als de app open is; eerlijke melding als push niet is ingesteld of geweigerd |
+
+### Tests en controles
+
+| Controle | Commando | Resultaat (11 okt 2026) |
+|---|---|---|
+| Backend unit- en integratietests, nieuw: registratie, wachtwoord wijzigen (alle sessies beëindigd), account verwijderen (persoonlijke data weg, plek bij activiteit vrij, beheerder geweigerd), herstel zonder e-mail, herstel met code (eenmalig, verlopen, na vijf foute pogingen ongeldig, nieuwe code vervangt oude, per-adreslimiet zonder verschil in antwoord), toestel wisselt van gebruiker, doelgroep (alleen actieve volgers van deze moskee met het onderwerp aan), alleen ADMIN en één keer en alleen gepubliceerd, ongeldige tokens opgeruimd, standaardteksten, FCM-gateway tegen een stub die de JWT-handtekening controleert, limiet op wachtwoordcontrole | `./mvnw verify` | Geslaagd lokaal tegen PostgreSQL: 68 unit- en 73 integratietests |
+| Portaal | `npm test`, `npm run lint`, `npm run format:check`, `npm run build` | Geslaagd lokaal: 25 bestanden, 115 tests; eerste bundel 330,98 kB |
+| App | `dart format`, `flutter analyze`, `flutter test` | Geslaagd lokaal: 154 tests, geen analysemeldingen |
+| App Android-build | `flutter build apk --debug` | Niet lokaal uitgevoerd (geen Android SDK in deze omgeving); CI bouwt de APK |
+| API doorlopen tegen de echte backend (profiel `local`) | Python-script in een tijdelijke map | Geslaagd lokaal: registreren (te kort wachtwoord 400, dubbel adres 409), volgen, toestel aanmelden, herstelcode aanvragen (ook voor een onbekend adres 202), code uit het log, foute code 400, goede code inloggen, code tweede keer 400, wachtwoord wijzigen (fout huidig wachtwoord 400), account verwijderen (fout wachtwoord 400, daarna inloggen 401), beheerder verwijderen 409 |
+| Portaal doorlopen (Playwright) | Script in een tijdelijke map | Geslaagd lokaal: concept geeft uitleg in plaats van verstuurknop, na publiceren bereik "2 volgers op 1 apparaat" en "Testomgeving", bevestigen, resultaat "Afgeleverd op 1 apparaat", na herladen geen verstuurknop meer. Geen API- of consolefouten |
+| App doorlopen (webbuild, Playwright) | Script in een tijdelijke map | Geslaagd lokaal: bezoeker, account aanmaken (te kort wachtwoord geweigerd), ingelogd, volgen, melding "push niet ingesteld" (web), accountinstellingen, uitloggen, wachtwoord vergeten met code uit het log, ingelogd met het nieuwe wachtwoord |
+
+### Beperkingen en open punten
+
+- Echte SMTP en echte FCM/APNs zijn niet getest; daarvoor zijn een e-mailprovider, een Firebase-project en een Apple
+  Developer-account nodig. Instellen: zie `backend/README.md` en `frontend/app/README.md`.
+- iOS: de capability Push Notifications (entitlement `aps-environment`) moet in Xcode worden aangezet en een APNs-sleutel
+  in Firebase worden gezet; niet gedaan en niet getest.
+- Een melding die halverwege het verzenden stopt (herstart van de backend), blijft "wordt verstuurd" (D-034).
+- Verloopt een sessie zonder uitloggen, dan blijft het toestel aangemeld tot de volgende keer inloggen of tot FCM het
+  token ongeldig meldt (D-039).
+- Herstel-e-mail is platte tekst, zonder logo of eigen opmaak per moskee.
+- Niet getest op echte telefoons; de app is getest met widgettests en als webbuild in Chromium.
+
+### Acceptatiecriteria fase 5
+
+- [x] Registratie, inloggen en uitloggen, JWT met roterende refresh tokens, wachtwoordherstel via e-mail (e-mail lokaal
+  via de log-provider).
+- [x] Volgen en meldingsvoorkeuren gekoppeld aan registratie en verzending.
+- [x] FCM-verzending server-side; app meldt toestellen aan en verwerkt meldingen (zonder echte credentials alleen lokaal
+  getest).
+- [x] Autorisatieregels getest (alleen ADMIN verstuurt, alleen eigen moskee, eigen account).
+- [x] Pushdoelgroepen afgeschermd per moskee en voorkeur (integratietest).
+- [x] Zonder credentials alleen lokaal getest en zo gerapporteerd.
 
 ## Fase 6 — Testen, privacy, beveiliging en productievoorbereiding
 
@@ -459,6 +511,8 @@ credentials alleen lokaal getest en zo gerapporteerd.
 - Volledige testronde backend/Flutter/Angular, AVG-documentatie (bewaartermijnen, verwijderprocessen,
   toestemming), logging zonder persoonsgegevens, healthchecks, Docker-images, back-up en herstel,
   release- en rollbackprocedure.
+- Uit fase 5: herstel voor pushmeldingen die op "wordt verstuurd" blijven staan (D-034), oude herstelcodes en
+  pushverzendingen opruimen (bewaartermijn), echte SMTP en FCM/APNs testen met de credentials van de pilot.
 
 **Acceptatiecriteria:** relevante tests slagen, buildstatus vastgelegd, resterende productieblokkades gedocumenteerd.
 

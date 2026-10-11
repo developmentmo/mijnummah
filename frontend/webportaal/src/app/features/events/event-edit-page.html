@@ -244,6 +244,21 @@
             <a matButton [routerLink]="['aanmeldingen']">Aanmeldingen bekijken</a>
           }
         </div>
+        <mu-push-panel
+          contentType="EVENT"
+          [contentId]="e.id"
+          [eligible]="e.status === 'PUBLISHED' && !isOver(e)"
+          [ineligibleReason]="
+            e.status === 'CANCELLED'
+              ? 'Deze activiteit is geannuleerd.'
+              : e.status === 'DRAFT'
+                ? 'Publiceer de activiteit eerst. Daarna kun je een pushmelding versturen.'
+                : 'Deze activiteit is voorbij.'
+          "
+          [blocked]="form.dirty"
+          defaultTitleHint="de titel van de activiteit"
+          defaultBodyHint="datum, tijd en locatie"
+        />
       </aside>
     }
   </div>

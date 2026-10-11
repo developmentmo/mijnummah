@@ -11,7 +11,7 @@ void main() {
   testWidgets('een bezoeker ziet uitleg, een inlogknop en de vier statussen', (tester) async {
     await pumpApp(tester, location: '/profiel');
     expect(find.text('Je bent bezoeker'), findsOneWidget);
-    expect(find.textContaining('Zelf een account aanmaken kan nog niet'), findsOneWidget);
+    expect(find.widgetWithText(OutlinedButton, 'Account aanmaken'), findsOneWidget);
     for (final status in ['Bezoeker', 'Account', 'Volger', 'Lid']) {
       await tester.ensureVisible(find.text(status));
       expect(find.text(status), findsOneWidget);
@@ -30,7 +30,7 @@ void main() {
     await pumpApp(tester, backend: backend, location: '/profiel', tokenStore: signedInStore(backend));
 
     expect(find.text('Je volgt Noeroel Islam sinds 1 september 2026.'), findsOneWidget);
-    expect(find.textContaining('nog niet verstuurd'), findsOneWidget);
+    expect(find.textContaining('Pushmeldingen zijn in deze versie van de app niet ingesteld'), findsOneWidget);
     final media = find.widgetWithText(SwitchListTile, 'Nieuwe lezingen');
     expect(tester.widget<SwitchListTile>(media).value, isFalse);
 

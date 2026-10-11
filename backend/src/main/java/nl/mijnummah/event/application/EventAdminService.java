@@ -2,7 +2,10 @@ package nl.mijnummah.event.application;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 import org.springframework.data.domain.Page;
@@ -24,7 +27,14 @@ import nl.mijnummah.event.infrastructure.EventRepository;
 import nl.mijnummah.event.infrastructure.EventSpecifications;
 import nl.mijnummah.identity.AuthenticatedUser;
 import nl.mijnummah.mosque.MosqueAccessService;
+import nl.mijnummah.mosque.MosqueDirectory;
 import nl.mijnummah.mosque.MosquePermission;
+import nl.mijnummah.notification.PushContentNotPublishedException;
+import nl.mijnummah.notification.PushContentType;
+import nl.mijnummah.notification.PushNotificationView;
+import nl.mijnummah.notification.PushNotifications;
+import nl.mijnummah.notification.PushRequest;
+import nl.mijnummah.notification.PushText;
 
 /**
  * Event management for administrators and editors of a mosque. Every method first checks
@@ -33,18 +43,26 @@ import nl.mijnummah.mosque.MosquePermission;
 @Service
 public class EventAdminService {
 
+    private static final DateTimeFormatter PUSH_DATE =
+            DateTimeFormatter.ofPattern("EEE d MMM, HH:mm", Locale.forLanguageTag("nl"));
+
     private final EventRepository events;
     private final EventRegistrationRepository registrations;
     private final EventViews views;
     private final MosqueAccessService access;
+    private final MosqueDirectory mosques;
+    private final PushNotifications push;
     private final Clock clock;
 
     public EventAdminService(EventRepository events, EventRegistrationRepository registrations, EventViews views,
-                             MosqueAccessService access, Clock clock) {
+                             MosqueAccessService access, MosqueDirectory mosques, PushNotifications push,
+                             Clock clock) {
         this.events = events;
         this.registrations = registrations;
         this.views = views;
         this.access = access;
+        this.mosques = mosques;
+        this.push = push;
         this.clock = clock;
     }
 
@@ -127,6 +145,30 @@ public class EventAdminService {
             throw new EventHasRegistrationsException("This event has registrations and cannot be deleted.");
         }
         events.delete(event);
+    }
+
+    /**
+     * Sends a push notification about a published event that has not ended to the followers who want events. By
+     * default the title, and the date, time and location in the mosque's time zone ("za 14 nov, 18:30 · Grote zaal").
+     */
+    @Transactional
+    public PushNotificationView sendPush(AuthenticatedUser actor, UUID mosqueId, UUID eventId, PushText text) {
+        access.require(actor, mosqueId, MosquePermission.MANAGE_CONTENT);
+        Event event = load(mosqueId, eventId);
+        EventDetails details = event.details();
+        if (event.getStatus() != EventStatus.PUBLISHED || event.isOver(Instant.now(clock))) {
+            throw new PushContentNotPublishedException("Only a published event that has not ended can be sent as a "
+                    + "push notification.");
+        }
+        ZoneId zone = ZoneId.of(mosques.requireActive(mosqueId).timeZone());
+        return push.send(actor, new PushRequest(mosqueId, PushContentType.EVENT, eventId,
+                text.titleOr(details.title()), text.bodyOr(defaultPushBody(details, zone))));
+    }
+
+    static String defaultPushBody(EventDetails details, ZoneId zone) {
+        // Java's Dutch abbreviations end with a dot ("za.", "nov."); the app and portal write them without.
+        String when = PUSH_DATE.format(details.startsAt().atZone(zone)).replace(".", "");
+        return details.location() == null ? when : when + " · " + details.location();
     }
 
     private Event load(UUID mosqueId, UUID eventId) {

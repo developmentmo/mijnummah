@@ -300,3 +300,101 @@ Belangrijke architectuur- en ontwerpbeslissingen. Status: **Voorgesteld** (wacht
   beheerder. De interface verbergt wat een rol niet mag, maar de backend blijft elke actie controleren.
 - **Waarom:** Links zijn deelbaar en herlaadbaar, en een gebruiker met meerdere moskeeën ziet altijd in welke moskee die werkt.
 - **Gevolg:** Een gemanipuleerde URL levert hooguit een melding op; data van een andere moskee komt nooit binnen.
+
+## D-032 — Pushdoelgroep op de server bepaald, niet met FCM-topics
+
+- **Status:** Besloten (fase 5); vervangt het voorstel "topics per moskee en onderwerp" uit het plan
+- **Besluit:** De app meldt zijn pushtoken aan bij de backend (`PUT /api/v1/me/devices`). Bij verzenden kiest de
+  backend de ontvangers: volgers van díe moskee, met het onderwerp niet uitgezet, met een actief account, en van hen de
+  aangemelde toestellen. Elk toestel krijgt een eigen bericht via FCM HTTP v1. Tokens die FCM als ongeldig meldt,
+  worden verwijderd.
+- **Waarom:** Met topics bepaalt het toestel zelf waarop het geabonneerd is; een geblokkeerd of verwijderd account, of
+  een oude abonnering na ontvolgen, zou dan nog meldingen krijgen. Op de server is de doelgroep afdwingbaar en testbaar
+  (afgeschermd per moskee en voorkeur, zoals de acceptatiecriteria vragen).
+- **Gevolg:** Eén verzoek per toestel. Voor de omvang van één moskee is dat ruim voldoende; bij veel grotere aantallen
+  kan later batching of een wachtrij nodig zijn.
+
+## D-033 — Alleen beheerders versturen een pushmelding, één keer per item
+
+- **Status:** Besloten (fase 5)
+- **Besluit:** Een pushmelding versturen vraagt de rol ADMIN van de moskee (`SEND_NOTIFICATIONS`); een EDITOR kan
+  content publiceren maar niet pushen. Per aankondiging, activiteit of video kan hoogstens één keer een melding gaan
+  (unieke sleutel op `content_type, content_id`). Alleen gepubliceerde content komt in aanmerking: geen verlopen
+  aankondiging en geen activiteit die al voorbij is. Titel en tekst zijn optioneel aan te passen (100 en 250 tekens);
+  leeg betekent een standaardtekst.
+- **Waarom:** Een pushmelding bereikt iedereen direct en is niet terug te halen. Eén keer per item voorkomt dubbel
+  versturen door een dubbele klik of twee beheerders tegelijk.
+- **Gevolg:** Het portaal toont vooraf het bereik (volgers en toestellen), vraagt bevestiging en laat daarna het
+  resultaat zien in plaats van de verstuurknop.
+
+## D-034 — Een melding die halverwege stopt, blijft "wordt verstuurd"
+
+- **Status:** Besloten (fase 5); bekende beperking
+- **Besluit:** Verzenden gebeurt na de commit, op de achtergrond. Stopt de backend precies tijdens het verzenden, dan
+  blijft de melding op SENDING staan en kan hij (door D-033) niet opnieuw worden verstuurd.
+- **Waarom:** Automatisch opnieuw versturen kan dubbele meldingen geven; dat is erger dan een gemiste melding. Een
+  herstelmechanisme hoort bij de productievoorbereiding.
+- **Gevolg:** Op de lijst voor fase 6: een herstelactie voor platformbeheerders, of markeren als mislukt na een
+  time-out.
+
+## D-035 — Providers voor e-mail en push: `none`, echt, of `log`
+
+- **Status:** Besloten (fase 5)
+- **Besluit:** `MAIL_PROVIDER` is `none`, `smtp` of `log`; `PUSH_PROVIDER` is `none`, `fcm` of `log`. Standaard is
+  `none`: wachtwoordherstel geeft dan `503 PASSWORD_RESET_UNAVAILABLE` en verzenden `503`. Alleen het profiel `local`
+  gebruikt `log`; dat schrijft e-mails en meldingen naar het log, waarschuwt bij het starten dat er niets wordt
+  verstuurd, en de backend meldt `simulated: true` zodat het portaal "Testomgeving" toont.
+- **Waarom:** Geen nepintegraties en geen geheimen in de repository, maar wel lokaal te testen. Een productie zonder
+  instellingen zegt eerlijk dat iets niet kan, in plaats van te doen alsof het gelukt is.
+- **Gevolg:** De echte SMTP- en FCM-koppeling zijn alleen tegen lokale testdubbels getest (zie het implementatieplan).
+
+## D-036 — Wachtwoordherstel met een code per e-mail
+
+- **Status:** Besloten (fase 5)
+- **Besluit:** `POST /auth/password-reset` stuurt een code van 8 tekens (zonder verwarrende tekens zoals 0/O en 1/I,
+  getoond als ABCD-EFGH), 30 minuten geldig, hoogstens 5 pogingen. De database bewaart alleen een SHA-256-hash van
+  gebruiker plus code. Het antwoord is altijd `202`, ook voor een onbekend adres; per adres gaan hoogstens 3 e-mails
+  per uur, daarboven wordt stil niets verstuurd. Een nieuwe aanvraag maakt oudere codes ongeldig. Bevestigen zet het
+  nieuwe wachtwoord, beëindigt alle sessies en logt in op het huidige toestel.
+- **Waarom:** Een code werkt in de app zonder deep links of universal links (die per moskee-app een eigen domein en
+  configuratie vragen). Het altijd gelijke antwoord verraadt niet welke adressen een account hebben.
+- **Gevolg:** Per IP gelden limieten op aanvragen en bevestigen; samen met 5 pogingen per code maakt dat raden
+  onhaalbaar.
+
+## D-037 — Account zelf verwijderen
+
+- **Status:** Besloten (fase 5)
+- **Besluit:** `POST /api/v1/me/deletion` met het wachtwoord verwijdert het account definitief. De database ruimt via
+  foreign keys mee op: sessies, volgen en voorkeuren, pushtoestellen, herstelcodes en aanmeldingen voor activiteiten
+  (migratie V12). Een account dat een moskee beheert of content heeft geschreven, kan dat niet zelf (`409
+  ACCOUNT_DELETION_BLOCKED`); dat regelt een platformbeheerder.
+- **Waarom:** De app-stores en de AVG verwachten dat een gebruiker zijn account zelf kan verwijderen. Content van een
+  moskee mag niet ongemerkt zijn auteur verliezen.
+- **Gevolg:** Wachtwoord wijzigen en account verwijderen hebben samen een limiet per IP (10 per 15 minuten), zodat een
+  gestolen toegangstoken niet gebruikt kan worden om het wachtwoord te raden.
+
+## D-038 — FCM zonder Firebase Admin SDK
+
+- **Status:** Besloten (fase 5)
+- **Besluit:** De backend praat met de FCM HTTP v1-API via de bestaande `RestClient`. Het toegangstoken komt van een
+  serviceaccount (JSON-bestand, pad in `FCM_CREDENTIALS_FILE`) via een ondertekende JWT (RFC 7523), ondertekend met
+  Nimbus, dat al in het project zit. Het token wordt hergebruikt tot kort voor het verloopt.
+- **Waarom:** De Admin SDK trekt veel afhankelijkheden mee (gRPC, Google Cloud-bibliotheken) voor één HTTP-aanroep.
+- **Gevolg:** De koppeling is getest tegen een lokale stub die de handtekening van de JWT controleert en
+  FCM-antwoorden nabootst, niet tegen Google zelf.
+
+## D-039 — Pushmeldingen in de app
+
+- **Status:** Besloten (fase 5)
+- **Besluit:** De app gebruikt `firebase_core` en `firebase_messaging`. De Firebase-instellingen komen per build uit
+  `--dart-define` (geen `google-services.json` of `GoogleService-Info.plist` in de repository). Zonder die instellingen,
+  en op het web, zijn meldingen uit en zegt de app dat bij de meldingsvoorkeuren. Toestemming wordt pas gevraagd als de
+  gebruiker de moskee gaat volgen of een onderwerp aanzet, niet bij het starten. Het toestel wordt aangemeld na inloggen
+  (als er toestemming is) en afgemeld vóór uitloggen. Tikken op een melding opent de aankondiging, activiteit of
+  lezing; een melding terwijl de app open is, verschijnt onderin met een knop "Bekijken".
+- **Waarom:** Elke moskee-app krijgt een eigen Firebase-project (white-label, fase 7). Toestemming vragen met een
+  duidelijke aanleiding geeft meer "ja" en is wat Apple en Google aanraden.
+- **Gevolg:** Verloopt een sessie zonder uitloggen, dan blijft het toestel aangemeld tot de volgende keer inloggen op
+  dat toestel (het token gaat dan naar de nieuwe gebruiker) of tot FCM het token ongeldig meldt. Voor iOS moeten in
+  Xcode de capability Push Notifications en een APNs-sleutel in Firebase worden ingesteld; dat kan alleen met een
+  Apple Developer-account en is niet gedaan.

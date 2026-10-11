@@ -12,6 +12,7 @@ import {
   configureTesting,
   http,
   respond,
+  respondPushPanel,
   selectMosque,
   spyOnRouter,
   text,
@@ -45,6 +46,8 @@ describe('EventEditPage', () => {
   async function open(event = anEvent()) {
     const fixture = await render(event.id);
     await respond(`${BASE}/${event.id}`, event);
+    await fixture.whenStable();
+    await respondPushPanel();
     await fixture.whenStable();
     return fixture;
   }

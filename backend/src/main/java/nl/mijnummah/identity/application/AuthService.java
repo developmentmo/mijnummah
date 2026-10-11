@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import nl.mijnummah.common.crypto.OpaqueTokens;
+import nl.mijnummah.identity.PlatformRole;
 import nl.mijnummah.identity.domain.RefreshToken;
 import nl.mijnummah.identity.domain.User;
 import nl.mijnummah.identity.domain.UserStatus;
@@ -18,8 +19,8 @@ import nl.mijnummah.identity.infrastructure.SecurityProperties;
 import nl.mijnummah.identity.infrastructure.UserRepository;
 
 /**
- * Login, refresh-token rotation and logout. Self-registration of app users follows in fase 5; until then
- * accounts are created by a platform administrator ({@link UserAdminService}).
+ * Self-registration, login, refresh-token rotation and logout. Accounts for mosque administrators are created by a
+ * platform administrator ({@link UserAdminService}); app users register themselves.
  */
 @Service
 public class AuthService {
@@ -31,6 +32,7 @@ public class AuthService {
     private final SecurityProperties properties;
     private final Clock clock;
     private final LoginThrottle loginThrottle;
+    private final UserAdminService userAdminService;
 
     /**
      * Hash compared against when the email is unknown, so login takes about as long for unknown emails as for
@@ -44,7 +46,8 @@ public class AuthService {
                        AccessTokenService accessTokenService,
                        SecurityProperties properties,
                        Clock clock,
-                       LoginThrottle loginThrottle) {
+                       LoginThrottle loginThrottle,
+                       UserAdminService userAdminService) {
         this.users = users;
         this.refreshTokens = refreshTokens;
         this.passwordEncoder = passwordEncoder;
@@ -52,7 +55,19 @@ public class AuthService {
         this.properties = properties;
         this.clock = clock;
         this.loginThrottle = loginThrottle;
+        this.userAdminService = userAdminService;
         this.dummyPasswordHash = passwordEncoder.encode(OpaqueTokens.generate());
+    }
+
+    /**
+     * Creates an app account (platform role USER, no rights for any mosque) and signs it in.
+     *
+     * @throws EmailAlreadyRegisteredException when the address is taken
+     */
+    @Transactional
+    public AuthTokens register(String email, String displayName, String password) {
+        UserProfile profile = userAdminService.createUnchecked(email, displayName, password, PlatformRole.USER);
+        return issueFor(profile.id());
     }
 
     @Transactional
@@ -118,6 +133,11 @@ public class AuthService {
     public void logout(String rawRefreshToken) {
         refreshTokens.findByTokenHash(OpaqueTokens.sha256Hex(rawRefreshToken))
                 .ifPresent(token -> refreshTokens.revokeFamily(token.getFamilyId(), Instant.now(clock)));
+    }
+
+    /** A new login session for a user whose identity was proven another way (registration, password reset). */
+    AuthTokens issueFor(UUID userId) {
+        return issueTokens(userId, UUID.randomUUID(), Instant.now(clock));
     }
 
     private AuthTokens issueTokens(UUID userId, UUID familyId, Instant now) {

@@ -30,6 +30,7 @@ import {
 import { MosqueContext } from '../../core/mosque/mosque-context';
 import { applyServerErrors, controlError } from '../../shared/forms/form-errors';
 import { HasUnsavedChanges } from '../../shared/forms/unsaved-changes.guard';
+import { PushPanel } from '../notifications/push-panel';
 import { Confirm } from '../../shared/ui/confirm-dialog';
 import { Notifier } from '../../shared/ui/notifier';
 import { PageHeader } from '../../shared/ui/page-header';
@@ -68,6 +69,7 @@ type Action = 'publish' | 'unpublish' | 'cancel' | 'delete';
     MatSelectModule,
     MatSlideToggle,
     PageHeader,
+    PushPanel,
     ReactiveFormsModule,
     RouterLink,
     Skeleton,
@@ -183,6 +185,11 @@ export class EventEditPage implements OnInit, HasUnsavedChanges {
     } finally {
       this.busy.set(false);
     }
+  }
+
+  /** Zoals in de agenda: voorbij na het einde, of na het begin als er geen einde is. */
+  protected isOver(event: AdminEvent): boolean {
+    return Date.parse(event.endsAt ?? event.startsAt) <= Date.now();
   }
 
   protected when(iso: string | null): string {

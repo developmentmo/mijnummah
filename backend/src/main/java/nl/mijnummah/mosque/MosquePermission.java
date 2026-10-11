@@ -13,5 +13,8 @@ public enum MosquePermission {
     MANAGE_MOSQUE,
 
     /** Add and remove administrators of the mosque. */
-    MANAGE_ADMINISTRATORS
+    MANAGE_ADMINISTRATORS,
+
+    /** Send a push notification about published content to the mosque's followers. */
+    SEND_NOTIFICATIONS
 }

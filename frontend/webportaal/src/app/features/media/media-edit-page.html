@@ -188,6 +188,15 @@
             Verwijderen
           </button>
         </div>
+        <mu-push-panel
+          contentType="MEDIA"
+          [contentId]="m.id"
+          [eligible]="m.status === 'PUBLISHED'"
+          ineligibleReason="Publiceer de video eerst. Daarna kun je een pushmelding versturen."
+          [blocked]="form.dirty"
+          defaultTitleHint="de titel van de video"
+          defaultBodyHint="soort video en spreker, bijvoorbeeld ‘Lezing van Imam Yusuf’"
+        />
       </aside>
     }
   </div>

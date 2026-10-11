@@ -13,6 +13,7 @@ import '../../data/models.dart';
 import '../agenda/agenda_providers.dart';
 import 'follow_card.dart';
 import 'follow_providers.dart';
+import 'push_permission_notice.dart';
 
 /// Profiel: account, volgen met meldingsvoorkeuren, eigen aanmeldingen en de weergave-instelling.
 class ProfilePage extends ConsumerWidget {
@@ -87,11 +88,7 @@ class _Visitor extends StatelessWidget {
             const SizedBox(height: TokSpace.s4),
             FilledButton(onPressed: () => context.push('/inloggen'), child: const Text('Inloggen')),
             const SizedBox(height: TokSpace.s3),
-            Text(
-              'Zelf een account aanmaken kan nog niet in deze versie van de app. Heb je nog geen account, vraag er '
-              'dan een aan bij de moskee.',
-              style: text.bodySmall,
-            ),
+            OutlinedButton(onPressed: () => context.push('/account-aanmaken'), child: const Text('Account aanmaken')),
           ],
         ),
       ),
@@ -150,6 +147,12 @@ class _Account extends ConsumerWidget {
             ),
             const SizedBox(height: TokSpace.s3),
             OutlinedButton.icon(
+              onPressed: () => context.push('/account'),
+              icon: const Icon(Icons.manage_accounts_outlined),
+              label: const Text('Accountinstellingen'),
+            ),
+            const SizedBox(height: TokSpace.s2),
+            OutlinedButton.icon(
               onPressed: () => _logout(context, ref),
               icon: const Icon(Icons.logout),
               label: const Text('Uitloggen'),
@@ -174,10 +177,12 @@ class _FollowSectionState extends ConsumerState<_FollowSection> {
 
   Future<void> _toggle(FollowStatus status, NotificationTopic topic, bool enabled) async {
     setState(() => _saving = topic);
+    final container = ProviderScope.containerOf(context, listen: false);
     try {
       await ref.read(meRepositoryProvider).updateNotification(status.mosqueId, topic, enabled);
       ref.invalidate(followStatusProvider);
       await ref.read(followStatusProvider.future);
+      if (enabled) await enablePush(container);
     } on AppFailure {
       if (mounted) {
         ScaffoldMessenger.of(
@@ -249,11 +254,7 @@ class _FollowSectionState extends ConsumerState<_FollowSection> {
                 value: follow.notifications[topic] ?? false,
                 onChanged: _saving != null ? null : (enabled) => _toggle(follow, topic, enabled),
               ),
-            const StatusMessage(
-              kind: StatusKind.info,
-              message:
-                  'Je voorkeuren worden bewaard. Pushmeldingen worden in deze versie van de app nog niet verstuurd.',
-            ),
+            const PushPermissionNotice(),
             const SizedBox(height: TokSpace.s3),
             Align(
               alignment: Alignment.centerLeft,

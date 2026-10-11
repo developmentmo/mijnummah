@@ -138,6 +138,11 @@ public class Event {
         return status == EventStatus.PUBLISHED || status == EventStatus.CANCELLED;
     }
 
+    /** Over when the end has passed, or the start for an event without an end (as in the agenda lists). */
+    public boolean isOver(Instant now) {
+        return !now.isBefore(endsAt != null ? endsAt : startsAt);
+    }
+
     public boolean hasStarted(Instant now) {
         return !now.isBefore(startsAt);
     }

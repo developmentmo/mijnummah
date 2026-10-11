@@ -65,6 +65,19 @@ class EventTest {
         assertThat(details.visibility()).isEqualTo(Visibility.PUBLIC);
     }
 
+    @Test
+    void anEventIsOverAfterItsEndOrWithoutAnEndAfterItsStart() {
+        Instant start = NOW.plus(Duration.ofDays(3));
+        Event withoutEnd = Event.draft(mosqueId, details(), actor, NOW);
+        assertThat(withoutEnd.isOver(start.minusSeconds(1))).isFalse();
+        assertThat(withoutEnd.isOver(start)).isTrue();
+
+        Event withEnd = Event.draft(mosqueId, new EventDetails("Les", null, EventCategory.CLASS, start,
+                start.plus(Duration.ofHours(2)), null, null, Visibility.PUBLIC, false, null), actor, NOW);
+        assertThat(withEnd.isOver(start.plus(Duration.ofHours(1)))).isFalse();
+        assertThat(withEnd.isOver(start.plus(Duration.ofHours(2)))).isTrue();
+    }
+
     private EventDetails details() {
         return new EventDetails("Lezing", null, EventCategory.LECTURE, NOW.plus(Duration.ofDays(3)), null, null, null,
                 Visibility.PUBLIC, true, 50);

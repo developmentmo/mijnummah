@@ -6,7 +6,7 @@ import '../api/api_client.dart';
 import '../api/api_exception.dart';
 import 'token_store.dart';
 
-/// Inloggen, uitloggen en het verversen van tokens.
+/// Inloggen, registreren, uitloggen, wachtwoordherstel en het verversen van tokens.
 ///
 /// Refresh tokens roteren: elk token is één keer bruikbaar en hergebruik trekt de hele sessie in. Daarom loopt
 /// er altijd hoogstens één verversing tegelijk; gelijktijdige verzoeken wachten op dezelfde verversing.
@@ -55,7 +55,58 @@ class AuthService implements AccessTokenSource {
       body: {'email': email.trim(), 'password': password},
       authenticated: false,
     );
+    return _start(tokens as Json);
+  }
+
+  /// Maakt een account aan en logt direct in. Fouten zoals `EMAIL_ALREADY_REGISTERED` of `INVALID_PASSWORD` gaan
+  /// naar de aanroeper.
+  Future<UserProfile> register({required String email, required String displayName, required String password}) async {
+    final tokens = await _api.post(
+      '/auth/register',
+      body: {'email': email.trim(), 'displayName': displayName.trim(), 'password': password},
+      authenticated: false,
+    );
+    return _start(tokens as Json);
+  }
+
+  /// Vraagt een herstelcode aan. De backend antwoordt altijd hetzelfde, ook als er geen account met dit adres is;
+  /// zonder ingestelde e-mail geeft hij `PASSWORD_RESET_UNAVAILABLE`.
+  Future<void> requestPasswordReset(String email) =>
+      _api.post('/auth/password-reset', body: {'email': email.trim()}, authenticated: false);
+
+  /// Zet een nieuw wachtwoord met de code uit de e-mail en logt in. Andere sessies worden door de backend beëindigd.
+  Future<UserProfile> confirmPasswordReset({
+    required String email,
+    required String code,
+    required String newPassword,
+  }) async {
+    final tokens = await _api.post(
+      '/auth/password-reset/confirm',
+      body: {'email': email.trim(), 'code': code.trim(), 'newPassword': newPassword},
+      authenticated: false,
+    );
+    return _start(tokens as Json);
+  }
+
+  /// Wijzigt het wachtwoord. De backend beëindigt alle sessies en geeft dit toestel een nieuwe.
+  Future<void> changePassword({required String currentPassword, required String newPassword}) async {
+    final tokens = await _api.put(
+      '/me/password',
+      body: {'currentPassword': currentPassword, 'newPassword': newPassword},
+    );
     _session = _sessionFrom(tokens as Json);
+    await _store.save(_session!);
+  }
+
+  /// Verwijdert het account definitief en beëindigt de sessie. Fouten (zoals een verkeerd wachtwoord of
+  /// `ACCOUNT_DELETION_BLOCKED`) gaan naar de aanroeper; de sessie blijft dan bestaan.
+  Future<void> deleteAccount(String password) async {
+    await _api.post('/me/deletion', body: {'password': password});
+    await _endSession();
+  }
+
+  Future<UserProfile> _start(Json tokens) async {
+    _session = _sessionFrom(tokens);
     try {
       final profile = UserProfile.fromJson(await _api.get('/auth/me') as Json);
       await _store.save(_session!, profile: profile.toJson());

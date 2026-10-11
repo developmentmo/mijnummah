@@ -69,6 +69,18 @@ mijnummah:
       name: ${BOOTSTRAP_MOSQUE_NAME:}
       city: ${BOOTSTRAP_MOSQUE_CITY:}
       admin-email: ${BOOTSTRAP_MOSQUE_ADMIN_EMAIL:}
+  # Email for password reset codes: none (password reset unavailable), smtp or log (local development only).
+  # SMTP connection: SPRING_MAIL_HOST, SPRING_MAIL_PORT, SPRING_MAIL_USERNAME, SPRING_MAIL_PASSWORD.
+  mail:
+    provider: ${MAIL_PROVIDER:none}
+    from: ${MAIL_FROM:}
+  # Push notifications: none (sending unavailable), fcm (Firebase Cloud Messaging) or log (local development only).
+  push:
+    provider: ${PUSH_PROVIDER:none}
+    fcm:
+      project-id: ${FCM_PROJECT_ID:}
+      # Path to the Firebase service account key (JSON), mounted as a secret. Never commit this file.
+      credentials-file: ${FCM_CREDENTIALS_FILE:}
   api-docs:
     # OpenAPI document (/v3/api-docs) and Swagger UI (/swagger-ui.html). Off by default in real environments.
     enabled: ${API_DOCS_ENABLED:false}

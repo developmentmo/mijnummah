@@ -19,6 +19,12 @@ import nl.mijnummah.mosque.MosqueAccessService;
 import nl.mijnummah.mosque.MosqueDirectory;
 import nl.mijnummah.mosque.MosquePermission;
 import nl.mijnummah.mosque.MosqueRef;
+import nl.mijnummah.notification.PushContentNotPublishedException;
+import nl.mijnummah.notification.PushContentType;
+import nl.mijnummah.notification.PushNotificationView;
+import nl.mijnummah.notification.PushNotifications;
+import nl.mijnummah.notification.PushRequest;
+import nl.mijnummah.notification.PushText;
 
 /** Public announcements of active mosques, and their management ({@link MosquePermission#MANAGE_CONTENT}). */
 @Service
@@ -27,13 +33,15 @@ public class AnnouncementService {
     private final AnnouncementRepository announcements;
     private final MosqueDirectory mosques;
     private final MosqueAccessService access;
+    private final PushNotifications push;
     private final Clock clock;
 
     public AnnouncementService(AnnouncementRepository announcements, MosqueDirectory mosques,
-                               MosqueAccessService access, Clock clock) {
+                               MosqueAccessService access, PushNotifications push, Clock clock) {
         this.announcements = announcements;
         this.mosques = mosques;
         this.access = access;
+        this.push = push;
         this.clock = clock;
     }
 
@@ -88,7 +96,7 @@ public class AnnouncementService {
         return AnnouncementView.of(announcement, now);
     }
 
-    /** Makes the announcement visible in the app. Does not send a push notification. */
+    /** Makes the announcement visible in the app. Does not send a push notification (see {@link #sendPush}). */
     @Transactional
     public AnnouncementView publish(AuthenticatedUser actor, UUID mosqueId, UUID announcementId) {
         access.require(actor, mosqueId, MosquePermission.MANAGE_CONTENT);
@@ -105,6 +113,23 @@ public class AnnouncementService {
         Instant now = Instant.now(clock);
         announcement.unpublish(actor.id(), now);
         return AnnouncementView.of(announcement, now);
+    }
+
+    /**
+     * Sends a push notification about a published, unexpired announcement to the followers who want announcements.
+     * By default the title and text of the announcement itself.
+     */
+    @Transactional
+    public PushNotificationView sendPush(AuthenticatedUser actor, UUID mosqueId, UUID announcementId, PushText text) {
+        access.require(actor, mosqueId, MosquePermission.MANAGE_CONTENT);
+        Announcement announcement = load(mosqueId, announcementId);
+        if (announcement.getStatus() != AnnouncementStatus.PUBLISHED || announcement.isExpired(Instant.now(clock))) {
+            throw new PushContentNotPublishedException("Only a published announcement that has not expired can be "
+                    + "sent as a push notification.");
+        }
+        AnnouncementDetails details = announcement.details();
+        return push.send(actor, new PushRequest(mosqueId, PushContentType.ANNOUNCEMENT, announcementId,
+                text.titleOr(details.title()), text.bodyOr(details.body())));
     }
 
     @Transactional

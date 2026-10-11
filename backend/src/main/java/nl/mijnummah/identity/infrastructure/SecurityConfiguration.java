@@ -21,6 +21,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import nl.mijnummah.common.ratelimit.FixedWindowRateLimiter;
 import nl.mijnummah.identity.application.LoginThrottle;
+import nl.mijnummah.identity.application.PasswordResetThrottle;
 
 /**
  * HTTP security: stateless JWT bearer authentication, deny-by-default.
@@ -49,7 +50,10 @@ class SecurityConfiguration {
                         .requestMatchers(HttpMethod.POST,
                                 "/api/v1/auth/login",
                                 "/api/v1/auth/refresh",
-                                "/api/v1/auth/logout").permitAll()
+                                "/api/v1/auth/logout",
+                                "/api/v1/auth/register",
+                                "/api/v1/auth/password-reset",
+                                "/api/v1/auth/password-reset/confirm").permitAll()
                         // Published content of active mosques. A valid bearer token is still read, so signed-in
                         // users also see content with visibility REGISTERED_USERS.
                         .requestMatchers(HttpMethod.GET, "/api/v1/public/**").permitAll()
@@ -90,6 +94,13 @@ class SecurityConfiguration {
         var source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/api/**", configuration);
         return source;
+    }
+
+    /** Reset emails per email address (see {@link RateLimitProperties#passwordResetPerAccount()}). */
+    @Bean
+    PasswordResetThrottle passwordResetThrottle(RateLimitProperties rateLimits, Clock clock) {
+        var limit = rateLimits.passwordResetPerAccount();
+        return new PasswordResetThrottle(new FixedWindowRateLimiter(limit.requests(), limit.per(), clock));
     }
 
     @Bean

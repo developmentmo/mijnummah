@@ -23,7 +23,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 import nl.mijnummah.follow.application.FollowService;
 import nl.mijnummah.follow.application.FollowView;
-import nl.mijnummah.follow.domain.NotificationTopic;
+import nl.mijnummah.follow.NotificationTopic;
 import nl.mijnummah.identity.AuthenticatedUser;
 
 @RestController
@@ -64,7 +64,7 @@ class FollowController {
 
     @PutMapping("/{mosqueId}/notifications")
     @Operation(summary = "Meldingsvoorkeuren wijzigen; weggelaten onderwerpen blijven ongewijzigd",
-            description = "Slaat alleen voorkeuren op. Pushmeldingen worden in fase 5 verstuurd.")
+            description = "Bepaalt welke pushmeldingen van deze moskee je ontvangt (standaard alles aan).")
     FollowView updatePreferences(@AuthenticationPrincipal AuthenticatedUser actor, @PathVariable UUID mosqueId,
                                  @Valid @RequestBody PreferencesRequest request) {
         return followService.updatePreferences(actor, mosqueId, request.changes());
