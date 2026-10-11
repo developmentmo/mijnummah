@@ -12,7 +12,7 @@ uit het masterprompt (code, tests, build, regressies, documentatie, beperkingen,
 | Fase | Onderwerp | Status |
 |---|---|---|
 | 0 | Repositoryanalyse en technisch plan | Voltooid en goedgekeurd |
-| 1 | Branding en design system | Geïmplementeerd, lokaal getest; wacht op CI en beoordeling |
+| 1 | Branding en design system | Getest en geslaagd (lokaal en CI); wacht op beoordeling |
 | 3 | Backend, database en API (vóór fase 2, zie D-004) | Nog niet begonnen |
 | 2 | UX/UI en Flutter-app | Nog niet begonnen |
 | 4 | Beheerportaal (Angular) | Nog niet begonnen |
@@ -172,7 +172,7 @@ frontend/webportaal/public/                       favicon, apple-touch-icon, log
 
 ### Tests en controles
 
-| Controle | Commando | Resultaat lokaal (11 okt 2026) |
+| Controle | Commando | Resultaat (11 okt 2026, lokaal en in CI) |
 |---|---|---|
 | Gegenereerde tokens zijn actueel | `node design/tokens/build.mjs --check` | Geslaagd |
 | WCAG 2.2 AA voor alle kleurparen | `node design/tokens/contrast.mjs` | Geslaagd, 107 van 107 paren |
@@ -181,7 +181,7 @@ frontend/webportaal/public/                       favicon, apple-touch-icon, log
 | Flutter-formattering en analyse | `dart format …`, `flutter analyze` | Geslaagd, geen meldingen |
 | Flutter-tests (thema, SVG's laden in flutter_svg, licht/donker, telefoon, tablet, 200% tekst, semantics, minder beweging) | `flutter test` | Geslaagd, 22 tests |
 | Portaal formattering, lint, tests, build | `npm run format:check`, `npm run lint`, `npm test`, `npm run build` | Geslaagd, 13 tests |
-| Flutter Android-build | `flutter build apk --debug` | Niet lokaal uitgevoerd: de Android SDK is in deze omgeving niet te downloaden. Draait in CI |
+| Flutter Android-build | `flutter build apk --debug` | Geslaagd in CI (GitHub Actions); lokaal niet mogelijk omdat de Android SDK hier niet te downloaden is |
 | iOS-build | — | Niet uitgevoerd: vereist macOS en Xcode |
 
 Afwijking van het plan: geen golden tests. Fontrendering verschilt per besturingssysteem, waardoor goldens
