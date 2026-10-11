@@ -26,7 +26,9 @@ Belangrijke architectuur- en ontwerpbeslissingen. Status: **Voorgesteld** (wacht
 ## D-003 — Monorepo met generieke platformnaam
 
 - **Status:** Voorgesteld
-- **Besluit:** Eén repository met `backend/`, `mobile/`, `admin/`, `design/`, `deploy/`, `docs/`.
+- **Besluit:** Eén repository met `backend/`, `frontend/app/` (Flutter), `frontend/webportaal/` (Angular), `design/`,
+  `deploy/` en `docs/`. De indeling van `backend/` en `frontend/` volgt de lokale RepairTrack-structuur van de
+  eigenaar.
   Code en packages heten generiek (`mijnummah`, Java-package `nl.mijnummah`); "Noeroel Islam" komt alleen
   voor in brandconfiguratie, assets en content.
 - **Gevolg:** Fase 7 (andere moskeeën) vraagt geen hernoemingen. Contracten tussen app, portaal en backend
