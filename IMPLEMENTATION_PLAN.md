@@ -59,8 +59,9 @@ Angular-applicatie"). Die aanname klopt niet. Alle fases bouwen daarom nieuw op,
 ```text
 mijnummah/
 ├── backend/           Spring Boot 4 (Java 21, Maven), modulaire monoliet, Flyway, PostgreSQL 17
-├── mobile/            Flutter-app (Riverpod, Dio, go_router)
-├── admin/             Angular-beheerportaal (Angular Material, M3-thema op design tokens)
+├── frontend/
+│   ├── app/           Flutter-app (Riverpod, Dio, go_router)
+│   └── webportaal/    Angular-beheerportaal (Angular Material, M3-thema op design tokens)
 ├── design/
 │   ├── tokens/        tokens.json (enige bron) + generator naar Dart en CSS
 │   └── branding/      SVG-bronbestanden van logo's en app-icoon, plus exports
@@ -125,12 +126,12 @@ mijnummah/
 4. **Design tokens.** Eén bronbestand `design/tokens/tokens.json` (W3C Design Tokens-formaat) met kleuren,
    typografie, spacing, radius, schaduw, iconmaten, motion en componenttokens (knop, invoerveld, card,
    navigatie, modal, melding). Een klein Node-script zonder externe dependencies genereert:
-   - `mobile/lib/core/design/tokens.g.dart` (constanten),
-   - `admin/src/styles/_tokens.css` (CSS custom properties).
+   - `frontend/app/lib/core/design/tokens.g.dart` (constanten),
+   - `frontend/webportaal/src/styles/_tokens.css` (CSS custom properties).
    Op beide gaat een handgeschreven themalaag: `ThemeData` + `ThemeExtension` in Flutter en een Angular
    Material M3-thema in het portaal (D-005).
-5. **Scaffolding** (nodig omdat de repo leeg is): een minimale Flutter-app in `mobile/` en een minimale
-   Angular-app in `admin/`, elk met alleen het thema en een interne designpreview van tokens en
+5. **Scaffolding** (nodig omdat de repo leeg is): een minimale Flutter-app in `frontend/app/` en een minimale
+   Angular-app in `frontend/webportaal/`, elk met alleen het thema en een interne designpreview van tokens en
    basiscomponenten. Nog geen functionele schermen; die horen bij fase 2 en 4.
 6. **Beeldtaal.** Richtlijnen voor fotografie en illustraties, plus neutrale placeholder-afbeeldingen die
    zichtbaar als "Voorbeeld" gemarkeerd zijn. Geen stockfoto's van personen die betrokkenheid bij Noeroel
@@ -143,22 +144,22 @@ mijnummah/
 ```text
 BRAND_GUIDELINES.md
 design/tokens/tokens.json
-design/tokens/build.mjs                generator Dart + CSS, met --check modus
-design/tokens/contrast.mjs             WCAG-contrastcontrole van de kleurparen
-design/branding/svg/                   logo-horizontal-{light,dark,mono}.svg, logo-compact-*.svg,
-                                       app-icon.svg, app-icon-foreground.svg, app-icon-background.svg
-design/branding/png/                   rasterexports (store-iconen 1024x1024, 512x512, Android/iOS-maten)
-design/fonts/                          Fraunces, Inter, Noto Naskh Arabic + OFL-licenties
-mobile/                                Flutter-project (pubspec.yaml, lib/main.dart, lib/app.dart)
-mobile/lib/core/design/                tokens.g.dart, app_theme.dart, brand_colors.dart (ThemeExtension),
-                                       app_typography.dart, app_spacing.dart, components/ (knop, card,
-                                       invoerveld, melding, skeleton)
-mobile/assets/branding/, mobile/assets/fonts/
-mobile/test/design/                    widget- en golden tests van het thema
-admin/                                 Angular-project (angular.json, package.json, src/)
-admin/src/styles/                      _tokens.css (gegenereerd), theme.scss, typography.scss
-admin/src/app/design-preview/          interne previewpagina
-.github/workflows/ci.yml               tokens --check, contrast, flutter analyze/test, ng lint/test/build
+design/tokens/build.mjs                      generator Dart + CSS, met --check modus
+design/tokens/contrast.mjs                   WCAG-contrastcontrole van de kleurparen
+design/branding/svg/                         logo-horizontal-{light,dark,mono}.svg, logo-compact-*.svg,
+                                             app-icon.svg, app-icon-foreground.svg, app-icon-background.svg
+design/branding/png/                         rasterexports (store-iconen 1024x1024, 512x512, Android/iOS-maten)
+design/fonts/                                Fraunces, Inter, Noto Naskh Arabic + OFL-licenties
+frontend/app/                                Flutter-project (pubspec.yaml, lib/main.dart, lib/app.dart)
+frontend/app/lib/core/design/                tokens.g.dart, app_theme.dart, brand_colors.dart (ThemeExtension),
+                                             app_typography.dart, app_spacing.dart, components/ (knop, card,
+                                             invoerveld, melding, skeleton)
+frontend/app/assets/                         branding/ en fonts/
+frontend/app/test/design/                    widget- en golden tests van het thema
+frontend/webportaal/                         Angular-project (angular.json, package.json, src/)
+frontend/webportaal/src/styles/              _tokens.css (gegenereerd), theme.scss, typography.scss
+frontend/webportaal/src/app/design-preview/  interne previewpagina
+.github/workflows/ci.yml                     tokens --check, contrast, flutter analyze/test, ng lint/test/build
 ```
 
 ### Tests en controles voor fase 1
