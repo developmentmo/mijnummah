@@ -14,7 +14,7 @@ uit het masterprompt (code, tests, build, regressies, documentatie, beperkingen,
 | 0 | Repositoryanalyse en technisch plan | Voltooid en goedgekeurd |
 | 1 | Branding en design system | Voltooid en goedgekeurd (PR #3 gemerged) |
 | 3 | Backend, database en API (vóór fase 2, zie D-004) | Voltooid en goedgekeurd (PR #4 gemerged) |
-| 2 | UX/UI en Flutter-app | Getest en geslaagd (lokaal); Android-build wacht op CI, daarna beoordeling |
+| 2 | UX/UI en Flutter-app | Getest en geslaagd (lokaal en CI, PR #5); wacht op beoordeling |
 | 4 | Beheerportaal (Angular) | Nog niet begonnen |
 | 5 | Accounts, volgen en notificaties | Nog niet begonnen |
 | 6 | Testen, privacy, beveiliging, productievoorbereiding | Nog niet begonnen |
@@ -260,7 +260,7 @@ Schermen en wat ze doen:
 | Unit- en widgettests: datums (zomer- en wintertijd, middernacht), API-client (fouten, 401 en verversen, offline-cache), authenticatie (één verversing tegelijk, ingetrokken sessie, uitloggen offline), modellen, alle schermen en toestanden, aanmelden zonder dubbele aanmelding, inloggen, volgen en voorkeuren, navigatie, overflow op een kleine telefoon met 200% tekst en op een tablet | `flutter test` | Geslaagd lokaal, 116 tests |
 | Geen losse kleuren of fonts | `node design/tokens/check-hardcoded.mjs` | Geslaagd lokaal |
 | Doorlopen tegen de echte backend | Webversie van de app (alleen in een tijdelijke map, niet in de repository) met Playwright tegen de backend met profiel `local` en testcontent | Geslaagd lokaal: home, agenda en filter, activiteit, inloggen (fout en goed), aanmelden, volgen en voorkeuren, lezingen, lezing (melding bij onbereikbare video), ontdekken. Alleen de verwachte API-fouten (401 bij het foute wachtwoord, 404 `NOT_FOLLOWING` voor het volgen) |
-| Android-build | `flutter build apk --debug` | Nog niet uitgevoerd: de Android SDK is hier niet te downloaden; draait in CI op de PR |
+| Android-build | `flutter build apk --debug` | Geslaagd in CI (GitHub Actions, PR #5); lokaal niet mogelijk omdat de Android SDK hier niet te downloaden is |
 
 ### Beperkingen en open punten
 
@@ -283,7 +283,7 @@ Schermen en wat ze doen:
 - [x] Nederlandse datums en tijden in `Europe/Amsterdam`.
 - [x] Toegankelijkheid: labels voor screenreaders, tekst tot 200% zonder overflow, focus- en drukstatussen uit het thema,
   contrast uit de tokens.
-- [ ] Android-build groen (wordt bevestigd in CI op de PR).
+- [x] Android-build groen in CI (PR #5).
 
 ## Fase 3 — Backend, database en API
 
