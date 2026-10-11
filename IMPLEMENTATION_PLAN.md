@@ -14,8 +14,8 @@ uit het masterprompt (code, tests, build, regressies, documentatie, beperkingen,
 | 0 | Repositoryanalyse en technisch plan | Voltooid en goedgekeurd |
 | 1 | Branding en design system | Voltooid en goedgekeurd (PR #3 gemerged) |
 | 3 | Backend, database en API (vóór fase 2, zie D-004) | Voltooid en goedgekeurd (PR #4 gemerged) |
-| 2 | UX/UI en Flutter-app | Getest en geslaagd (lokaal en CI, PR #5); wacht op beoordeling |
-| 4 | Beheerportaal (Angular) | Nog niet begonnen |
+| 2 | UX/UI en Flutter-app | Voltooid en goedgekeurd (PR #5 gemerged) |
+| 4 | Beheerportaal (Angular) | Getest en geslaagd (lokaal); wacht op CI en beoordeling |
 | 5 | Accounts, volgen en notificaties | Nog niet begonnen |
 | 6 | Testen, privacy, beveiliging, productievoorbereiding | Nog niet begonnen |
 | 7 | Voorbereiding white-label automatisering | Nog niet begonnen |
@@ -357,13 +357,88 @@ backend/
 
 **Afhankelijkheden:** fase 1 en 3.
 
-- Inloggen met de backend-authenticatie, route guards plus server-side autorisatie.
-- Dashboard (alleen echte gegevens), evenementenbeheer, mediabeheer, aankondigingen.
-- Duidelijk onderscheid tussen een aankondiging publiceren en een pushmelding versturen.
-- Bevestiging bij risicovolle acties, formuliervalidatie, Nederlandse teksten.
+### Aanpak
 
-**Acceptatiecriteria:** bevoegde beheerders beheren alle content zonder databasetoegang; unit tests voor
-componenten, services, guards en formulieren; build groen.
+- Angular 22 met standalone componenten, signals en `OnPush`; Angular Material voor formulieren, tabellen en dialogen.
+- Het adres van de backend staat in `public/config.json` en wordt vóór het opstarten geladen, zodat één build in elke
+  omgeving werkt (D-027).
+- Toegangstoken alleen in het geheugen, verversingstoken in `sessionStorage`; verversen loopt één keer tegelijk en een
+  401 leidt tot één nieuwe poging (D-028).
+- De moskee staat in de URL (`/m/:mosqueId/...`). Guards spiegelen de rollen in de interface; de backend blijft de
+  echte controle doen (D-031).
+- Publiceren en een pushmelding versturen zijn gescheiden. Publiceren verstuurt nooit een pushmelding, en verzenden
+  bestaat nog niet; het portaal zegt dat bij elke aankondiging (D-029).
+- Tijden worden ingevoerd en getoond in de tijdzone van de moskee (standaard `Europe/Amsterdam`), ongeacht de tijdzone
+  van de browser.
+- Backend: de beheerlijst van activiteiten sorteert oplopend als er een `from` is meegegeven, zodat het dashboard de
+  eerstvolgende activiteiten krijgt (D-030).
+
+### Opgeleverd
+
+```text
+frontend/webportaal/
+  public/config.json           apiBaseUrl (runtimeconfiguratie)
+  src/main.ts                  config laden, daarna opstarten; Nederlandse melding als dat mislukt
+  src/styles/_portal.scss      gedeelde stijlen voor lijsten, formulieren en zijpanelen
+  src/app/core/api/            AdminApi (alle beheer-endpoints), modellen, ApiError en Nederlandse foutteksten
+  src/app/core/auth/           AuthService, interceptor, guards (ingelogd, gast, platformbeheerder), veilige terug-URL
+  src/app/core/mosque/         MosqueContext (moskee en rol), mosqueGuard en mosqueAdminGuard
+  src/app/core/format/         Nederlandse labels, datums en duur in de tijdzone van de moskee
+  src/app/shared/              bevestigingsdialoog, meldingen, paginakop, statuslabel, formulierhulpen, niet-opgeslagen-guard
+  src/app/features/            shell, inloggen, moskee kiezen, overzicht, agenda, aanmeldingen, lezingen en video's,
+                               aankondigingen, moskeegegevens, beheerders, accounts
+  src/app/testing/harness.ts   testhulpen (alleen in tests)
+backend/.../AdminEventController.java   sortering bij `from` (D-030), met integratietest
+```
+
+Schermen en wat ze doen:
+
+| Scherm | Inhoud |
+|---|---|
+| Inloggen | E-mail en wachtwoord met controle vooraf; meldingen bij onjuiste gegevens, geblokkeerd account, te veel pogingen (met wachttijd), geen verbinding en een verlopen sessie. Na inloggen terug naar de pagina die eerst gevraagd werd |
+| Moskee kiezen | Alleen bij meer dan één moskee; anders direct door. Lege toestand met uitloggen |
+| Overzicht | Begroeting, snelle acties, de eerstvolgende vijf gepubliceerde activiteiten en vier tellers (conceptactiviteiten, gepubliceerde en concept-video's, gepubliceerde aankondigingen). Elk blok heeft eigen laad- en foutstatus |
+| Agenda | Lijst met filter op status, paginering in de URL; nieuwe activiteit |
+| Activiteit | Titel, beschrijving, categorie, zichtbaarheid, begin en einde, locatie, afbeelding-URL, aanmelden met capaciteit. Publiceren, depubliceren, annuleren en verwijderen met bevestiging; acties pas na opslaan; geannuleerd is alleen-lezen. Waarschuwing bij weggaan met niet-opgeslagen wijzigingen |
+| Aanmeldingen | Alleen voor beheerders: wie zich heeft aangemeld, met een privacynotitie |
+| Lezingen en video's | Lijst met statusfilter en zoeken; formulier met YouTube-link (met thumbnail), spreker, categorie, duur (u:mm:ss of minuten), opnamedatum en gekoppelde activiteit. Ongeldige of dubbele links komen bij het juiste veld |
+| Aankondigingen | Lijst met "Verlopen"-label; formulier met verloopdatum (zonder tijd wordt dat 23:59). De knop heet "Publiceren in de app" en de bevestiging zegt dat er géén pushmelding gaat; een paneel "Pushmelding" legt uit dat verzenden nog niet beschikbaar is |
+| Moskeegegevens | Profiel, adres en contact; wijzigingen ongedaan maken; waarschuwing bij weggaan |
+| Beheerders | Toevoegen op e-mail met rol, rol wijzigen en verwijderen met bevestiging; wie zijn eigen toegang wijzigt, wordt doorgestuurd |
+| Accounts | Alleen voor platformbeheerders: account aanmaken (wachtwoord minimaal 12 tekens, extra bevestiging voor platformbeheerder), blokkeren en deblokkeren met bevestiging, niet het eigen account |
+
+### Tests en controles
+
+| Controle | Commando | Resultaat (11 okt 2026) |
+|---|---|---|
+| Formattering | `npm run format:check` | Geslaagd lokaal |
+| Lint | `npm run lint` | Geslaagd lokaal |
+| Unit- en componenttests: datums en tijdzones, foutteksten, AuthService (herstellen, verversen één keer tegelijk, uitloggen offline), interceptor (401 en opnieuw proberen), alle guards, formulieren (validatie, omzetten naar verzoeken), inloggen, overzicht, agenda, activiteit (alle statusacties en bevestigingen), aankondiging (publiceren zonder push), video, moskee kiezen, shell, beheerders, accounts, bevestigingsdialoog, niet-opgeslagen-guard | `npm test` | Geslaagd lokaal, 24 bestanden, 102 tests |
+| Build | `npm run build` | Geslaagd lokaal, eerste bundel 330,88 kB (budget 500 kB), geen waarschuwingen |
+| Geen losse kleuren of fonts | `node design/tokens/check-hardcoded.mjs` | Geslaagd lokaal |
+| Tokens actueel | `node design/tokens/build.mjs --check` | Geslaagd lokaal |
+| Backend | `./mvnw verify` | Geslaagd lokaal tegen PostgreSQL (EventFlowIT 13 tests, inclusief de nieuwe sortering) |
+| Doorlopen tegen de echte backend | Playwright-script (alleen in een tijdelijke map) tegen de backend met profiel `local` | Geslaagd lokaal: deep link naar inloggen en terug, fout en goed wachtwoord, moskee kiezen, overzicht, agenda-filter, validatie (einde vóór begin), activiteit aanmaken en publiceren (in een browser met tijdzone New York wordt 18:30 Amsterdamse tijd correct als 17:30 UTC (wintertijd) opgeslagen en verschijnt hij in de publieke API), niet-opgeslagen-dialoog, annuleren afgewezen, aanmeldingen, video met ongeldige en geldige link, aankondiging publiceren, moskeegegevens, onbekende beheerder, accounts, telefoon in donkere modus zonder horizontaal scrollen, uitloggen. Alleen de verwachte API-fouten (401 bij het foute wachtwoord, 404 bij de onbekende beheerder) |
+
+### Beperkingen en open punten
+
+- Afbeeldingen uploaden kan nog niet; een activiteit heeft een veld voor een afbeelding-URL. Opslag voor uploads hoort
+  bij fase 6.
+- Pushmeldingen versturen bestaat nog niet (fase 5); het portaal zegt dat expliciet.
+- De weergave van datumvelden (dag-maand of maand-dag) hangt af van de taalinstelling van de browser.
+- Niet getest op echte apparaten; wel in Chromium op desktop- en telefoonformaat.
+- De teller "Gepubliceerde aankondigingen" telt ook verlopen aankondigingen mee.
+- YouTube-thumbnails waren in deze omgeving niet bereikbaar; het formulier werkt zonder.
+
+### Acceptatiecriteria fase 4
+
+- [x] Bevoegde beheerders beheren activiteiten, video's, aankondigingen, moskeegegevens en beheerders zonder
+  databasetoegang (doorlopen tegen de echte backend).
+- [x] Route guards in het portaal, autorisatie blijft server-side (bestaande integratietests uit fase 3).
+- [x] Publiceren en pushmelding zijn duidelijk gescheiden.
+- [x] Bevestiging bij risicovolle acties, formuliervalidatie, Nederlandse teksten.
+- [x] Unit tests voor componenten, services, guards en formulieren.
+- [x] Build groen lokaal. CI: zie PR.
 
 ## Fase 5 — Accounts, volgen en notificaties
 

@@ -1,0 +1,99 @@
+:host {
+  display: grid;
+  gap: var(--mu-space-8);
+}
+
+.intro {
+  display: grid;
+  gap: var(--mu-space-1);
+}
+
+.quick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--mu-space-2);
+}
+
+.panel {
+  display: grid;
+  gap: var(--mu-space-3);
+}
+
+.panel__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--mu-space-2);
+}
+
+.events {
+  display: grid;
+  gap: var(--mu-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.event {
+  display: grid;
+  gap: var(--mu-space-1);
+  padding: var(--mu-space-3) var(--mu-space-4);
+  border: 1px solid var(--mu-color-border);
+  border-radius: var(--mu-radius-md);
+  background: var(--mu-color-surface);
+  color: var(--mu-color-on-surface);
+  text-decoration: none;
+}
+
+.event:hover {
+  border-color: var(--mu-color-primary);
+}
+
+.when {
+  color: var(--mu-color-accent-text);
+}
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(calc(var(--mu-space-16) * 3.5), 1fr));
+  gap: var(--mu-space-3);
+  margin: var(--mu-space-3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tile {
+  display: grid;
+  border: 1px solid var(--mu-color-border);
+  border-radius: var(--mu-card-radius);
+  background: var(--mu-color-surface);
+
+  a {
+    display: grid;
+    gap: var(--mu-space-1);
+    padding: var(--mu-card-padding);
+    color: var(--mu-color-on-surface);
+    text-decoration: none;
+  }
+
+  &:hover {
+    border-color: var(--mu-color-primary);
+  }
+}
+
+.count {
+  color: var(--mu-color-primary);
+}
+
+.retry {
+  justify-self: start;
+  margin: 0 var(--mu-card-padding) var(--mu-space-3);
+  min-height: var(--mu-touch-target);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--mu-color-link);
+  text-decoration: underline;
+  cursor: pointer;
+}

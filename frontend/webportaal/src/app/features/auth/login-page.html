@@ -1,0 +1,51 @@
+<main id="inhoud" class="page">
+  <div class="theme"><mu-theme-toggle /></div>
+  <section class="card" aria-labelledby="titel">
+    <mu-brand-logo [height]="48" />
+    <div class="intro">
+      <h1 id="titel" class="mu-headline-medium">Inloggen</h1>
+      <p class="mu-body-medium mu-muted">
+        Beheeromgeving voor bestuurders en redacteuren van de moskee.
+      </p>
+    </div>
+
+    @if (sessionExpired) {
+      <mu-status-message
+        kind="info"
+        message="Je sessie is verlopen. Log opnieuw in om verder te gaan."
+      />
+    }
+    @if (error(); as message) {
+      <mu-status-message kind="error" [message]="message" />
+    }
+
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <mat-form-field appearance="outline">
+        <mat-label>E-mailadres</mat-label>
+        <input matInput type="email" formControlName="email" autocomplete="username" required />
+        @if (form.controls.email.invalid) {
+          <mat-error>{{ controlError(form.controls.email) }}</mat-error>
+        }
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Wachtwoord</mat-label>
+        <input
+          matInput
+          type="password"
+          formControlName="password"
+          autocomplete="current-password"
+          required
+        />
+        @if (form.controls.password.invalid) {
+          <mat-error>{{ controlError(form.controls.password) }}</mat-error>
+        }
+      </mat-form-field>
+      <button matButton="filled" type="submit" [disabled]="busy()">
+        {{ busy() ? 'Bezig met inloggen…' : 'Inloggen' }}
+      </button>
+    </form>
+    <p class="mu-body-small mu-muted">
+      Geen account of wachtwoord vergeten? Neem contact op met de beheerder van je moskee.
+    </p>
+  </section>
+</main>

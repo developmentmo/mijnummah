@@ -254,3 +254,49 @@ Belangrijke architectuur- en ontwerpbeslissingen. Status: **Voorgesteld** (wacht
   - De designpreview uit fase 1 blijft bereikbaar in debug-builds via Profiel > Ontwikkeling (`/design`).
 - **Gevolg:** Een aanbevelingsveld kan later in de backend en het portaal worden toegevoegd zonder de app-structuur te
   wijzigen.
+
+## D-027 — Runtimeconfiguratie van het portaal
+
+- **Status:** Besloten (fase 4)
+- **Besluit:** Het portaal leest het adres van de backend uit `public/config.json` (`apiBaseUrl`) voordat Angular
+  opstart. Lukt dat niet, dan toont de pagina een Nederlandse foutmelding.
+- **Waarom:** Eén build kan zo naar test, acceptatie en productie, en per moskee (white-label) zonder opnieuw te
+  bouwen. Er staan geen geheimen in.
+- **Gevolg:** Bij uitrollen wordt alleen `config.json` vervangen.
+
+## D-028 — Tokens in het portaal
+
+- **Status:** Besloten (fase 4)
+- **Besluit:** Het toegangstoken staat alleen in het geheugen; het verversingstoken in `sessionStorage`. Verversen
+  gebeurt 30 seconden vóór het verlopen en altijd één keer tegelijk. Een 401 leidt tot één verversing en één nieuwe
+  poging; daarna gaat de gebruiker naar inloggen met de oorspronkelijke pagina als terug-URL (alleen interne adressen).
+- **Waarom:** `sessionStorage` overleeft een herlaadactie maar niet het sluiten van het tabblad, wat past bij een
+  beheeromgeving. Een httpOnly-cookie vraagt een andere backend-flow (CSRF), die nu niet nodig is.
+- **Gevolg:** Een XSS-lek kan het verversingstoken lezen; daarom geen `innerHTML` met gebruikersinhoud en een strikte
+  CSP in fase 6.
+
+## D-029 — Publiceren is geen pushmelding
+
+- **Status:** Besloten (fase 4)
+- **Besluit:** Publiceren zet content zichtbaar in de app en verstuurt nooit een pushmelding. De knop heet "Publiceren
+  in de app", de bevestiging zegt dat er géén pushmelding gaat, en een apart paneel "Pushmelding" meldt dat verzenden
+  nog niet beschikbaar is. Er is geen knop die niets doet.
+- **Waarom:** Het masterprompt vraagt een duidelijk onderscheid; verzenden vereist Firebase en APNs (fase 5).
+- **Gevolg:** In fase 5 wordt het paneel een aparte, bevestigde actie.
+
+## D-030 — Sortering van de beheerlijst van activiteiten
+
+- **Status:** Besloten (fase 4)
+- **Besluit:** `GET /api/v1/admin/mosques/{id}/events` sorteert aflopend op begintijd, behalve als `from` is meegegeven:
+  dan oplopend (eerstvolgende eerst). Bij gelijke tijd beslist het id.
+- **Waarom:** Het dashboard toont de eerstvolgende activiteiten; aflopend zou de verste toekomst eerst geven.
+- **Gevolg:** Integratietest `adminListFromAMomentIsSoonestFirst`.
+
+## D-031 — Moskee in de URL; rollen gespiegeld in de interface
+
+- **Status:** Besloten (fase 4)
+- **Besluit:** Alle moskeeschermen staan onder `/m/:mosqueId`. `mosqueGuard` kiest de moskee en weigert er een zonder
+  toegang; `mosqueAdminGuard` beschermt Moskeegegevens, Beheerders en Aanmeldingen. Een platformbeheerder telt als
+  beheerder. De interface verbergt wat een rol niet mag, maar de backend blijft elke actie controleren.
+- **Waarom:** Links zijn deelbaar en herlaadbaar, en een gebruiker met meerdere moskeeën ziet altijd in welke moskee die werkt.
+- **Gevolg:** Een gemanipuleerde URL levert hooguit een melding op; data van een andere moskee komt nooit binnen.

@@ -1,0 +1,143 @@
+<mu-page-header
+  heading="Accounts"
+  subtitle="Platformbeheer: accounts voor beheerders en redacteuren."
+/>
+
+<section aria-labelledby="nieuw">
+  <h2 id="nieuw" class="mu-title-medium">Account aanmaken</h2>
+  <form class="mu-form" [formGroup]="form" (ngSubmit)="create()" novalidate>
+    <fieldset class="mu-fieldset">
+      <legend>Nieuw account</legend>
+      <div class="mu-form-row">
+        <mat-form-field appearance="outline">
+          <mat-label>Naam</mat-label>
+          <input matInput formControlName="displayName" required maxlength="100" />
+          @if (form.controls.displayName.invalid) {
+            <mat-error>{{ controlError(form.controls.displayName) }}</mat-error>
+          }
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>E-mailadres</mat-label>
+          <input
+            matInput
+            type="email"
+            formControlName="email"
+            required
+            maxlength="254"
+            autocomplete="off"
+          />
+          @if (form.controls.email.invalid) {
+            <mat-error>{{ controlError(form.controls.email) }}</mat-error>
+          }
+        </mat-form-field>
+      </div>
+      <div class="mu-form-row">
+        <mat-form-field appearance="outline">
+          <mat-label>Tijdelijk wachtwoord</mat-label>
+          <input
+            matInput
+            type="password"
+            formControlName="password"
+            required
+            autocomplete="new-password"
+          />
+          <mat-hint>Minstens 12 tekens. Geef het veilig door, niet per gewone e-mail.</mat-hint>
+          @if (form.controls.password.invalid) {
+            <mat-error>{{ controlError(form.controls.password) }}</mat-error>
+          }
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Soort account</mat-label>
+          <mat-select formControlName="platformRole">
+            <mat-option value="USER">Gewoon account</mat-option>
+            <mat-option value="PLATFORM_ADMIN">Platformbeheerder</mat-option>
+          </mat-select>
+          <mat-hint>Moskeerechten geef je daarna bij Beheerders.</mat-hint>
+        </mat-form-field>
+      </div>
+    </fieldset>
+    @if (createError(); as message) {
+      <mu-status-message kind="error" [message]="message" />
+    }
+    <div class="mu-form-actions">
+      <button matButton="filled" type="submit" [disabled]="busy()">Account aanmaken</button>
+    </div>
+  </form>
+</section>
+
+<section aria-labelledby="lijst">
+  <h2 id="lijst" class="mu-title-medium">Alle accounts</h2>
+  @if (rowError(); as message) {
+    <mu-status-message kind="error" [message]="message" />
+  }
+  @if (users.error(); as message) {
+    <mu-status-message
+      kind="error"
+      [message]="message"
+      actionLabel="Opnieuw proberen"
+      (action)="users.load()"
+    />
+  } @else if (users.value(); as page) {
+    <div class="mu-table-wrap" [attr.aria-busy]="users.loading()">
+      <table class="mu-table">
+        <caption class="mu-visually-hidden">
+          Accounts op e-mailadres
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">Naam</th>
+            <th scope="col">E-mailadres</th>
+            <th scope="col">Soort</th>
+            <th scope="col">Status</th>
+            <th scope="col">Sinds</th>
+            <th scope="col"><span class="mu-visually-hidden">Acties</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (u of page.items; track u.id) {
+            <tr>
+              <td>{{ u.displayName }}</td>
+              <td>{{ u.email }}</td>
+              <td>{{ u.platformRole === 'PLATFORM_ADMIN' ? 'Platformbeheerder' : 'Gewoon' }}</td>
+              <td>
+                <mu-status-badge
+                  [status]="u.status"
+                  [label]="u.status === 'ACTIVE' ? 'Actief' : 'Geblokkeerd'"
+                />
+              </td>
+              <td class="nowrap">{{ since(u.createdAt) }}</td>
+              <td>
+                @if (u.id !== myUserId()) {
+                  <button
+                    matButton
+                    type="button"
+                    [class.mu-danger-button]="u.status === 'ACTIVE'"
+                    [disabled]="busy()"
+                    (click)="toggleBlocked(u)"
+                  >
+                    {{ u.status === 'ACTIVE' ? 'Blokkeren' : 'Blokkade opheffen' }}
+                  </button>
+                } @else {
+                  <span class="mu-muted mu-body-small">Jouw account</span>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    <mat-paginator
+      [length]="page.totalItems"
+      [pageIndex]="page.page"
+      [pageSize]="pageSize"
+      [hidePageSize]="true"
+      (page)="goTo($event)"
+      aria-label="Pagina's met accounts"
+    />
+  } @else {
+    <div class="mu-loading-rows" aria-busy="true" aria-label="Accounts laden">
+      <mu-skeleton height="var(--mu-space-12)" />
+      <mu-skeleton height="var(--mu-space-12)" />
+    </div>
+  }
+</section>

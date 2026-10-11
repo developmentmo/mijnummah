@@ -1,0 +1,194 @@
+<mu-page-header
+  [heading]="isNew() ? 'Nieuwe video' : (media()?.title ?? 'Video')"
+  [backLink]="listLink"
+  backLabel="Lezingen en video’s"
+/>
+
+@if (loadError(); as message) {
+  <mu-status-message
+    kind="error"
+    [message]="message"
+    actionLabel="Opnieuw proberen"
+    (action)="load()"
+  />
+} @else if (!isNew() && !media()) {
+  <div class="mu-loading-rows" aria-busy="true" aria-label="Video laden">
+    <mu-skeleton height="var(--mu-space-16)" />
+    <mu-skeleton height="var(--mu-space-16)" />
+  </div>
+} @else {
+  <div class="mu-edit-layout">
+    <form class="mu-form" [formGroup]="form" (ngSubmit)="save()" novalidate>
+      <fieldset class="mu-fieldset">
+        <legend>Video</legend>
+        <mat-form-field appearance="outline" class="mu-field-full">
+          <mat-label>YouTube-link</mat-label>
+          <input matInput type="url" formControlName="videoUrl" required maxlength="500" />
+          <mat-hint>Bijv. https://www.youtube.com/watch?v=… of https://youtu.be/…</mat-hint>
+          @if (form.controls.videoUrl.invalid) {
+            <mat-error>{{ controlError(form.controls.videoUrl) }}</mat-error>
+          }
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="mu-field-full">
+          <mat-label>Titel</mat-label>
+          <input matInput formControlName="title" required maxlength="150" />
+          @if (form.controls.title.invalid) {
+            <mat-error>{{ controlError(form.controls.title) }}</mat-error>
+          }
+        </mat-form-field>
+        <div class="mu-form-row">
+          <mat-form-field appearance="outline">
+            <mat-label>Spreker</mat-label>
+            <input matInput formControlName="speaker" maxlength="100" />
+            @if (form.controls.speaker.invalid) {
+              <mat-error>{{ controlError(form.controls.speaker) }}</mat-error>
+            }
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Categorie</mat-label>
+            <mat-select formControlName="category" required>
+              @for (c of categories; track c.value) {
+                <mat-option [value]="c.value">{{ c.label }}</mat-option>
+              }
+            </mat-select>
+            @if (form.controls.category.invalid) {
+              <mat-error>Kies een categorie.</mat-error>
+            }
+          </mat-form-field>
+        </div>
+        <mat-form-field appearance="outline" class="mu-field-full">
+          <mat-label>Beschrijving</mat-label>
+          <textarea matInput formControlName="description" rows="5" maxlength="10000"></textarea>
+          @if (form.controls.description.invalid) {
+            <mat-error>{{ controlError(form.controls.description) }}</mat-error>
+          }
+        </mat-form-field>
+      </fieldset>
+
+      <fieldset class="mu-fieldset">
+        <legend>Details</legend>
+        <div class="mu-form-row">
+          <mat-form-field appearance="outline">
+            <mat-label>Duur</mat-label>
+            <input matInput formControlName="duration" inputmode="numeric" />
+            <mat-hint>u:mm:ss, mm:ss of minuten</mat-hint>
+            @if (form.controls.duration.invalid) {
+              <mat-error>{{ controlError(form.controls.duration) }}</mat-error>
+            }
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>Opnamedatum</mat-label>
+            <input matInput type="date" formControlName="recordedOn" />
+          </mat-form-field>
+        </div>
+        <mat-form-field appearance="outline" class="mu-field-full">
+          <mat-label>Gekoppelde activiteit</mat-label>
+          <mat-select formControlName="relatedEventId">
+            <mat-option value="">Geen</mat-option>
+            @if (relatedMissing()) {
+              <mat-option [value]="media()!.relatedEventId"
+                >Huidige koppeling (oudere activiteit)</mat-option
+              >
+            }
+            @for (e of events.value() ?? []; track e.id) {
+              <mat-option [value]="e.id">{{ eventLabel(e) }}</mat-option>
+            }
+          </mat-select>
+          @if (events.error()) {
+            <mat-hint>Activiteiten konden niet worden geladen.</mat-hint>
+          } @else {
+            <mat-hint>Optioneel, bijv. de lezing waarvan dit de opname is</mat-hint>
+          }
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="mu-field-full">
+          <mat-label>Eigen thumbnail (link)</mat-label>
+          <input matInput type="url" formControlName="thumbnailUrl" maxlength="500" />
+          <mat-hint>Optioneel. Leeg = de afbeelding van YouTube.</mat-hint>
+          @if (form.controls.thumbnailUrl.invalid) {
+            <mat-error>{{ controlError(form.controls.thumbnailUrl) }}</mat-error>
+          }
+        </mat-form-field>
+        <mat-radio-group
+          formControlName="visibility"
+          aria-label="Wie ziet deze video?"
+          class="mu-radios"
+        >
+          @for (v of visibilities; track v.value) {
+            <mat-radio-button [value]="v.value">{{ v.label }}</mat-radio-button>
+          }
+        </mat-radio-group>
+      </fieldset>
+
+      @if (saveError(); as message) {
+        <mu-status-message kind="error" [message]="message" />
+      }
+      <div class="mu-form-actions">
+        <button matButton="filled" type="submit" [disabled]="busy()">
+          {{ isNew() ? 'Opslaan als concept' : 'Wijzigingen opslaan' }}
+        </button>
+        <a matButton [routerLink]="listLink">Annuleren</a>
+      </div>
+    </form>
+
+    @if (media(); as m) {
+      <aside class="mu-side-panel" aria-labelledby="status-titel">
+        <h2 id="status-titel" class="mu-title-medium">Status</h2>
+        <mu-status-badge [status]="m.status" [label]="statusLabels[m.status]" />
+        @if (m.thumbnailUrl) {
+          <img class="thumb" [src]="m.thumbnailUrl" alt="" />
+        }
+        <a [href]="m.video.watchUrl" target="_blank" rel="noopener noreferrer"
+          >Bekijken op YouTube</a
+        >
+        <dl>
+          @if (m.publishedAt) {
+            <div>
+              <dt>Gepubliceerd</dt>
+              <dd>{{ when(m.publishedAt) }}</dd>
+            </div>
+          }
+          <div>
+            <dt>Laatst gewijzigd</dt>
+            <dd>{{ when(m.updatedAt) }}</dd>
+          </div>
+        </dl>
+        @if (actionError(); as message) {
+          <mu-status-message kind="error" [message]="message" />
+        }
+        @if (form.dirty) {
+          <p class="mu-hint">Sla eerst je wijzigingen op.</p>
+        }
+        <div class="mu-side-actions">
+          @if (m.status === 'DRAFT') {
+            <button
+              matButton="filled"
+              type="button"
+              [disabled]="busy() || form.dirty"
+              (click)="run('publish')"
+            >
+              Publiceren
+            </button>
+          } @else {
+            <button
+              matButton="outlined"
+              type="button"
+              [disabled]="busy() || form.dirty"
+              (click)="run('unpublish')"
+            >
+              Terug naar concept
+            </button>
+          }
+          <button
+            matButton="outlined"
+            class="mu-danger-button"
+            type="button"
+            [disabled]="busy()"
+            (click)="run('delete')"
+          >
+            Verwijderen
+          </button>
+        </div>
+      </aside>
+    }
+  </div>
+}

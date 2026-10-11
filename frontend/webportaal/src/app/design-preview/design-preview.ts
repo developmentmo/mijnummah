@@ -10,6 +10,7 @@ import { BrandLogo } from '../shared/ui/brand-logo';
 import { Skeleton } from '../shared/ui/skeleton';
 import { StatePlaceholder } from '../shared/ui/state-placeholder';
 import { StatusMessage } from '../shared/ui/status-message';
+import { ThemeToggle } from '../shared/ui/theme-toggle';
 
 interface Swatch {
   name: string;
@@ -34,6 +35,7 @@ interface Swatch {
     Skeleton,
     StatePlaceholder,
     StatusMessage,
+    ThemeToggle,
   ],
   templateUrl: './design-preview.html',
   styleUrl: './design-preview.scss',

@@ -45,14 +45,17 @@ class AdminEventController {
     }
 
     @GetMapping
-    @Operation(summary = "Alle activiteiten van de moskee (ook concepten), nieuwste starttijd eerst")
+    @Operation(summary = "Alle activiteiten van de moskee (ook concepten), nieuwste starttijd eerst; "
+            + "met from (bijv. komende activiteiten) eerstvolgende eerst")
     PageResponse<EventResponse.Admin> list(@AuthenticationPrincipal AuthenticatedUser actor,
                                            @PathVariable UUID mosqueId,
                                            @RequestParam(required = false) EventStatus status,
                                            @RequestParam(required = false) Instant from,
                                            @RequestParam(required = false) Integer page,
                                            @RequestParam(required = false) Integer size) {
-        var pageable = PageRequests.of(page, size, Sort.by(Sort.Order.desc("startsAt"), Sort.Order.asc("id")));
+        // An overview from a moment onwards (the portal dashboard) reads best soonest first.
+        var byStart = from == null ? Sort.Order.desc("startsAt") : Sort.Order.asc("startsAt");
+        var pageable = PageRequests.of(page, size, Sort.by(byStart, Sort.Order.asc("id")));
         return PageResponse.of(eventService.list(actor, mosqueId, status, from, pageable), EventResponse.Admin::from);
     }
 
