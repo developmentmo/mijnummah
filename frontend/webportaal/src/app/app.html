@@ -1,0 +1,19 @@
+<a class="mu-skip-link" href="#inhoud">Naar de inhoud</a>
+<header class="topbar">
+  <mu-brand-logo [height]="36" />
+  <span class="topbar__product mu-label-large mu-muted">Beheer</span>
+  <mat-button-toggle-group
+    class="topbar__theme"
+    aria-label="Weergave"
+    hideSingleSelectionIndicator
+    [value]="theme.mode()"
+    (change)="setMode($event.value)"
+  >
+    <mat-button-toggle value="system">Systeem</mat-button-toggle>
+    <mat-button-toggle value="light">Licht</mat-button-toggle>
+    <mat-button-toggle value="dark">Donker</mat-button-toggle>
+  </mat-button-toggle-group>
+</header>
+<main id="inhoud" tabindex="-1">
+  <router-outlet />
+</main>

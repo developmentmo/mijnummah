@@ -11,8 +11,8 @@ uit het masterprompt (code, tests, build, regressies, documentatie, beperkingen,
 
 | Fase | Onderwerp | Status |
 |---|---|---|
-| 0 | Repositoryanalyse en technisch plan | Geïmplementeerd, wacht op beoordeling |
-| 1 | Branding en design system | Nog niet begonnen |
+| 0 | Repositoryanalyse en technisch plan | Voltooid en goedgekeurd |
+| 1 | Branding en design system | Getest en geslaagd (lokaal en CI); wacht op beoordeling |
 | 3 | Backend, database en API (vóór fase 2, zie D-004) | Nog niet begonnen |
 | 2 | UX/UI en Flutter-app | Nog niet begonnen |
 | 4 | Beheerportaal (Angular) | Nog niet begonnen |
@@ -127,7 +127,7 @@ mijnummah/
    typografie, spacing, radius, schaduw, iconmaten, motion en componenttokens (knop, invoerveld, card,
    navigatie, modal, melding). Een klein Node-script zonder externe dependencies genereert:
    - `frontend/app/lib/core/design/tokens.g.dart` (constanten),
-   - `frontend/webportaal/src/styles/_tokens.css` (CSS custom properties).
+   - `frontend/webportaal/src/styles/tokens.generated.css` (CSS custom properties).
    Op beide gaat een handgeschreven themalaag: `ThemeData` + `ThemeExtension` in Flutter en een Angular
    Material M3-thema in het portaal (D-005).
 5. **Scaffolding** (nodig omdat de repo leeg is): een minimale Flutter-app in `frontend/app/` en een minimale
@@ -139,41 +139,54 @@ mijnummah/
 7. **`BRAND_GUIDELINES.md`** met kleurcodes en contrastwaarden, typografie, logogebruik (vrije ruimte,
    minimale maat, verboden toepassingen), componentregels en toegankelijkheidsrichtlijnen.
 
-### Bestanden en modules die fase 1 aanmaakt
+### Opgeleverde bestanden
 
 ```text
-BRAND_GUIDELINES.md
-design/tokens/tokens.json
-design/tokens/build.mjs                      generator Dart + CSS, met --check modus
-design/tokens/contrast.mjs                   WCAG-contrastcontrole van de kleurparen
-design/branding/svg/                         logo-horizontal-{light,dark,mono}.svg, logo-compact-*.svg,
-                                             app-icon.svg, app-icon-foreground.svg, app-icon-background.svg
-design/branding/png/                         rasterexports (store-iconen 1024x1024, 512x512, Android/iOS-maten)
-design/fonts/                                Fraunces, Inter, Noto Naskh Arabic + OFL-licenties
-frontend/app/                                Flutter-project (pubspec.yaml, lib/main.dart, lib/app.dart)
-frontend/app/lib/core/design/                tokens.g.dart, app_theme.dart, brand_colors.dart (ThemeExtension),
-                                             app_typography.dart, app_spacing.dart, components/ (knop, card,
-                                             invoerveld, melding, skeleton)
-frontend/app/assets/                         branding/ en fonts/
-frontend/app/test/design/                    widget- en golden tests van het thema
-frontend/webportaal/                         Angular-project (angular.json, package.json, src/)
-frontend/webportaal/src/styles/              _tokens.css (gegenereerd), theme.scss, typography.scss
-frontend/webportaal/src/app/design-preview/  interne previewpagina
-.github/workflows/ci.yml                     tokens --check, contrast, flutter analyze/test, ng lint/test/build
+BRAND_GUIDELINES.md                               huisstijlrichtlijnen
+design/tokens/tokens.json                         enige bron van alle tokens (W3C Design Tokens-formaat)
+design/tokens/contrast-pairs.json                 kleurparen die WCAG AA moeten halen
+design/tokens/build.mjs, lib.mjs                  generator Dart + CSS, met --check modus
+design/tokens/contrast.mjs                        WCAG-contrastcontrole
+design/tokens/check-hardcoded.mjs                 zoekt losse kleuren en fonts buiten de tokens
+design/fonts/                                     variabele bronfonts + OFL-licenties, build_fonts.py
+design/branding/build_branding.py                 genereert alle logo's en app-iconen
+design/branding/check_assets.py                   controleert SVG's, iconmaten en kopieën
+design/branding/svg/, png/                        15 SVG-varianten, store-iconen, logo-exports
+frontend/app/                                     Flutter-project (Android en iOS), app-ID nl.mijnummah.noeroelislam
+frontend/app/lib/core/design/                     tokens.g.dart (gegenereerd, incl. AppColors ThemeExtension),
+                                                  app_theme.dart, brand_logo.dart, components/ (melding,
+                                                  skeleton, lege/fouttoestand), design.dart
+frontend/app/lib/features/design_preview/         interne designpreview (startscherm in fase 1)
+frontend/app/assets/branding/, assets/fonts/      gegenereerde logo's en statische fonts
+frontend/app/android/.../res/mipmap-*/            launcher-iconen, adaptive en themed icon
+frontend/app/ios/.../AppIcon.appiconset/          iOS-icoon 1024x1024 zonder alfakanaal
+frontend/app/test/                                thema-, logo- en previewtests
+frontend/webportaal/                              Angular 22-project met Angular Material en ESLint
+frontend/webportaal/src/styles/                   tokens.generated.css, fonts.css, _material-theme.scss, _base.scss
+frontend/webportaal/src/app/core/theme/           licht/donker/systeem
+frontend/webportaal/src/app/shared/ui/            logo, melding, skeleton, lege toestand
+frontend/webportaal/src/app/design-preview/       interne designpreview op /
+frontend/webportaal/public/                       favicon, apple-touch-icon, logo's, WOFF2-fonts
+.github/workflows/ci.yml                          design-, Flutter- en portaalcontroles
 ```
 
-### Tests en controles voor fase 1
+### Tests en controles
 
-| Controle | Commando (indicatief) |
-|---|---|
-| Gegenereerde tokens zijn actueel | `node design/tokens/build.mjs --check` |
-| Alle tekst/achtergrond-paren halen WCAG AA (4,5:1, grote tekst 3:1) | `node design/tokens/contrast.mjs` |
-| SVG's zijn geldige XML met `viewBox`, zonder externe referenties of ingesloten fonts | `xmllint --noout` + controlescript |
-| Flutter kan de SVG's laden en renderen | widgettest met `flutter_svg` |
-| Flutter-thema en componenten | `flutter analyze` en `flutter test` (incl. goldens licht/donker, tekstschaal 200%) |
-| Angular-thema en preview | `ng lint`, `ng test`, `ng build` |
-| Geen losse kleuren buiten de tokens | lint/grep-controle op hex-waarden buiten `design/` en gegenereerde bestanden |
-| Flutter Android-build | `flutter build apk --debug` (iOS alleen op macOS, zie R8) |
+| Controle | Commando | Resultaat (11 okt 2026, lokaal en in CI) |
+|---|---|---|
+| Gegenereerde tokens zijn actueel | `node design/tokens/build.mjs --check` | Geslaagd |
+| WCAG 2.2 AA voor alle kleurparen | `node design/tokens/contrast.mjs` | Geslaagd, 107 van 107 paren |
+| Geen losse kleuren/fonts buiten de tokens | `node design/tokens/check-hardcoded.mjs` | Geslaagd |
+| SVG's geldig, iconmaten, iOS-icoon zonder alfa, kopieën gelijk aan bron | `python3 design/branding/check_assets.py` | Geslaagd, 15 bron-SVG's en 10 kopieën |
+| Flutter-formattering en analyse | `dart format …`, `flutter analyze` | Geslaagd, geen meldingen |
+| Flutter-tests (thema, SVG's laden in flutter_svg, licht/donker, telefoon, tablet, 200% tekst, semantics, minder beweging) | `flutter test` | Geslaagd, 22 tests |
+| Portaal formattering, lint, tests, build | `npm run format:check`, `npm run lint`, `npm test`, `npm run build` | Geslaagd, 13 tests |
+| Flutter Android-build | `flutter build apk --debug` | Geslaagd in CI (GitHub Actions); lokaal niet mogelijk omdat de Android SDK hier niet te downloaden is |
+| iOS-build | — | Niet uitgevoerd: vereist macOS en Xcode |
+
+Afwijking van het plan: geen golden tests. Fontrendering verschilt per besturingssysteem, waardoor goldens
+tussen een Mac en CI onbetrouwbaar worden (D-015). In plaats daarvan testen de widgettests op overflow bij
+verschillende schermformaten en tekstschalen, en zijn de previews handmatig visueel gecontroleerd.
 
 ### Acceptatiecriteria fase 1
 
