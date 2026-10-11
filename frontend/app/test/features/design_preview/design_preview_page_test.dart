@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mijnummah_app/app.dart';
 import 'package:mijnummah_app/core/design/design.dart';
+
+import '../../helpers/test_app.dart' as harness;
 
 /// Scrollt de hele preview door, zodat ook onderaan gebouwde widgets op overflow worden gecontroleerd.
 Future<void> scrollThrough(WidgetTester tester) async {
@@ -16,15 +17,9 @@ void main() {
   const phone = Size(360, 780);
   const tablet = Size(1024, 1366);
 
-  Future<void> pumpApp(WidgetTester tester, {Size size = phone, double textScale = 1}) async {
-    tester.view.physicalSize = size;
-    tester.view.devicePixelRatio = 1;
-    tester.platformDispatcher.textScaleFactorTestValue = textScale;
-    addTearDown(tester.view.reset);
-    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
-    await tester.pumpWidget(const NoeroelIslamApp());
-    await tester.pump();
-  }
+  // De designpreview is in debug-builds bereikbaar via /design (Profiel > Ontwikkeling).
+  Future<void> pumpApp(WidgetTester tester, {Size size = phone, double textScale = 1}) =>
+      harness.pumpApp(tester, location: '/design', size: size, textScale: textScale);
 
   testWidgets('toont de designpreview met logo en secties', (tester) async {
     await pumpApp(tester);
