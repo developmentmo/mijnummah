@@ -13,8 +13,8 @@ uit het masterprompt (code, tests, build, regressies, documentatie, beperkingen,
 |---|---|---|
 | 0 | Repositoryanalyse en technisch plan | Geïmplementeerd, wacht op beoordeling |
 | 1 | Branding en design system | Nog niet begonnen |
+| 3 | Backend, database en API (vóór fase 2, zie D-004) | Nog niet begonnen |
 | 2 | UX/UI en Flutter-app | Nog niet begonnen |
-| 3 | Backend, database en API | Nog niet begonnen |
 | 4 | Beheerportaal (Angular) | Nog niet begonnen |
 | 5 | Accounts, volgen en notificaties | Nog niet begonnen |
 | 6 | Testen, privacy, beveiliging, productievoorbereiding | Nog niet begonnen |
@@ -74,7 +74,7 @@ mijnummah/
 | # | Risico | Gevolg | Maatregel |
 |---|---|---|---|
 | R1 | Repo is leeg terwijl het plan uitgaat van bestaande code | Meer werk per fase dan voorzien | Scaffolding expliciet in fase 1 (app/portaal) en fase 3 (backend) opgenomen |
-| R2 | Fasevolgorde: Flutter-schermen (fase 2) vóór de backend (fase 3) | Schermen zonder echte API leiden tot mockdata, wat de regels verbieden | Voorstel: fase 3 vóór fase 2 uitvoeren (D-004, vraag aan jou) |
+| R2 | Fasevolgorde: Flutter-schermen (fase 2) vóór de backend (fase 3) | Schermen zonder echte API leiden tot mockdata, wat de regels verbieden | Besloten: fase 3 vóór fase 2 (D-004) |
 | R3 | Goud `#C6A45A` haalt op licht geen WCAG-contrast (2,14 op ivoor, 2,37 op wit) | Onleesbare tekst/iconen | Goud alleen decoratief op licht of als tekst op donkergroen (5,16). Extra donkere goudtint voor tekst op licht. Contrasttest in CI (D-008) |
 | R4 | Jadegroen op ivoor is 4,69:1, net boven AA | Kleine tekst of afwijkende tinten zakken eronder | Jade alleen voor normale/grote tekst en knoppen met witte tekst (5,19); automatische contrastcontrole |
 | R5 | Tenantisolatie later inbouwen is duur en foutgevoelig | Datalekken tussen moskeeën | `mosque_id` + autorisatieservice vanaf de eerste migratie; isolatietests (D-006) |
@@ -94,7 +94,6 @@ mijnummah/
 
 | Nodig vanaf | Informatie |
 |---|---|
-| Fase 2 | Akkoord op de voorgestelde volgorde (fase 3 vóór fase 2), zie D-004 |
 | Fase 2 | Echte gegevens van Noeroel Islam voor Ontdekken: adres, contact, korte beschrijving, vaste activiteiten. Zonder deze gegevens komen er gemarkeerde placeholders |
 | Fase 3 | Keuze videoplatform (standaard: YouTube, ongepubliceerde of openbare video's) |
 | Fase 5 | Firebase-project en Apple Developer-account (APNs-sleutel) |
@@ -188,7 +187,7 @@ admin/src/app/design-preview/          interne previewpagina
 
 ## Fase 2 — UX/UI en Flutter-app
 
-**Afhankelijkheden:** fase 1; bij voorkeur fase 3 (zie D-004).
+**Afhankelijkheden:** fase 1 en fase 3 (fase 3 wordt eerst uitgevoerd, D-004).
 
 - Navigatie met vijf tabs (Home, Agenda, Lezingen, Ontdekken, Profiel) via `go_router` met `StatefulShellRoute`.
 - Home, Agenda + detail, Lezingen + zoeken/categorieën + detail met videospeler, Ontdekken, Profiel.

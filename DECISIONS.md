@@ -34,11 +34,11 @@ Belangrijke architectuur- en ontwerpbeslissingen. Status: **Voorgesteld** (wacht
 
 ## D-004 — Backend (fase 3) vóór de Flutter-schermen (fase 2)
 
-- **Status:** Voorgesteld, akkoord van de eigenaar nodig
+- **Status:** Besloten (11 oktober 2026, door de eigenaar gekozen)
 - **Context:** In het masterprompt komt de Flutter-app vóór de backend. Met een lege repo betekent dat schermen
   zonder echte API, terwijl mockdata in productieflows niet is toegestaan.
-- **Besluit (voorstel):** Volgorde 0 → 1 → 3 → 2 → 4 → 5 → 6 → 7. Fase 1 blijft ongewijzigd.
-- **Alternatief:** Originele volgorde aanhouden. Fase 2 bouwt dan tegen een vastgelegd OpenAPI-contract met
+- **Besluit:** Volgorde 0 → 1 → 3 → 2 → 4 → 5 → 6 → 7. Fase 1 blijft ongewijzigd.
+- **Afgewezen alternatief:** Originele volgorde aanhouden. Fase 2 bouwt dan tegen een vastgelegd OpenAPI-contract met
   een lokale testserver die alleen in tests en ontwikkeling draait, en fase 3 implementeert dat contract.
 
 ## D-005 — Eén bron voor design tokens, gegenereerd naar Flutter en Angular
