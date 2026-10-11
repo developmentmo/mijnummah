@@ -13,7 +13,7 @@ uit het masterprompt (code, tests, build, regressies, documentatie, beperkingen,
 |---|---|---|
 | 0 | Repositoryanalyse en technisch plan | Voltooid en goedgekeurd |
 | 1 | Branding en design system | Voltooid en goedgekeurd (PR #3 gemerged) |
-| 3 | Backend, database en API (vóór fase 2, zie D-004) | Getest en geslaagd (lokaal); wacht op CI en beoordeling |
+| 3 | Backend, database en API (vóór fase 2, zie D-004) | Getest en geslaagd (lokaal en in CI); wacht op beoordeling |
 | 2 | UX/UI en Flutter-app | Nog niet begonnen |
 | 4 | Beheerportaal (Angular) | Nog niet begonnen |
 | 5 | Accounts, volgen en notificaties | Nog niet begonnen |
@@ -261,7 +261,7 @@ backend/
 | Integratietests: authenticatie (rotatie, hergebruik, blokkeren, throttle), moskeebeheer, tenantisolatie A/B (30 pogingen), agenda en aanmeldingen (duplicaat, capaciteit, regels), media, aankondigingen, volgen, databaseconstraints, OpenAPI | `./mvnw verify` met `TEST_DATABASE_URL` | Geslaagd lokaal tegen PostgreSQL 16, 55 tests |
 | Migraties reproduceerbaar op een lege database | `DatabaseConstraintsIT`, applicatiestart | Geslaagd lokaal: V1 t/m V9 op een lege database, Hibernate-validatie akkoord |
 | Applicatie start, bootstrap en OpenAPI | `java -jar …` met profiel `local` | Geslaagd lokaal: health UP, platformbeheerder en Noeroel Islam aangemaakt, `/v3/api-docs` en Swagger UI bereikbaar |
-| Integratietests met Testcontainers (PostgreSQL 17) | CI-job "Backend" | Nog niet uitgevoerd: lokaal geen Docker beschikbaar; draait in CI op deze PR |
+| Integratietests met Testcontainers (PostgreSQL 17) | CI-job "Backend" | Geslaagd in CI (55 integratietests, PR #4); lokaal niet uitgevoerd omdat Docker ontbreekt |
 
 ### Beperkingen en open punten
 
@@ -279,7 +279,7 @@ backend/
 - [x] Autorisatie server-side afgedwongen: `MosqueAccessService` bij elke beheeractie, lookups op (id, moskee),
   isolatietests A/B, en foreign keys op (id, mosque_id) in de database.
 - [x] Video's niet in PostgreSQL; geen livestreaming.
-- [ ] CI-job "Backend" groen (wordt bevestigd op de PR).
+- [x] CI-job "Backend" groen (PR #4, inclusief Testcontainers).
 
 ## Fase 4 — Beheerportaal
 
