@@ -16,8 +16,8 @@ uit het masterprompt (code, tests, build, regressies, documentatie, beperkingen,
 | 3 | Backend, database en API (vóór fase 2, zie D-004) | Voltooid en goedgekeurd (PR #4 gemerged) |
 | 2 | UX/UI en Flutter-app | Voltooid en goedgekeurd (PR #5 gemerged) |
 | 4 | Beheerportaal (Angular) | Voltooid en goedgekeurd (PR #6 gemerged) |
-| 5 | Accounts, volgen en notificaties | Getest en geslaagd (lokaal); echte e-mail en push niet getest (geen credentials); wacht op CI en beoordeling |
-| 6 | Testen, privacy, beveiliging, productievoorbereiding | Nog niet begonnen |
+| 5 | Accounts, volgen en notificaties | Voltooid en goedgekeurd (PR #7 gemerged); echte e-mail en push niet getest (geen credentials) |
+| 6 | Testen, privacy, beveiliging, productievoorbereiding | Getest en geslaagd (lokaal); productieblokkades gedocumenteerd; wacht op CI en beoordeling |
 | 7 | Voorbereiding white-label automatisering | Nog niet begonnen |
 | 8 | Latere uitbreidingen (niet implementeren) | Alleen documentatie |
 
@@ -508,13 +508,65 @@ daarvoor ontbreken credentials. Ze zijn getest tegen lokale testdubbels en met d
 
 **Afhankelijkheden:** fase 1 t/m 5; hosting en domein.
 
-- Volledige testronde backend/Flutter/Angular, AVG-documentatie (bewaartermijnen, verwijderprocessen,
-  toestemming), logging zonder persoonsgegevens, healthchecks, Docker-images, back-up en herstel,
-  release- en rollbackprocedure.
-- Uit fase 5: herstel voor pushmeldingen die op "wordt verstuurd" blijven staan (D-034), oude herstelcodes en
-  pushverzendingen opruimen (bewaartermijn), echte SMTP en FCM/APNs testen met de credentials van de pilot.
+**Status:** Getest en geslaagd lokaal. Wat alleen met hosting of credentials kan (echte server, SMTP, FCM/APNs,
+stores), staat onder "Productieblokkades" in [DEPLOYMENT.md](DEPLOYMENT.md#productieblokkades).
 
-**Acceptatiecriteria:** relevante tests slagen, buildstatus vastgelegd, resterende productieblokkades gedocumenteerd.
+### Aanpak
+
+- Eerst de gaten zoeken: wat bewaren we te lang, wat lekt in logs, welke route is niet getest, wat ontbreekt om te
+  kunnen deployen. Daarna gericht oplossen en testen, zonder nieuwe afhankelijkheden in de code.
+- Privacy en productie als documenten die de moskee en een beheerder kunnen gebruiken: [PRIVACY.md](PRIVACY.md) en
+  [DEPLOYMENT.md](DEPLOYMENT.md).
+
+### Opgeleverd
+
+| Onderdeel | Wat |
+|---|---|
+| Bewaartermijnen (D-040) | Nachtelijke opschoning van verlopen sessies (7 dagen), herstelcodes (1 dag), aanmeldingen (365 dagen na de activiteit) en pushtokens (270 dagen niet gezien); instelbaar met `RETENTION_*` |
+| Hangende pushmeldingen (D-041) | Na 30 minuten op "wordt verstuurd" automatisch "mislukt"; lost D-034 op |
+| Loghygiëne (D-043) | Geen e-mailadressen meer in start- en foutmeldingen; `log`-providers weigeren buiten `local`/`test` |
+| API-beveiliging (D-042) | CSP en Referrer-Policy op alle API-antwoorden; test die elke route afloopt (anoniem 401, gebruiker zonder rol nooit toegang tot beheer); pushroutes in de tenant-isolatietest |
+| Containers (D-044) | Dockerfiles voor backend en portaal (zonder rootrechten, healthchecks), portaal-nginx met CSP-nonce, `config.json` uit `API_BASE_URL`, SPA-routes |
+| Productiestack | `deploy/docker-compose.prod.yml`, `.env.example`, `backup.sh` (dump, controle, rotatie), `restore.sh` (alleen in een nieuwe database) |
+| CI | Nieuwe job "Containers en productiestack": bouwt beide images, start de stack, rooktest, back-up en herstel |
+| Health | Mailhealthcheck uit, zodat een SMTP-storing de API niet `DOWN` meldt |
+| Portaal | Uitleg over beeldrechten (afbeelding activiteit) en publicatierechten (video) |
+| App | Pushtoken pas na toestemming (D-045); schermformaattests voor account aanmaken, wachtwoord vergeten, profiel en account (kleine telefoon met 200% tekst, tablet) |
+| Documentatie | PRIVACY.md (gegevens, doelen, grondslagen, toegang, termijnen, verwijderen, toestemming push, logging, beeldrechten, externe diensten, rechten, open punten), DEPLOYMENT.md (configuratie, geheimen, eerste start, back-up en herstel, logging en monitoring, healthchecks, release en rollback, productieblokkades) |
+
+### Tests en controles
+
+| Controle | Commando | Resultaat (11 okt 2026) |
+|---|---|---|
+| Backend unit- en integratietests, nieuw: opschoning per termijn (net vóór en net na de grens), hangende melding één keer mislukt, `LocalOnly`, route-sweep anoniem en zonder rol, API-headers, pushroutes tussen moskeeën | `./mvnw verify` | Geslaagd lokaal tegen PostgreSQL: 70 unit- en 80 integratietests |
+| Portaal | `npm test`, `npm run lint`, `npm run format:check`, `npm run build` | Geslaagd lokaal: 25 bestanden, 117 tests; eerste bundel 330,98 kB |
+| App | `dart format`, `flutter analyze`, `flutter test` | Geslaagd lokaal: 162 tests, geen analysemeldingen |
+| App Android-build | `flutter build apk --debug` | Niet lokaal (geen Android SDK); CI bouwt de APK |
+| App iOS-build | | Niet uitgevoerd (vraagt macOS met Xcode) |
+| Productiestack lokaal | `docker compose -f deploy/docker-compose.prod.yml up` met de runtime-images | Geslaagd lokaal: drie containers `healthy`, inloggen in het portaal via de containers zonder console- of CSP-fouten, health `UP`, JSON-logs zonder e-mailadressen |
+| Back-up en herstel | `deploy/backup.sh`, `deploy/restore.sh` | Geslaagd lokaal: dump gecontroleerd, hersteld in een nieuwe database met dezelfde aantallen; live database en bestaande naam geweigerd |
+| Volledige Docker-build | `docker build` | Lokaal niet mogelijk (build-container zonder internet in deze omgeving); CI-job bouwt en test |
+
+### Beperkingen en open punten
+
+- Geen echte server getest: hosting, TLS, DNS, externe back-upopslag en uptimebewaking ontbreken nog.
+- Echte SMTP en FCM/APNs nog steeds niet getest (geen credentials). Ook "pushtoken pas na toestemming" is niet op een
+  toestel gecontroleerd.
+- Juridische punten voor de moskee: art. 9 AVG, privacyverklaring op een vaste URL, verwerkersovereenkomsten
+  (PRIVACY.md, "Open punten").
+- Inzage en export van gegevens zijn handmatig; inactieve accounts worden niet automatisch verwijderd.
+- Opschoning draait in elke backend; bij meerdere instanties dubbel (onschuldig, D-040).
+- Geen load- of penetratietest uitgevoerd.
+
+### Acceptatiecriteria fase 6
+
+- [x] Relevante tests slagen (backend, portaal, app) lokaal; CI: zie PR.
+- [x] Buildstatus vastgelegd (tabel hierboven).
+- [x] Privacy: dataminimalisatie, bewaartermijnen en verwijderprocessen, toestemming voor push, geen gevoelige data in
+  logs, beeldrechten, geen tracking (PRIVACY.md).
+- [x] Productievoorbereiding: configuratie, geheimen, back-up en herstel, logging en monitoring, healthchecks,
+  containers, deployment, release en rollback (DEPLOYMENT.md).
+- [x] Resterende productieblokkades gedocumenteerd (DEPLOYMENT.md).
 
 ## Fase 7 — White-label voorbereiding
 

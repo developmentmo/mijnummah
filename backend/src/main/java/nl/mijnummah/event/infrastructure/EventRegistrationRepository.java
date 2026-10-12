@@ -1,5 +1,6 @@
 package nl.mijnummah.event.infrastructure;
 
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -8,6 +9,7 @@ import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -44,4 +46,11 @@ public interface EventRegistrationRepository extends JpaRepository<EventRegistra
 
         long getConfirmed();
     }
+
+    /** Clean-up: registrations for events that ended (or, without an end, started) before the cutoff. */
+    @Modifying
+    @Query("""
+            delete from EventRegistration r where r.eventId in (
+                select e.id from Event e where coalesce(e.endsAt, e.startsAt) < :cutoff)""")
+    int deleteForEventsEndedBefore(@Param("cutoff") Instant cutoff);
 }

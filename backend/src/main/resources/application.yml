@@ -81,6 +81,15 @@ mijnummah:
       project-id: ${FCM_PROJECT_ID:}
       # Path to the Firebase service account key (JSON), mounted as a secret. Never commit this file.
       credentials-file: ${FCM_CREDENTIALS_FILE:}
+  # Nightly clean-up of personal and expired data; periods and reasons in PRIVACY.md. ISO-8601 durations.
+  retention:
+    enabled: ${RETENTION_ENABLED:true}
+    cron: ${RETENTION_CRON:0 30 3 * * *}
+    expired-sessions: ${RETENTION_EXPIRED_SESSIONS:P7D}
+    expired-reset-codes: ${RETENTION_EXPIRED_RESET_CODES:P1D}
+    event-registrations: ${RETENTION_EVENT_REGISTRATIONS:P365D}
+    inactive-push-devices: ${RETENTION_INACTIVE_PUSH_DEVICES:P270D}
+    push-sending-timeout: ${RETENTION_PUSH_SENDING_TIMEOUT:PT30M}
   api-docs:
     # OpenAPI document (/v3/api-docs) and Swagger UI (/swagger-ui.html). Off by default in real environments.
     enabled: ${API_DOCS_ENABLED:false}
@@ -94,6 +103,11 @@ springdoc:
   default-produces-media-type: application/json
 
 management:
+  health:
+    mail:
+      # An unreachable or unconfigured mail server must not mark the whole API as down; failed reset mails are
+      # logged by PasswordResetMailer.
+      enabled: false
   endpoints:
     web:
       exposure:

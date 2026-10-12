@@ -100,3 +100,41 @@ jobs:
         run: npm test
       - name: Build
         run: npm run build
+
+  containers:
+    name: Containers en productiestack
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Images bouwen
+        run: |
+          docker build -t mijnummah-backend:ci backend
+          docker build -t mijnummah-webportaal:ci frontend/webportaal
+      - name: Stack starten (wacht op healthchecks)
+        working-directory: deploy
+        run: |
+          {
+            echo "IMAGE_TAG=ci"
+            echo "POSTGRES_PASSWORD=$(openssl rand -hex 16)"
+            echo "JWT_SECRET=$(openssl rand -base64 48)"
+            echo "PORTAL_ORIGIN=http://localhost:8081"
+            echo "API_BASE_URL=http://localhost:8080"
+            echo "SECRETS_DIR=$RUNNER_TEMP/secrets"
+          } > "$RUNNER_TEMP/ci.env"
+          mkdir -p "$RUNNER_TEMP/secrets"
+          docker compose -f docker-compose.prod.yml --env-file "$RUNNER_TEMP/ci.env" -p ci up -d --no-build --wait --wait-timeout 180
+      - name: Rooktest
+        working-directory: deploy
+        run: |
+          curl -fsS http://localhost:8080/actuator/health | grep -q '"UP"'
+          curl -fsS http://localhost:8080/api/v1/public/mosques > /dev/null
+          curl -fsS http://localhost:8081/config.json | grep -q 'http://localhost:8080'
+          curl -fsSI http://localhost:8081/agenda | grep -qi "content-security-policy: default-src 'self'"
+          COMPOSE="docker compose -f docker-compose.prod.yml --env-file $RUNNER_TEMP/ci.env -p ci" \
+            BACKUP_DIR="$RUNNER_TEMP/backups" ./backup.sh
+          COMPOSE="docker compose -f docker-compose.prod.yml --env-file $RUNNER_TEMP/ci.env -p ci" \
+            ./restore.sh "$(ls "$RUNNER_TEMP"/backups/*.dump)" mijnummah_restore_check
+      - name: Logs bij een fout
+        if: failure()
+        working-directory: deploy
+        run: docker compose -f docker-compose.prod.yml --env-file "$RUNNER_TEMP/ci.env" -p ci logs --no-color

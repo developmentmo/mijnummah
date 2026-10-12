@@ -1,0 +1,10 @@
+# Beveiligingsheaders voor elk antwoord. nginx erft add_header niet in een location met eigen add_header,
+# daarom wordt dit bestand daar opnieuw ingevoegd.
+# CSP: alleen eigen scripts en stijlen (Angular krijgt per verzoek een nonce), API-verkeer alleen naar de backend,
+# afbeeldingen ook via https (YouTube- en eigen thumbnails), geen frames, geen plugins.
+add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'nonce-$request_id'; style-src 'self' 'nonce-$request_id'; img-src 'self' data: https:; font-src 'self'; connect-src 'self' ${API_BASE_URL}; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'" always;
+add_header X-Content-Type-Options "nosniff" always;
+add_header X-Frame-Options "DENY" always;
+add_header Referrer-Policy "no-referrer" always;
+add_header Permissions-Policy "camera=(), microphone=(), geolocation=(), interest-cohort=()" always;
+add_header Cross-Origin-Opener-Policy "same-origin" always;

@@ -58,6 +58,8 @@ void main() {
       '/lezing/m1',
       '/aankondiging/a1',
       '/inloggen',
+      '/account-aanmaken',
+      '/wachtwoord-vergeten',
     ]) {
       for (final (device, size, scale) in [
         ('kleine telefoon, 200% tekst', const Size(360, 780), 2.0),
@@ -65,6 +67,28 @@ void main() {
       ]) {
         testWidgets('$location op $device', (tester) async {
           await pumpApp(tester, backend: backend, location: location, size: size, textScale: scale);
+          await scrollThrough(tester);
+          expect(tester.takeException(), isNull);
+        });
+      }
+    }
+
+    // Alleen voor ingelogde gebruikers.
+    for (final location in ['/profiel', '/account']) {
+      for (final (device, size, scale) in [
+        ('kleine telefoon, 200% tekst', const Size(360, 780), 2.0),
+        ('tablet', const Size(1024, 1366), 1.0),
+      ]) {
+        testWidgets('$location ingelogd op $device', (tester) async {
+          final signedIn = standardBackend();
+          await pumpApp(
+            tester,
+            backend: signedIn,
+            tokenStore: signedInStore(signedIn),
+            location: location,
+            size: size,
+            textScale: scale,
+          );
           await scrollThrough(tester);
           expect(tester.takeException(), isNull);
         });

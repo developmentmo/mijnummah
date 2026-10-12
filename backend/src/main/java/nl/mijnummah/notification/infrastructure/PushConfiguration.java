@@ -10,11 +10,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
 import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.web.client.RestClient;
 
 import tools.jackson.databind.json.JsonMapper;
 
+import nl.mijnummah.common.profile.LocalOnly;
 import nl.mijnummah.notification.application.DeliveryResult;
 import nl.mijnummah.notification.application.PushGateway;
 import nl.mijnummah.notification.application.PushMessage;
@@ -26,10 +28,11 @@ class PushConfiguration {
     private static final Logger log = LoggerFactory.getLogger(PushConfiguration.class);
 
     @Bean
-    PushGateway pushGateway(PushProperties properties, JsonMapper json, Clock clock) {
+    PushGateway pushGateway(PushProperties properties, JsonMapper json, Clock clock, Environment environment) {
         return switch (properties.provider()) {
             case NONE -> new UnconfiguredPushGateway();
             case LOG -> {
+                LocalOnly.require(environment, "PUSH_PROVIDER=log");
                 log.warn("PUSH_PROVIDER=log: push notifications are written to the log and NOT sent. "
                         + "Local development only.");
                 yield new LoggingPushGateway();

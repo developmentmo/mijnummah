@@ -10,6 +10,7 @@
     <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   </head>
   <body>
-    <mu-root></mu-root>
+    <!-- In de container vervangt nginx de placeholder per verzoek door een willekeurige CSP-nonce. -->
+    <mu-root ngCspNonce="CSP_NONCE_PLACEHOLDER"></mu-root>
   </body>
 </html>

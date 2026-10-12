@@ -39,4 +39,9 @@ public interface PushDeviceRepository extends JpaRepository<PushDevice, UUID> {
     @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("delete from PushDevice d where d.token in :tokens")
     int deleteByTokenIn(@Param("tokens") Collection<String> tokens);
+
+    /** Clean-up: devices whose app has not registered for a long time (FCM tokens go stale). */
+    @Modifying
+    @Query("delete from PushDevice d where d.lastSeenAt < :cutoff")
+    int deleteLastSeenBefore(@Param("cutoff") Instant cutoff);
 }

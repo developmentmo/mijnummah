@@ -1,0 +1,50 @@
+# Beheerportaal: statische Angular-build achter nginx (unprivileged, poort 8080).
+# ${API_BASE_URL} wordt bij het starten van de container ingevuld (envsubst); nginx-variabelen blijven staan.
+
+server {
+    listen 8080;
+    server_name _;
+    root /usr/share/nginx/html;
+    server_tokens off;
+    charset utf-8;
+
+    gzip on;
+    gzip_types text/css application/javascript application/json image/svg+xml;
+
+    include /etc/nginx/conf.d/security-headers.inc;
+
+    # Containercontrole, zonder logregel per controle.
+    location = /healthz {
+        access_log off;
+        default_type text/plain;
+        return 200 "ok\n";
+    }
+
+    # Instellingen per omgeving; één image voor elke omgeving.
+    location = /config.json {
+        include /etc/nginx/conf.d/security-headers.inc;
+        add_header Cache-Control "no-store" always;
+        default_type application/json;
+        return 200 '{"apiBaseUrl":"${API_BASE_URL}"}';
+    }
+
+    location = /index.html {
+        include /etc/nginx/conf.d/security-headers.inc;
+        add_header Cache-Control "no-cache" always;
+        sub_filter_once off;
+        sub_filter_types text/html;
+        sub_filter "CSP_NONCE_PLACEHOLDER" $request_id;
+    }
+
+    # Bestanden met een hash in de naam veranderen nooit.
+    location ~ "-[A-Za-z0-9_-]{8}\.(js|css)$" {
+        include /etc/nginx/conf.d/security-headers.inc;
+        add_header Cache-Control "public, max-age=31536000, immutable" always;
+        try_files $uri =404;
+    }
+
+    # Single-page app: onbekende paden openen de app, die zelf routeert.
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}

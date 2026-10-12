@@ -16,6 +16,9 @@ mijnummah:
   # All integration tests come from 127.0.0.1; the per-account login throttle stays active.
   rate-limit:
     enabled: false
+  # Tests call the clean-up directly instead of waiting for the schedule.
+  retention:
+    enabled: false
   cors:
     allowed-origins: https://beheer.mijnummah.example
   api-docs:

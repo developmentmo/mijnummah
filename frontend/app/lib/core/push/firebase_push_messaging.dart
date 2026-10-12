@@ -82,6 +82,9 @@ class FirebasePushMessaging implements PushMessaging {
   @override
   Future<String?> token() async {
     try {
+      // Automatisch een token maken staat uit in het manifest en Info.plist, zodat er vóór toestemming geen token
+      // bestaat. Deze methode wordt alleen aangeroepen als de gebruiker toestemming heeft gegeven.
+      await _messaging.setAutoInitEnabled(true);
       return await _messaging.getToken();
     } on FirebaseException catch (e) {
       // Op iOS is er pas een token als APNs het toestel heeft geregistreerd; `tokenRefreshed` meldt het later.
