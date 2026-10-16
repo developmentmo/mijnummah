@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { describe, expect, it } from 'vitest';
 
+import { BRAND } from '../../core/brand/brand.generated';
 import { ThemeService } from '../../core/theme/theme.service';
 import { BrandLogo } from './brand-logo';
 
@@ -16,7 +17,7 @@ describe('BrandLogo', () => {
     TestBed.inject(ThemeService).setMode('light');
     const img: HTMLImageElement = render().nativeElement.querySelector('img');
     expect(img.getAttribute('src')).toBe('branding/logo-horizontal-light.svg');
-    expect(img.alt).toBe('Noeroel Islam');
+    expect(img.alt).toBe(BRAND.name);
   });
 
   it('wisselt naar het donkere logo in het donkere thema', () => {

@@ -7,15 +7,20 @@ import '../api/api_exception.dart';
 import 'push_messaging.dart';
 
 /// Koppelt het pushtoken van dit toestel aan de ingelogde gebruiker (`PUT /me/devices`) en ontkoppelt het bij
-/// uitloggen. Welke meldingen het toestel krijgt, bepaalt de backend: volgen, meldingsvoorkeuren en moskee.
+/// uitloggen. Welke meldingen het toestel krijgt, bepaalt de backend: volgen, meldingsvoorkeuren en moskee. Het
+/// token wordt aangemeld voor de moskee van deze app ([mosqueSlug]), zodat meldingen van andere moskees die de
+/// gebruiker volgt alleen in hun eigen app verschijnen.
 ///
 /// Toestemming wordt pas gevraagd als de gebruiker iets doet waarvoor meldingen nodig zijn ([enable]), niet bij
 /// het starten van de app.
 class PushRegistration {
-  PushRegistration(this._api, this._push);
+  PushRegistration(this._api, this._push, {required this.mosqueSlug});
 
   final ApiClient _api;
   final PushMessaging _push;
+
+  /// De moskee van deze app.
+  final String mosqueSlug;
 
   bool _signedIn = false;
   String? _registered;
@@ -66,7 +71,7 @@ class PushRegistration {
     final platform = _push.platform;
     if (!_signedIn || token == null || token.isEmpty || platform == null || token == _registered) return;
     try {
-      await _api.put('/me/devices', body: {'token': token, 'platform': platform.apiValue});
+      await _api.put('/me/devices', body: {'token': token, 'platform': platform.apiValue, 'mosqueSlug': mosqueSlug});
       if (_signedIn) _registered = token;
     } on AppFailure catch (e) {
       // Bij de volgende start of tokenwissel wordt het opnieuw geprobeerd.

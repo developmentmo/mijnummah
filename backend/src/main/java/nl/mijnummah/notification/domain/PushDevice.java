@@ -27,6 +27,10 @@ public class PushDevice {
     @Column(name = "user_id", nullable = false)
     private UUID userId;
 
+    /** The mosque whose app registered the token; null only for tokens from before fase 7 (never targeted). */
+    @Column(name = "mosque_id")
+    private UUID mosqueId;
+
     @Column(name = "token", nullable = false, updatable = false, length = MAX_TOKEN_LENGTH)
     private String token;
 
@@ -50,6 +54,10 @@ public class PushDevice {
 
     public UUID getUserId() {
         return userId;
+    }
+
+    public UUID getMosqueId() {
+        return mosqueId;
     }
 
     public String getToken() {

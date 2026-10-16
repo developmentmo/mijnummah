@@ -1,0 +1,141 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/developmentmo/mijnummah/brands/brand.schema.json",
+  "title": "Merkconfiguratie van een moskee-app",
+  "description": "Eén bestand per moskee in brands/<slug>/brand.json. Gecontroleerd door `node tools/brand/brand.mjs validate`. Geen geheimen: Firebase- en signinggegevens staan in de GitHub-omgeving van de moskee (zie WHITE_LABEL.md).",
+  "type": "object",
+  "required": ["slug", "name", "android", "ios", "colors", "logo"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "slug": {
+      "description": "Gelijk aan de slug van de moskee in de backend; ook de mapnaam. Dezelfde regel als de backend.",
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+      "maxLength": 60
+    },
+    "name": {
+      "description": "Naam van de moskee en de app, zoals in de stores en in de app.",
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 40
+    },
+    "launcherName": {
+      "description": "Korte naam onder het app-icoon. Standaard gelijk aan name.",
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 20
+    },
+    "android": {
+      "type": "object",
+      "required": ["applicationId"],
+      "additionalProperties": false,
+      "properties": {
+        "applicationId": {
+          "description": "Android application ID; na de eerste release niet meer te wijzigen.",
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$",
+          "maxLength": 100
+        }
+      }
+    },
+    "ios": {
+      "type": "object",
+      "required": ["bundleId"],
+      "additionalProperties": false,
+      "properties": {
+        "bundleId": {
+          "description": "iOS bundle identifier; na de eerste release niet meer te wijzigen.",
+          "type": "string",
+          "pattern": "^[A-Za-z0-9-]+(\\.[A-Za-z0-9-]+)+$",
+          "maxLength": 100
+        }
+      }
+    },
+    "colors": {
+      "description": "Merkkleuren. primary is de hoofdkleur (800 = donkerste merktint, 500 = middentint), accent spaarzaam gebruikt (400). Contrast wordt per merk gecontroleerd.",
+      "type": "object",
+      "required": ["primary", "accent"],
+      "additionalProperties": false,
+      "properties": {
+        "primary": { "$ref": "#/$defs/scale11" },
+        "accent": { "$ref": "#/$defs/scale10" },
+        "neutral": {
+          "description": "Optioneel: eigen neutrale tinten (achtergronden, tekst). Standaard de warme tinten uit design/tokens/tokens.json.",
+          "$ref": "#/$defs/neutralScale"
+        }
+      }
+    },
+    "logo": {
+      "type": "object",
+      "required": ["mark"],
+      "additionalProperties": false,
+      "properties": {
+        "mark": {
+          "description": "Beeldmerk als SVG in deze map: viewBox 0 0 96 96, alleen de kleuren primary.800 en accent.400, geen tekst, scripts of externe bestanden.",
+          "type": "string",
+          "pattern": "^[a-z0-9-]+\\.svg$"
+        }
+      }
+    },
+    "links": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "privacyPolicyUrl": {
+          "description": "Privacyverklaring; verplicht voor de stores. De app toont de link bij Profiel zodra hij is ingevuld.",
+          "$ref": "#/$defs/httpsUrl"
+        },
+        "website": { "$ref": "#/$defs/httpsUrl" }
+      }
+    },
+    "backend": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "apiBaseUrl": {
+          "description": "Productieadres van de backend, zonder /api/v1. Vereist voor een release-build.",
+          "$ref": "#/$defs/httpsUrl"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "hex": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
+    "httpsUrl": { "type": "string", "pattern": "^https://[A-Za-z0-9.-]+(:[0-9]+)?(/[A-Za-z0-9._~/%-]*)?$", "maxLength": 300 },
+    "scale11": {
+      "type": "object",
+      "required": ["50", "100", "200", "300", "400", "500", "600", "700", "800", "900", "950"],
+      "additionalProperties": false,
+      "properties": {
+        "50": { "$ref": "#/$defs/hex" }, "100": { "$ref": "#/$defs/hex" }, "200": { "$ref": "#/$defs/hex" },
+        "300": { "$ref": "#/$defs/hex" }, "400": { "$ref": "#/$defs/hex" }, "500": { "$ref": "#/$defs/hex" },
+        "600": { "$ref": "#/$defs/hex" }, "700": { "$ref": "#/$defs/hex" }, "800": { "$ref": "#/$defs/hex" },
+        "900": { "$ref": "#/$defs/hex" }, "950": { "$ref": "#/$defs/hex" }
+      }
+    },
+    "scale10": {
+      "type": "object",
+      "required": ["50", "100", "200", "300", "400", "500", "600", "700", "800", "900"],
+      "additionalProperties": false,
+      "properties": {
+        "50": { "$ref": "#/$defs/hex" }, "100": { "$ref": "#/$defs/hex" }, "200": { "$ref": "#/$defs/hex" },
+        "300": { "$ref": "#/$defs/hex" }, "400": { "$ref": "#/$defs/hex" }, "500": { "$ref": "#/$defs/hex" },
+        "600": { "$ref": "#/$defs/hex" }, "700": { "$ref": "#/$defs/hex" }, "800": { "$ref": "#/$defs/hex" },
+        "900": { "$ref": "#/$defs/hex" }
+      }
+    },
+    "neutralScale": {
+      "type": "object",
+      "required": ["0", "25", "50", "100", "200", "300", "400", "500", "600", "700", "800", "900", "950"],
+      "additionalProperties": false,
+      "properties": {
+        "0": { "$ref": "#/$defs/hex" }, "25": { "$ref": "#/$defs/hex" }, "50": { "$ref": "#/$defs/hex" },
+        "100": { "$ref": "#/$defs/hex" }, "200": { "$ref": "#/$defs/hex" }, "300": { "$ref": "#/$defs/hex" },
+        "400": { "$ref": "#/$defs/hex" }, "500": { "$ref": "#/$defs/hex" }, "600": { "$ref": "#/$defs/hex" },
+        "700": { "$ref": "#/$defs/hex" }, "800": { "$ref": "#/$defs/hex" }, "900": { "$ref": "#/$defs/hex" },
+        "950": { "$ref": "#/$defs/hex" }
+      }
+    }
+  }
+}

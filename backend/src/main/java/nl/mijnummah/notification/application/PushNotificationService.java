@@ -36,8 +36,8 @@ import nl.mijnummah.notification.infrastructure.PushNotificationRepository;
  * Decides who receives a push notification and records it; {@link PushDispatcher} delivers it.
  * <p>
  * The audience is always derived from the mosque in the route (after the access check): active followers of that
- * mosque who did not switch the content's topic off, and their registered devices. Followers of other mosques, and
- * people who do not follow, are never addressed.
+ * mosque who did not switch the content's topic off, and their devices in that mosque's app. Followers of other
+ * mosques, devices in the apps of other mosques, and people who do not follow, are never addressed.
  */
 @Service
 public class PushNotificationService implements PushNotifications {
@@ -74,7 +74,8 @@ public class PushNotificationService implements PushNotifications {
         if (notifications.existsByContentTypeAndContentId(request.contentType(), request.contentId())) {
             throw new PushAlreadySentException();
         }
-        List<String> tokens = devices.findByUserIdIn(recipients(request.mosqueId(), request.contentType())).stream()
+        List<String> tokens = devices.findByMosqueIdAndUserIdIn(request.mosqueId(),
+                recipients(request.mosqueId(), request.contentType())).stream()
                 .map(PushDevice::getToken)
                 .toList();
         PushNotification notification = PushNotification.start(request, tokens.size(), actor.id(),
@@ -112,7 +113,7 @@ public class PushNotificationService implements PushNotifications {
     public PushAudience audience(AuthenticatedUser actor, UUID mosqueId, PushContentType contentType) {
         access.require(actor, mosqueId, MosquePermission.MANAGE_CONTENT);
         Set<UUID> recipients = recipients(mosqueId, contentType);
-        long deviceCount = recipients.isEmpty() ? 0 : devices.countByUserIdIn(recipients);
+        long deviceCount = recipients.isEmpty() ? 0 : devices.countByMosqueIdAndUserIdIn(mosqueId, recipients);
         return new PushAudience(gateway.configured(), gateway.simulated(), recipients.size(),
                 Math.toIntExact(deviceCount));
     }

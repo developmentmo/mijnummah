@@ -1,27 +1,27 @@
 /* GEGENEREERD BESTAND, NIET HANDMATIG AANPASSEN. Bron: design/tokens/tokens.json */
 
 :root {
-  --mu-palette-green-50: #eef5f2;
-  --mu-palette-green-100: #d5e7e0;
-  --mu-palette-green-200: #adcfc2;
-  --mu-palette-green-300: #7fb2a0;
-  --mu-palette-green-400: #4f927d;
-  --mu-palette-green-500: #2f7965;
-  --mu-palette-green-600: #24614f;
-  --mu-palette-green-700: #1a4d3f;
-  --mu-palette-green-800: #123c32;
-  --mu-palette-green-900: #0b2820;
-  --mu-palette-green-950: #061a14;
-  --mu-palette-gold-50: #fbf6ea;
-  --mu-palette-gold-100: #f4e9cc;
-  --mu-palette-gold-200: #e9d49e;
-  --mu-palette-gold-300: #dcbd77;
-  --mu-palette-gold-400: #c6a45a;
-  --mu-palette-gold-500: #ad8a40;
-  --mu-palette-gold-600: #8c6e31;
-  --mu-palette-gold-700: #6e5627;
-  --mu-palette-gold-800: #54421f;
-  --mu-palette-gold-900: #3b2e17;
+  --mu-palette-primary-50: #eef5f2;
+  --mu-palette-primary-100: #d5e7e0;
+  --mu-palette-primary-200: #adcfc2;
+  --mu-palette-primary-300: #7fb2a0;
+  --mu-palette-primary-400: #4f927d;
+  --mu-palette-primary-500: #2f7965;
+  --mu-palette-primary-600: #24614f;
+  --mu-palette-primary-700: #1a4d3f;
+  --mu-palette-primary-800: #123c32;
+  --mu-palette-primary-900: #0b2820;
+  --mu-palette-primary-950: #061a14;
+  --mu-palette-accent-50: #fbf6ea;
+  --mu-palette-accent-100: #f4e9cc;
+  --mu-palette-accent-200: #e9d49e;
+  --mu-palette-accent-300: #dcbd77;
+  --mu-palette-accent-400: #c6a45a;
+  --mu-palette-accent-500: #ad8a40;
+  --mu-palette-accent-600: #8c6e31;
+  --mu-palette-accent-700: #6e5627;
+  --mu-palette-accent-800: #54421f;
+  --mu-palette-accent-900: #3b2e17;
   --mu-palette-neutral-0: #ffffff;
   --mu-palette-neutral-25: #fbf9f4;
   --mu-palette-neutral-50: #f7f3e9;

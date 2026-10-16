@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mijnummah_app/core/brand/brand.g.dart';
+import 'package:mijnummah_app/features/profile/profile_page.dart';
 
 import '../../helpers/fake_backend.dart';
 import '../../helpers/fixtures.dart';
@@ -98,5 +100,21 @@ void main() {
     await pumpApp(tester, location: '/profiel');
     await tapVisible(tester, find.widgetWithText(ChoiceChip, 'Donker'));
     expect(Theme.of(tester.element(find.text('Profiel').first)).brightness, Brightness.dark);
+  });
+
+  testWidgets('toont de privacyverklaring alleen als het merk er een heeft', (tester) async {
+    await pumpApp(tester, location: '/profiel');
+    await scrollThrough(tester);
+    expect(find.text('Privacyverklaring'), Brand.privacyPolicyUrl == null ? findsNothing : findsOneWidget);
+  });
+
+  testWidgets('de privacylink noemt de site waar hij naartoe gaat', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(body: PrivacyPolicyTile(url: Uri.parse('https://moskee.example/privacy'))),
+      ),
+    );
+    expect(find.text('Privacyverklaring'), findsOneWidget);
+    expect(find.text('moskee.example'), findsOneWidget);
   });
 }

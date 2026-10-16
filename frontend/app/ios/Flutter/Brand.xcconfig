@@ -1,0 +1,3 @@
+// GEGENEREERD BESTAND, NIET HANDMATIG AANPASSEN. Bron: brands/noeroel-islam/brand.json (node tools/brand/brand.mjs apply)
+BRAND_BUNDLE_IDENTIFIER = nl.mijnummah.noeroelislam
+BRAND_DISPLAY_NAME = Noeroel Islam

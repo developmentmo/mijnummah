@@ -3,6 +3,7 @@ package nl.mijnummah.notification.api;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 import org.springframework.http.HttpStatus;
@@ -37,9 +38,10 @@ class DeviceController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @Operation(summary = "Pushtoken van dit apparaat registreren (idempotent)",
             description = "Een token hoort bij wie er op het apparaat is ingelogd; logt iemand anders in, dan gaat het "
-                    + "token naar die persoon.")
+                    + "token naar die persoon. mosqueSlug is de moskee van de app: alleen meldingen van die moskee "
+                    + "gaan naar dit token.")
     void register(@AuthenticationPrincipal AuthenticatedUser actor, @Valid @RequestBody DeviceRequest request) {
-        deviceService.register(actor, request.token(), request.platform());
+        deviceService.register(actor, request.token(), request.platform(), request.mosqueSlug());
     }
 
     /** A POST with a body rather than a DELETE with the token in the URL, so tokens do not end up in access logs. */
@@ -51,11 +53,12 @@ class DeviceController {
     }
 
     record DeviceRequest(@NotBlank @Size(max = PushDevice.MAX_TOKEN_LENGTH) String token,
-                         @NotNull DevicePlatform platform) {
+                         @NotNull DevicePlatform platform,
+                         @NotBlank @Size(max = 60) @Pattern(regexp = "^[a-z0-9]+(-[a-z0-9]+)*$") String mosqueSlug) {
 
         @Override
         public String toString() {
-            return "DeviceRequest[platform=" + platform + "]";
+            return "DeviceRequest[platform=" + platform + ", mosqueSlug=" + mosqueSlug + "]";
         }
     }
 

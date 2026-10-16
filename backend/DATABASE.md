@@ -21,6 +21,8 @@ benoemde constraints (`pk_`, `fk_`, `uk_`, `ix_`, `ck_`), statuswaarden als teks
 | `announcement` | Aankondigingen met optionele vervaldatum | Gepubliceerd heeft `published_at` |
 | `mosque_follow` | Wie welke moskee volgt | PK (gebruiker, moskee) |
 | `notification_preference` | Afwijkende voorkeur per onderwerp (`ANNOUNCEMENTS`, `EVENTS`, `MEDIA`) | FK op de volgrelatie met `ON DELETE CASCADE` |
+| `push_device` | Pushtoken van een geïnstalleerde app: gebruiker, moskee van de app, platform | Token uniek; `mosque_id` (V13) mag alleen leeg zijn bij tokens van vóór fase 7, die nooit worden aangeschreven |
+| `push_notification` | Verstuurde pushmelding per content-item met aantallen | Uniek per content-item; aantallen kloppen met elkaar |
 
 Content-tabellen hebben auditkolommen (`created_at`, `created_by`, `updated_at`, `updated_by`) en een `version`
 voor optimistic locking: als twee beheerders tegelijk hetzelfde item opslaan, krijgt de tweede
@@ -34,9 +36,12 @@ voor optimistic locking: als twee beheerders tegelijk hetzelfde item opslaan, kr
   wijst.
 - In de applicatie zoekt elke beheeractie objecten op met `(id, mosque_id)`, nadat `MosqueAccessService` de
   gebruiker voor die moskee heeft goedgekeurd.
+- Een pushtoken hoort bij de app van één moskee (`push_device.mosque_id`); versturen selecteert op die moskee, zodat
+  een melding van moskee B nooit in de app van moskee A verschijnt.
 - Indexen op `(mosque_id, status, starts_at)` en `(mosque_id, status, published_at)` dienen de publieke lijsten.
 
 ## Wat er niet in staat
 
 Geen videobestanden of andere binaire data (geen `bytea`-kolommen; `DatabaseConstraintsIT` controleert dat), geen
-wachtwoorden of refresh tokens in leesbare vorm, geen gegevens van pushproviders (fase 5).
+wachtwoorden of refresh tokens in leesbare vorm, geen sleutels of instellingen van pushproviders (die staan in de
+omgeving, zie DEPLOYMENT.md).

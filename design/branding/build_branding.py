@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Genereert alle logo- en app-icoonbestanden van Noeroel Islam.
+"""Genereert alle logo- en app-icoonbestanden van een moskee-app uit haar merkconfiguratie.
 
-Het beeldmerk is hieronder als geometrie vastgelegd; de woordmark wordt uit het font Fraunces omgezet
-naar paden, zodat de SVG's niet afhankelijk zijn van geïnstalleerde fonts.
+Het beeldmerk komt uit brands/<slug>/<logo.mark> (SVG op 96 x 96, gecontroleerd door tools/brand/brand.mjs) en wordt
+per variant herkleurd; de woordmark wordt uit het font Fraunces omgezet naar paden, zodat de SVG's niet afhankelijk
+zijn van geïnstalleerde fonts.
 
 Uitvoer:
 - design/branding/svg/   vector-bronbestanden van alle varianten
@@ -10,13 +11,16 @@ Uitvoer:
 - frontend/app/...        Android- en iOS-app-iconen en de assets die de app laadt
 - frontend/webportaal/... favicon en logo's voor het portaal
 
-Gebruik: python3 design/branding/build_branding.py   (vereist design/requirements.txt en de fonts uit
-design/fonts/build_fonts.py)
+Gebruik: python3 design/branding/build_branding.py [--brand=<slug>]   (standaard het merk uit brands/index.json;
+vereist design/requirements.txt). Normaal via `node tools/brand/brand.mjs apply <slug>`, dat eerst valideert.
 """
 from __future__ import annotations
 
 import io
 import json
+import os
+import re
+import sys
 from pathlib import Path
 
 import cairosvg
@@ -35,42 +39,51 @@ PNG_OUT = BRANDING / "png"
 APP = ROOT / "frontend/app"
 PORTAL = ROOT / "frontend/webportaal"
 
-NAME = TOKENS["brand"]["name"]["$value"]
+
+def selected_brand() -> str:
+    for arg in sys.argv[1:]:
+        if arg.startswith("--brand="):
+            return arg.split("=", 1)[1]
+    return os.environ.get("BRAND") or json.loads((ROOT / "brands/index.json").read_text(encoding="utf-8"))["default"]
+
+
+BRAND_SLUG = selected_brand()
+if not re.fullmatch(r"[a-z0-9]+(-[a-z0-9]+)*", BRAND_SLUG):
+    sys.exit(f"Ongeldige merknaam: {BRAND_SLUG}")
+BRAND_DIR = ROOT / "brands" / BRAND_SLUG
+BRAND = json.loads((BRAND_DIR / "brand.json").read_text(encoding="utf-8"))
+NAME = BRAND["name"]
 
 
 def palette(group: str, shade: str) -> str:
+    """Merkkleuren uit brand.json; neutral uit brand.json als het merk die heeft, anders uit tokens.json."""
+    if group in BRAND["colors"]:
+        return BRAND["colors"][group][shade]
     return TOKENS["color"]["palette"][group][shade]["$value"]
 
 
-GREEN_800 = palette("green", "800")  # donkergroen
-GREEN_500 = palette("green", "500")  # jadegroen
-GOLD_400 = palette("gold", "400")  # gedempt goud
-IVORY = palette("neutral", "50")  # warm ivoor
+PRIMARY_800 = palette("primary", "800")  # donkerste merktint
+ACCENT_400 = palette("accent", "400")  # accent
+IVORY = palette("neutral", "50")  # lichte achtergrond
 BLACK = palette("neutral", "950")
 WHITE = palette("neutral", "0")
 
 # ---------------------------------------------------------------------------
-# Beeldmerk op een raster van 96 x 96.
-# Een minimalistische mihrab-boog, onderaan open als uitnodigende doorgang, met daarin een vlam:
-# licht ("noer") en kennis. De vlam heeft een eigen kleur zodat het merk ook klein herkenbaar blijft.
+# Beeldmerk op een raster van 96 x 96, uit brands/<slug>/. Het bestand gebruikt primary.800 en accent.400;
+# per variant worden die vervangen door de kleuren van die variant.
 # ---------------------------------------------------------------------------
 MARK_SIZE = 96
-ARCH_STROKE = 8
-ARCH_PATH = "M22 87V47C22 30 34 19.5 48 10C62 19.5 74 30 74 47V87"
-FLAME_PATH = "M48 31C54.5 40.5 60 47 60 56.5A12 12 0 0 1 36 56.5C36 47 41.5 40.5 48 31Z"
-# Een dunne lijn onder de vlam verbindt de twee zijden van de boog: verbinding met de gemeenschap.
-BASE_PATH = "M37 78.5H59"
-BASE_STROKE = 4.5
+_mark_svg = (BRAND_DIR / BRAND["logo"]["mark"]).read_text(encoding="utf-8")
+_mark_svg = re.sub(r"<!--.*?-->", "", _mark_svg, flags=re.S)
+MARK_BODY = "".join(
+    line.strip() for line in re.sub(r"</svg>.*$", "", re.sub(r"^.*?<svg[^>]*>", "", _mark_svg, flags=re.S), flags=re.S).split("\n")
+)
+_MARK_COLORS = re.compile(f"({re.escape(PRIMARY_800)}|{re.escape(ACCENT_400)})", re.I)
 
 
-def mark_group(arch: str, flame: str, base: str | None = None) -> str:
-    base = base or arch
-    return (
-        f'<path d="{ARCH_PATH}" fill="none" stroke="{arch}" stroke-width="{ARCH_STROKE}" '
-        f'stroke-linecap="round" stroke-linejoin="round"/>'
-        f'<path d="{BASE_PATH}" fill="none" stroke="{base}" stroke-width="{BASE_STROKE}" stroke-linecap="round"/>'
-        f'<path d="{FLAME_PATH}" fill="{flame}"/>'
-    )
+def mark_group(primary: str, accent: str) -> str:
+    """Het beeldmerk met primary.800 vervangen door `primary` en accent.400 door `accent`."""
+    return _MARK_COLORS.sub(lambda m: primary if m.group(1).upper() == PRIMARY_800.upper() else accent, MARK_BODY)
 
 
 # ---------------------------------------------------------------------------
@@ -169,7 +182,16 @@ def icon(size: int, background: str | None, arch: str, flame: str, mark_scale: f
 # ---------------------------------------------------------------------------
 
 
+CHECK = "--check" in sys.argv[1:]
+STALE: list[str] = []
+
+
 def write(path: Path, content: str | bytes) -> None:
+    if CHECK:
+        # Alleen tekstbestanden (SVG, JSON, XML) zijn reproduceerbaar; rasterbestanden hangen af van de cairo-versie.
+        if isinstance(content, str) and (not path.exists() or path.read_text(encoding="utf-8") != content):
+            STALE.append(str(path.relative_to(ROOT)))
+        return
     path.parent.mkdir(parents=True, exist_ok=True)
     if isinstance(content, str):
         path.write_text(content, encoding="utf-8")
@@ -195,35 +217,38 @@ def png(svg_text: str, width: int, height: int | None = None, opaque_bg: str | N
 
 def main() -> None:
     variants = {
-        "logo-horizontal-light.svg": horizontal(GREEN_800, GOLD_400, GREEN_800),
-        "logo-horizontal-dark.svg": horizontal(IVORY, GOLD_400, IVORY),
+        "logo-horizontal-light.svg": horizontal(PRIMARY_800, ACCENT_400, PRIMARY_800),
+        "logo-horizontal-dark.svg": horizontal(IVORY, ACCENT_400, IVORY),
         "logo-horizontal-mono-black.svg": horizontal(BLACK, BLACK, BLACK),
         "logo-horizontal-mono-white.svg": horizontal(WHITE, WHITE, WHITE),
-        "logo-stacked-light.svg": stacked(GREEN_800, GOLD_400, GREEN_800),
-        "logo-stacked-dark.svg": stacked(IVORY, GOLD_400, IVORY),
-        "logo-compact-light.svg": compact(GREEN_800, GOLD_400),
-        "logo-compact-dark.svg": compact(IVORY, GOLD_400),
+        "logo-stacked-light.svg": stacked(PRIMARY_800, ACCENT_400, PRIMARY_800),
+        "logo-stacked-dark.svg": stacked(IVORY, ACCENT_400, IVORY),
+        "logo-compact-light.svg": compact(PRIMARY_800, ACCENT_400),
+        "logo-compact-dark.svg": compact(IVORY, ACCENT_400),
         "logo-compact-mono-black.svg": compact(BLACK, BLACK),
         "logo-compact-mono-white.svg": compact(WHITE, WHITE),
         # Volledig vlak; iOS en de stores ronden zelf de hoeken af.
-        "app-icon.svg": icon(1024, GREEN_800, IVORY, GOLD_400, 0.6),
+        "app-icon.svg": icon(1024, PRIMARY_800, IVORY, ACCENT_400, 0.6),
         # Android adaptive icon: voorgrond binnen de veilige zone (66 van 108 dp), achtergrond als vlak.
-        "app-icon-foreground.svg": icon(432, None, IVORY, GOLD_400, 0.46),
-        "app-icon-background.svg": svg(432, 432, f'<rect width="432" height="432" fill="{GREEN_800}"/>', f"{NAME} app-icoon achtergrond"),
+        "app-icon-foreground.svg": icon(432, None, IVORY, ACCENT_400, 0.46),
+        "app-icon-background.svg": svg(432, 432, f'<rect width="432" height="432" fill="{PRIMARY_800}"/>', f"{NAME} app-icoon achtergrond"),
         "app-icon-monochrome.svg": icon(432, None, WHITE, WHITE, 0.46),
-        "favicon.svg": icon(64, GREEN_800, IVORY, GOLD_400, 0.8, radius=14),
+        "favicon.svg": icon(64, PRIMARY_800, IVORY, ACCENT_400, 0.8, radius=14),
     }
-    print("SVG:")
+    if not CHECK:
+        print("SVG:")
     for name, content in variants.items():
         write(SVG_OUT / name, content)
 
-    print("PNG (design/branding/png):")
-    write(PNG_OUT / "app-icon-1024.png", png(variants["app-icon.svg"], 1024, opaque_bg=GREEN_800))
-    write(PNG_OUT / "play-store-icon-512.png", png(variants["app-icon.svg"], 512, opaque_bg=GREEN_800))
+    if not CHECK:
+        print("PNG (design/branding/png):")
+    write(PNG_OUT / "app-icon-1024.png", png(variants["app-icon.svg"], 1024, opaque_bg=PRIMARY_800))
+    write(PNG_OUT / "play-store-icon-512.png", png(variants["app-icon.svg"], 512, opaque_bg=PRIMARY_800))
     write(PNG_OUT / "logo-horizontal-light@2x.png", png(variants["logo-horizontal-light.svg"], 0, 192))
     write(PNG_OUT / "logo-horizontal-dark@2x.png", png(variants["logo-horizontal-dark.svg"], 0, 192))
 
-    print("Flutter-app:")
+    if not CHECK:
+        print("Flutter-app:")
     for name in [
         "logo-horizontal-light.svg",
         "logo-horizontal-dark.svg",
@@ -239,7 +264,7 @@ def main() -> None:
         densities = {"mdpi": 1, "hdpi": 1.5, "xhdpi": 2, "xxhdpi": 3, "xxxhdpi": 4}
         for density, factor in densities.items():
             folder = android_res / f"mipmap-{density}"
-            write(folder / "ic_launcher.png", png(icon(192, GREEN_800, IVORY, GOLD_400, 0.6, radius=40), int(48 * factor)))
+            write(folder / "ic_launcher.png", png(icon(192, PRIMARY_800, IVORY, ACCENT_400, 0.6, radius=40), int(48 * factor)))
             for layer in ("foreground", "background", "monochrome"):
                 write(folder / f"ic_launcher_{layer}.png", png(variants[f"app-icon-{layer}.svg"], int(108 * factor)))
         adaptive = (
@@ -254,9 +279,9 @@ def main() -> None:
 
     ios_icons = APP / "ios/Runner/Assets.xcassets/AppIcon.appiconset"
     if ios_icons.exists():
-        for old in ios_icons.glob("*.png"):
+        for old in ios_icons.glob("*.png") if not CHECK else []:
             old.unlink()
-        write(ios_icons / "Icon-App-1024x1024@1x.png", png(variants["app-icon.svg"], 1024, opaque_bg=GREEN_800))
+        write(ios_icons / "Icon-App-1024x1024@1x.png", png(variants["app-icon.svg"], 1024, opaque_bg=PRIMARY_800))
         contents = {
             "images": [
                 {"filename": "Icon-App-1024x1024@1x.png", "idiom": "universal", "platform": "ios", "size": "1024x1024"}
@@ -265,13 +290,18 @@ def main() -> None:
         }
         write(ios_icons / "Contents.json", json.dumps(contents, indent=2) + "\n")
 
-    print("Webportaal:")
+    if not CHECK:
+        print("Webportaal:")
     public = PORTAL / "public"
     write(public / "favicon.svg", variants["favicon.svg"])
-    write(public / "apple-touch-icon.png", png(variants["app-icon.svg"], 180, opaque_bg=GREEN_800))
+    write(public / "apple-touch-icon.png", png(variants["app-icon.svg"], 180, opaque_bg=PRIMARY_800))
     for name in ["logo-horizontal-light.svg", "logo-horizontal-dark.svg", "logo-compact-light.svg", "logo-compact-dark.svg"]:
         write(public / "branding" / name, variants[name])
 
 
 if __name__ == "__main__":
     main()
+    if CHECK:
+        for stale in STALE:
+            print(f"Niet actueel voor merk {BRAND_SLUG}: {stale}", file=sys.stderr)
+        sys.exit(1 if STALE else 0)

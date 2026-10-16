@@ -1,5 +1,9 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mijnummah_app/core/brand/brand.g.dart';
 import 'package:mijnummah_app/core/design/design.dart';
 
 void main() {
@@ -23,12 +27,17 @@ void main() {
       expect(theme.extension<AppColors>(), AppColors.dark);
     });
 
-    test('merkkleuren uit de huisstijl staan in het palet', () {
-      expect(TokPalette.green800, const Color(0xFF123C32));
-      expect(TokPalette.green500, const Color(0xFF2F7965));
-      expect(TokPalette.neutral50, const Color(0xFFF7F3E9));
-      expect(TokPalette.gold400, const Color(0xFFC6A45A));
-      expect(TokPalette.neutral900, const Color(0xFF242A27));
+    test('merkkleuren uit de merkconfiguratie staan in het palet', () {
+      // De tokens zijn gegenereerd uit brands/<slug>/brand.json; dit faalt als ze niet bij het toegepaste merk horen.
+      final brand =
+          jsonDecode(File('../../brands/${Brand.slug}/brand.json').readAsStringSync()) as Map<String, dynamic>;
+      final colors = brand['colors'] as Map<String, dynamic>;
+      Color hex(String group, String shade) =>
+          Color(int.parse('FF${((colors[group] as Map<String, dynamic>)[shade] as String).substring(1)}', radix: 16));
+      expect(TokPalette.primary800, hex('primary', '800'));
+      expect(TokPalette.primary500, hex('primary', '500'));
+      expect(TokPalette.accent400, hex('accent', '400'));
+      if (colors.containsKey('neutral')) expect(TokPalette.neutral50, hex('neutral', '50'));
     });
 
     test('koppen gebruiken Fraunces en lopende tekst Inter', () {

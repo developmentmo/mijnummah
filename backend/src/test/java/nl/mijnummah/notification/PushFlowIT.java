@@ -64,9 +64,44 @@ class PushFlowIT extends AbstractIntegrationTest {
                 .isEqualTo(204);
         assertThat(owners("gedeeld-toestel")).isEmpty();
 
-        ApiResponse invalid = api.put("/api/v1/me/devices", Map.of("token", "x", "platform", "WINDOWS"),
-                first.token());
+        ApiResponse invalid = api.put("/api/v1/me/devices",
+                Map.of("token", "x", "platform", "WINDOWS", "mosqueSlug", "noeroel-islam"), first.token());
         assertThat(invalid.status()).isEqualTo(400);
+        ApiResponse withoutApp = api.put("/api/v1/me/devices", Map.of("token", "x", "platform", "ANDROID"),
+                first.token());
+        assertThat(withoutApp.status()).isEqualTo(400);
+        ApiResponse unknownApp = registerDevice(first, "x", "bestaat-niet");
+        assertThat(unknownApp.status()).isEqualTo(404);
+        assertThat(unknownApp.field("code")).isEqualTo("MOSQUE_NOT_FOUND");
+        assertThat(owners("x")).isEmpty();
+    }
+
+    @Test
+    void aNotificationOnlyReachesTheAppOfTheMosqueThatSentIt() {
+        // one person follows both mosques and has both apps installed
+        Account member = follower("beide-apps", Map.of());
+        api.put("/api/v1/me/follows/" + otherMosqueId, null, member.token());
+        registerDevice(member, "app-noeroel", "noeroel-islam");
+        registerDevice(member, "app-andere", "andere-moskee");
+        Account otherAdmin = mosqueAdmin(otherMosqueId, "ander-beheer");
+
+        ApiResponse ownAudience = api.get(adminPath(mosqueId, "notifications/audience?contentType=ANNOUNCEMENT"),
+                admin.token());
+        assertThat(ownAudience.body().get("followers").asInt()).isEqualTo(1);
+        assertThat(ownAudience.body().get("devices").asInt()).isEqualTo(1);
+        ApiResponse otherAudience = api.get(adminPath(otherMosqueId,
+                "notifications/audience?contentType=ANNOUNCEMENT"), otherAdmin.token());
+        assertThat(otherAudience.body().get("devices").asInt()).isEqualTo(1);
+
+        UUID announcementId = publishedAnnouncement("Alleen voor deze app", "Tekst");
+        api.post(adminPath(mosqueId, "announcements/" + announcementId + "/push"), null, admin.token());
+        awaitCompleted();
+        assertThat(FCM.messages).extracting(m -> m.path("token").asString()).containsExactly("app-noeroel");
+
+        // the token moves with the app it was registered from: re-registering it for the other app moves it there
+        registerDevice(member, "app-noeroel", "andere-moskee");
+        assertThat(jdbc.queryForObject("select mosque_id from push_device where token = ?", UUID.class,
+                "app-noeroel")).isEqualTo(otherMosqueId);
     }
 
     @Test
@@ -236,8 +271,13 @@ class PushFlowIT extends AbstractIntegrationTest {
         return account;
     }
 
+    /** Registers the token from the app of noeroel-islam. */
     private ApiResponse registerDevice(Account account, String token) {
-        return api.put("/api/v1/me/devices", Map.of("token", token, "platform", "ANDROID"),
+        return registerDevice(account, token, "noeroel-islam");
+    }
+
+    private ApiResponse registerDevice(Account account, String token, String appMosqueSlug) {
+        return api.put("/api/v1/me/devices", Map.of("token", token, "platform", "ANDROID", "mosqueSlug", appMosqueSlug),
                 account == null ? null : account.token());
     }
 

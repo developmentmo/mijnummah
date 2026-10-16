@@ -190,10 +190,11 @@ Wat nog moet gebeuren voordat de pilot live kan. Status per punt in `IMPLEMENTAT
 
 1. Hosting kiezen (EU), server inrichten, domeinen en DNS.
 2. SMTP-dienst kiezen en instellen; herstel-e-mail end-to-end testen.
-3. Firebase-project per app aanmaken, FCM-serviceaccount op de server, pushmeldingen testen op echte Android- en
-   iOS-toestellen.
-4. Apple Developer-account: capability Push Notifications, APNs-sleutel in Firebase, signing (fase 7).
+3. Firebase-project van het platform aanmaken met per moskee een Android- en iOS-app (D-049), FCM-serviceaccount
+   op de server, pushmeldingen testen op echte Android- en iOS-toestellen.
+4. Apple Developer-account: capability Push Notifications, APNs-sleutel in Firebase, signing (zie WHITE_LABEL.md).
 5. Google Play- en App Store-accounts, store-teksten, schermafbeeldingen en de privacyformulieren.
 6. Privacyverklaring op een vaste URL, verwerkersovereenkomsten, besluit over art. 9 AVG (zie `PRIVACY.md`).
 7. Externe back-upopslag en uptimebewaking inrichten; eerste hersteltest op de echte server.
-8. Release-builds van de app (APK/AAB en iOS) met de productie-`API_BASE_URL` en Firebase-instellingen.
+8. Release-builds van de app met de workflow Release-app: `backend.apiBaseUrl` in het merk, GitHub Environment met
+   sleutels en Firebase-instellingen per moskee (WHITE_LABEL.md).

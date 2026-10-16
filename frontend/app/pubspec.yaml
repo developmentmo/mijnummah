@@ -1,5 +1,5 @@
 name: mijnummah_app
-description: "Noeroel Islam - moskee-app"
+description: "Moskee-app van het platform Mijn Ummah (merk per build, zie WHITE_LABEL.md)"
 publish_to: 'none'
 version: 0.1.0+1
 

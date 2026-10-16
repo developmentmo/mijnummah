@@ -1,6 +1,6 @@
 <a class="mu-skip-link" href="#inhoud">Naar de inhoud</a>
 <header class="topbar">
-  <a class="brand" routerLink="/" aria-label="Noeroel Islam beheer, naar het begin">
+  <a class="brand" routerLink="/" [attr.aria-label]="brandName + ' beheer, naar het begin'">
     <mu-brand-logo [height]="36" />
   </a>
   <span class="product mu-label-large mu-muted">Beheer</span>
@@ -37,6 +37,7 @@
           }
         </div>
         @if (auth.isPlatformAdmin()) {
+          <a mat-menu-item routerLink="/moskeeen/nieuw">Moskee toevoegen</a>
           <a mat-menu-item routerLink="/accounts">Accounts beheren</a>
         }
         <button mat-menu-item type="button" (click)="logout()">Uitloggen</button>

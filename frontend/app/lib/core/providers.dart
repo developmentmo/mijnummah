@@ -49,7 +49,11 @@ final authServiceProvider = Provider<AuthService>((ref) {
 final pushMessagingProvider = Provider<PushMessaging>((ref) => const UnsupportedPushMessaging());
 
 final pushRegistrationProvider = Provider<PushRegistration>((ref) {
-  final registration = PushRegistration(ref.watch(apiClientProvider), ref.watch(pushMessagingProvider));
+  final registration = PushRegistration(
+    ref.watch(apiClientProvider),
+    ref.watch(pushMessagingProvider),
+    mosqueSlug: ref.watch(appConfigProvider).mosqueSlug,
+  );
   ref.onDispose(registration.dispose);
   return registration;
 });
