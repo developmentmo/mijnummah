@@ -63,8 +63,8 @@ abstract final class AppTheme {
       outlineVariant: c.border,
       inverseSurface: c.surfaceInverse,
       onInverseSurface: c.onSurfaceInverse,
-      inversePrimary: brightness == Brightness.light ? TokPalette.green200 : TokPalette.green800,
-      shadow: TokPalette.green900,
+      inversePrimary: brightness == Brightness.light ? TokPalette.primary200 : TokPalette.primary800,
+      shadow: TokPalette.primary900,
       scrim: c.scrim,
     );
     final text = textTheme(c);
@@ -216,7 +216,7 @@ abstract final class AppTheme {
         behavior: SnackBarBehavior.floating,
         backgroundColor: c.surfaceInverse,
         contentTextStyle: text.bodyMedium?.copyWith(color: c.onSurfaceInverse),
-        actionTextColor: brightness == Brightness.light ? TokPalette.gold300 : TokPalette.green700,
+        actionTextColor: brightness == Brightness.light ? TokPalette.accent300 : TokPalette.primary700,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(TokComponent.notificationRadius)),
       ),
       progressIndicatorTheme: ProgressIndicatorThemeData(color: c.secondary, linearTrackColor: c.surfaceMuted),

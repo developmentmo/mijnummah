@@ -1,0 +1,56 @@
+{
+  "$schema": "../brand.schema.json",
+  "slug": "noeroel-islam",
+  "name": "Noeroel Islam",
+  "android": {
+    "applicationId": "nl.mijnummah.noeroelislam"
+  },
+  "ios": {
+    "bundleId": "nl.mijnummah.noeroelislam"
+  },
+  "colors": {
+    "primary": {
+      "50": "#EEF5F2",
+      "100": "#D5E7E0",
+      "200": "#ADCFC2",
+      "300": "#7FB2A0",
+      "400": "#4F927D",
+      "500": "#2F7965",
+      "600": "#24614F",
+      "700": "#1A4D3F",
+      "800": "#123C32",
+      "900": "#0B2820",
+      "950": "#061A14"
+    },
+    "accent": {
+      "50": "#FBF6EA",
+      "100": "#F4E9CC",
+      "200": "#E9D49E",
+      "300": "#DCBD77",
+      "400": "#C6A45A",
+      "500": "#AD8A40",
+      "600": "#8C6E31",
+      "700": "#6E5627",
+      "800": "#54421F",
+      "900": "#3B2E17"
+    },
+    "neutral": {
+      "0": "#FFFFFF",
+      "25": "#FBF9F4",
+      "50": "#F7F3E9",
+      "100": "#EFEAE0",
+      "200": "#E2DCD0",
+      "300": "#CBC5BA",
+      "400": "#A39F96",
+      "500": "#7C7A73",
+      "600": "#5D5E58",
+      "700": "#454945",
+      "800": "#333834",
+      "900": "#242A27",
+      "950": "#161A18"
+    }
+  },
+  "logo": {
+    "mark": "mark.svg"
+  }
+}

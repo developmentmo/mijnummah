@@ -392,7 +392,8 @@ Belangrijke architectuur- en ontwerpbeslissingen. Status: **Voorgesteld** (wacht
   gebruiker de moskee gaat volgen of een onderwerp aanzet, niet bij het starten. Het toestel wordt aangemeld na inloggen
   (als er toestemming is) en afgemeld vóór uitloggen. Tikken op een melding opent de aankondiging, activiteit of
   lezing; een melding terwijl de app open is, verschijnt onderin met een knop "Bekijken".
-- **Waarom:** Elke moskee-app krijgt een eigen Firebase-project (white-label, fase 7). Toestemming vragen met een
+- **Waarom:** De Firebase-instellingen verschillen per moskee-app (white-label; aanvankelijk een eigen project per
+  app, in fase 7 herzien naar één project met een app per moskee, zie D-049). Toestemming vragen met een
   duidelijke aanleiding geeft meer "ja" en is wat Apple en Google aanraden.
 - **Gevolg:** Verloopt een sessie zonder uitloggen, dan blijft het toestel aangemeld tot de volgende keer inloggen op
   dat toestel (het token gaat dan naar de nieuwe gebruiker) of tot FCM het token ongeldig meldt. Voor iOS moeten in
@@ -468,3 +469,75 @@ Belangrijke architectuur- en ontwerpbeslissingen. Status: **Voorgesteld** (wacht
   gebruiker nooit meldingen wil. Dat past niet bij "alleen wat nodig is".
 - **Gevolg:** Te controleren zodra er een Firebase-project is (fase 6 open punt, zie het implementatieplan).
 
+## D-046 — Merkconfiguratie per moskee in `brands/<slug>/`
+
+- **Status:** Besloten (fase 7)
+- **Besluit:** Alles wat per moskee-app verschilt staat in `brands/<slug>/brand.json` (naam, ID's, kleurschalen,
+  links, backendadres) plus het beeldmerk `mark.svg`. Een JSON Schema beschrijft het formaat; een eigen, kleine
+  controle in `tools/brand/lib.mjs` past het toe (alleen de sleutelwoorden die het schema gebruikt; een onbekend
+  sleutelwoord is een fout) en controleert ook het beeldmerk, dubbele ID's tussen merken en het contrast.
+- **Waarom:** Eén plek met duidelijke standaardwaarden die een niet-ontwikkelaar kan lezen. Geen JSON Schema-library:
+  het schema is klein, en zo draaien de controles met alleen Node, net als de tokengenerator.
+- **Gevolg:** Contactgegevens, beschrijving en tijdzone staan niet in het merk maar in de backend (D-050). Nieuwe
+  velden vragen een aanpassing van schema, controle en generator samen.
+
+## D-047 — Merk toepassen met codegeneratie in plaats van Flutter-flavors
+
+- **Status:** Besloten (fase 7)
+- **Besluit:** `node tools/brand/brand.mjs apply <slug>` schrijft de merkafhankelijke bestanden (Dart-constanten,
+  `brand.properties` voor Gradle, `Brand.xcconfig` voor Xcode, tokens, logo's, iconen, portaalnaam). De repository
+  bevat altijd het standaardmerk uit `brands/index.json`; CI controleert dat (`brand.mjs check`) en bouwt in een
+  matrix elke map in `brands/`.
+- **Waarom:** Flavors vragen per moskee extra blokken in Gradle, extra schemes en targets in Xcode en iconensets per
+  flavor; dat groeit met elke moskee en is foutgevoelig om met de hand te onderhouden. Met generatie blijft het
+  project gelijk en is een nieuwe moskee alleen een map met data.
+- **Gevolg:** Er is per checkout één merk actief. Om lokaal een andere app te draaien pas je dat merk toe en daarna
+  weer het standaardmerk vóór het committen (CI faalt anders). Een testmoskee (`voorbeeldmoskee`) bewaakt dat de
+  generatie voor een tweede merk blijft werken.
+
+## D-048 — Paletnamen primary en accent; typografie centraal
+
+- **Status:** Besloten (fase 7)
+- **Besluit:** De paletgroepen `green` en `gold` heten `primary` en `accent` en komen uit het merk; een merk kan ook
+  de neutrale tinten vervangen. De donkere tinten van de donkere modus draaien hun kleurtoon mee met de merkkleur
+  (voor het pilotmerk blijven ze exact gelijk). Status- en neutrale kleuren, maten en typografie blijven centraal.
+- **Waarom:** De namen beschreven Noeroel Islam, niet de rol. Typografie per moskee vraagt per font een licentie
+  die meeleveren in apps toestaat en een eigen controle op leesbaarheid; dat is nu niet nodig.
+- **Gevolg:** Code gebruikt `TokPalette.primary*` en `accent*`. Een ander font per moskee is een uitbreiding
+  (WHITE_LABEL.md, "Uitbreiden").
+
+## D-049 — Eén Firebase-project; pushtokens per app
+
+- **Status:** Besloten (fase 7); herziet D-039 op het punt "eigen Firebase-project per app"
+- **Besluit:** Het platform heeft één Firebase-project met per moskee een Android- en een iOS-app. De backend stuurt
+  met één serviceaccount. Een pushtoken wordt aangemeld met de slug van de moskee van de app
+  (`PUT /me/devices {token, platform, mosqueSlug}`) en bewaard met die moskee (`push_device.mosque_id`, V13). Een
+  melding van een moskee gaat alleen naar tokens van haar eigen app.
+- **Waarom:** Eén backend met een serviceaccount per moskee zou de configuratie per moskee laten groeien. Zonder
+  koppeling aan de app zou iemand die twee moskeeën volgt de meldingen van moskee B in de app van moskee A krijgen.
+- **Gevolg:** Tokens van vóór V13 krijgen de moskee als er precies één moskee is (de pilot); anders blijven ze leeg en
+  worden ze niet aangeschreven tot de app opnieuw aanmeldt (bij elke start). Er wordt niets verwijderd.
+
+## D-050 — Eén backend en één portaal voor alle moskeeën
+
+- **Status:** Besloten (fase 7)
+- **Besluit:** Alle apps praten met dezelfde backend; scheiding per moskee zit in de backend (D-006, D-017, getest in
+  `TenantIsolationIT`). Het beheerportaal is één installatie; een platformbeheerder voegt er moskeeën toe (*Moskee
+  toevoegen*, dezelfde slug als het merk). Contactgegevens, adres en beschrijving beheert de moskee in het portaal;
+  categorieën zijn voor alle moskeeën gelijk.
+- **Waarom:** Eén installatie is één ding om te beveiligen, back-uppen en bij te werken. Gegevens die vaak wijzigen
+  horen niet in een app-build.
+- **Gevolg:** Het portaal toont de naam en kleuren van het standaardmerk. Bij meer moskeeën een eigen platformmerk
+  voor het portaal overwegen (WHITE_LABEL.md).
+
+## D-051 — Ondertekening buiten de repository; releases alleen handmatig
+
+- **Status:** Besloten (fase 7)
+- **Besluit:** Gradle tekent een release alleen met een sleutel uit omgevingsvariabelen. Sleutels en Firebase-
+  waarden per app staan in een GitHub Environment met de naam van de slug. De workflow Release-app start alleen met
+  de hand, bouwt en tekent, en levert een artifact; hij uploadt niet naar de stores. CI tekent met een wegwerpsleutel
+  die alleen tijdens de job bestaat.
+- **Waarom:** Publiceren is niet terug te draaien en vraagt accounts, rechten en controles die er nog niet zijn. Een
+  Environment met verplichte goedkeuring houdt sleutels buiten pull requests van anderen.
+- **Gevolg:** iOS wordt ongetekend gebouwd tot er een Apple Developer-account is. Uploaden gebeurt met de hand na de
+  releasecontrole in WHITE_LABEL.md.

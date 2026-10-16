@@ -72,8 +72,10 @@ class RetentionIT extends AbstractIntegrationTest {
 
     @Test
     void devicesTheAppStoppedReportingAreRemoved() {
+        mosque("noeroel-islam");
         Account visitor = user("toestel");
-        api.put("/api/v1/me/devices", Map.of("token", "token-1", "platform", "ANDROID"), visitor.token());
+        api.put("/api/v1/me/devices", Map.of("token", "token-1", "platform", "ANDROID", "mosqueSlug", "noeroel-islam"),
+                visitor.token());
 
         pushRetention.purgeDevices(Instant.now().plus(Duration.ofDays(269)));
         assertThat(count("push_device")).isEqualTo(1);

@@ -32,8 +32,10 @@ jobs:
         run: ./mvnw -B -ntp verify
 
   design:
-    name: Design tokens en merkassets
+    name: Merken, design tokens en merkassets
     runs-on: ubuntu-latest
+    outputs:
+      brands: ${{ steps.brands.outputs.brands }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -42,41 +44,110 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
-      - name: Gegenereerde tokens zijn actueel
-        run: node design/tokens/build.mjs --check
-      - name: Kleurcontrast (WCAG 2.2 AA)
-        run: node design/tokens/contrast.mjs
+      - run: pip install -r design/requirements.txt
+      - name: Merkconfiguraties en kleurcontrast per merk (WCAG 2.2 AA)
+        run: node tools/brand/brand.mjs validate
+      - name: Repository geeft het standaardmerk weer (tokens, namen, ID's, logo's, iconen)
+        run: node tools/brand/brand.mjs check
       - name: Geen losse kleuren of fonts buiten de tokens
         run: node design/tokens/check-hardcoded.mjs
       - name: SVG's en app-iconen
         run: python3 design/branding/check_assets.py
+      - name: Merken voor de app-builds
+        id: brands
+        run: echo "brands=$(node -e "import('./tools/brand/lib.mjs').then(m => console.log(JSON.stringify(m.brandSlugs())))")" >> "$GITHUB_OUTPUT"
 
+  # Elke moskee-app uit dezelfde code: merk toepassen, testen en een release-build. De release wordt getekend met
+  # een wegwerpsleutel die alleen in deze job bestaat; echte sleutels staan nooit in CI (zie WHITE_LABEL.md).
   app:
-    name: Flutter-app
+    name: Flutter-app (${{ matrix.brand }})
+    needs: design
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: frontend/app
+    strategy:
+      fail-fast: false
+      matrix:
+        brand: ${{ fromJSON(needs.design.outputs.brands) }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: 3.47.7
           channel: stable
           cache: true
+      - name: Merk toepassen
+        run: |
+          pip install -r design/requirements.txt
+          node tools/brand/brand.mjs apply ${{ matrix.brand }}
       - run: flutter pub get
+        working-directory: frontend/app
       - name: Formattering (gegenereerde *.g.dart uitgezonderd)
+        working-directory: frontend/app
         run: dart format --output=none --set-exit-if-changed $(find lib test -name '*.dart' ! -name '*.g.dart')
       - name: Analyse
+        working-directory: frontend/app
         run: flutter analyze
       - name: Tests
+        working-directory: frontend/app
         run: flutter test
-      - name: Android-build (debug)
-        run: flutter build apk --debug
+      - name: Android-release (AAB, getekend met een wegwerpsleutel)
+        working-directory: frontend/app
+        run: |
+          export ANDROID_KEYSTORE_PATH="$RUNNER_TEMP/ci-release.jks"
+          export ANDROID_KEYSTORE_PASSWORD="$(openssl rand -hex 16)"
+          export ANDROID_KEY_PASSWORD="$ANDROID_KEYSTORE_PASSWORD"
+          export ANDROID_KEY_ALIAS=ci
+          keytool -genkeypair -noprompt -keystore "$ANDROID_KEYSTORE_PATH" -storepass "$ANDROID_KEYSTORE_PASSWORD" \
+            -keypass "$ANDROID_KEY_PASSWORD" -alias "$ANDROID_KEY_ALIAS" -keyalg RSA -keysize 2048 -validity 1 \
+            -dname "CN=CI wegwerpsleutel"
+          flutter build appbundle --release --dart-define=API_BASE_URL=https://api.example.invalid
+          AAB=build/app/outputs/bundle/release/app-release.aab
+          jarsigner -verify "$AAB" | grep -q "jar verified"
+          keytool -printcert -jarfile "$AAB" | grep -q "CN=CI wegwerpsleutel"
+          APP_ID="$(node ../../tools/brand/brand.mjs show ${{ matrix.brand }} android.applicationId)"
+          unzip -p "$AAB" base/manifest/AndroidManifest.xml | grep -aq "$APP_ID"
+          echo "AAB voor $APP_ID gebouwd en getekend."
+
+  app-ios:
+    name: iOS-build (${{ matrix.brand }})
+    needs: design
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        brand: ${{ fromJSON(needs.design.outputs.brands) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.47.7
+          channel: stable
+          cache: true
+      # Zonder --skip-assets zou macOS cairo nodig hebben; de iconen per merk worden in de Android-job al gebouwd
+      # en gecontroleerd. Hier gaat het om bundle-ID, naam en of het Xcode-project bouwt.
+      - name: Merk toepassen (zonder iconen)
+        run: node tools/brand/brand.mjs apply ${{ matrix.brand }} --skip-assets
+      - name: Simulatorbuild zonder ondertekening
+        working-directory: frontend/app
+        run: |
+          flutter build ios --simulator --no-codesign --dart-define=API_BASE_URL=https://api.example.invalid
+          PLIST=build/ios/iphonesimulator/Runner.app/Info.plist
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$PLIST")" = \
+            "$(node ../../tools/brand/brand.mjs show ${{ matrix.brand }} ios.bundleId)"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleDisplayName' "$PLIST")" = \
+            "$(node ../../tools/brand/brand.mjs show ${{ matrix.brand }} launcherName)"
 
   webportaal:
     name: Webportaal

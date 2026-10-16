@@ -15,7 +15,7 @@ Future<void> main() async {
       overrides: [sharedPreferencesProvider.overrideWithValue(prefs), pushMessagingProvider.overrideWithValue(push)],
       // Geen automatische herhaling bij fouten: het scherm toont direct een melding met "Opnieuw proberen".
       retry: (retryCount, error) => null,
-      child: const NoeroelIslamApp(),
+      child: const MosqueApp(),
     ),
   );
 }

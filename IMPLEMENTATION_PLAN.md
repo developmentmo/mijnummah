@@ -17,8 +17,8 @@ uit het masterprompt (code, tests, build, regressies, documentatie, beperkingen,
 | 2 | UX/UI en Flutter-app | Voltooid en goedgekeurd (PR #5 gemerged) |
 | 4 | Beheerportaal (Angular) | Voltooid en goedgekeurd (PR #6 gemerged) |
 | 5 | Accounts, volgen en notificaties | Voltooid en goedgekeurd (PR #7 gemerged); echte e-mail en push niet getest (geen credentials) |
-| 6 | Testen, privacy, beveiliging, productievoorbereiding | Getest en geslaagd (lokaal); productieblokkades gedocumenteerd; wacht op CI en beoordeling |
-| 7 | Voorbereiding white-label automatisering | Nog niet begonnen |
+| 6 | Testen, privacy, beveiliging, productievoorbereiding | Voltooid en goedgekeurd (PR #9 gemerged); productieblokkades gedocumenteerd |
+| 7 | Voorbereiding white-label automatisering | Getest en geslaagd (lokaal); Android- en iOS-builds per merk alleen in CI; wacht op beoordeling |
 | 8 | Latere uitbreidingen (niet implementeren) | Alleen documentatie |
 
 ---
@@ -570,14 +570,71 @@ stores), staat onder "Productieblokkades" in [DEPLOYMENT.md](DEPLOYMENT.md#produ
 
 ## Fase 7 — White-label voorbereiding
 
-**Afhankelijkheden:** stabiele pilot.
+**Afhankelijkheden:** stabiele pilot (fase 1 t/m 6).
 
-- Brandconfiguratie per moskee (naam, ID's, kleuren, logo's, contact, push, backend) in een gevalideerd
-  formaat; tokens en iconen gegenereerd uit die configuratie (de tokengenerator uit fase 1 is hier al op
-  voorbereid). Flutter-flavors of build-time configuratie, CI-matrix per moskee, signing buiten de repo.
-- Expliciete test: beheerder van moskee A kan niets van moskee B lezen of wijzigen.
+**Status:** Getest en geslaagd lokaal. De Android- en iOS-builds per merk kunnen hier niet (geen Android SDK, geen
+macOS) en draaien in CI. Werkwijze en runbook: [WHITE_LABEL.md](WHITE_LABEL.md).
 
-**Acceptatiecriteria:** een tweede testmoskee vereist geen kopie van de codebase en geen ongecontroleerde toegang.
+### Aanpak
+
+- Eerst inventariseren wat moskeespecifiek was: de naam stond in app, portaal, Android-manifest, `Info.plist` en
+  tests; ID's in Gradle en Xcode; kleuren als "green" en "gold" in de tokens; het beeldmerk als code in de
+  logogenerator. Daarna één configuratie per moskee, waar alles uit wordt gegenereerd (D-046, D-047).
+- Een fictieve tweede moskee (`brands/voorbeeldmoskee/`) om te bewijzen dat het zonder kopie van de code werkt, en
+  om dat in CI te blijven bewijzen.
+- Zoeken naar plekken waar gegevens van moskeeën kunnen mengen nu er meerdere apps zijn. Gevonden: pushtokens hoorden
+  niet bij een app (opgelost, D-049). Verder de bestaande tenant-isolatietest uitgebreid.
+
+### Opgeleverd
+
+| Onderdeel | Wat |
+|---|---|
+| Merkconfiguratie (D-046) | `brands/<slug>/brand.json` met schema (`brands/brand.schema.json`) en beeldmerk `mark.svg`; controle op schema, beeldmerk (alleen merkkleuren, geen scripts, tekst of links), dubbele ID's en contrast |
+| Tooling (D-047) | `tools/brand/brand.mjs`: `list`, `validate`, `new` (kleurschalen uit twee merkkleuren, tijdelijk beeldmerk), `apply`, `check`, `show` |
+| Tokens en assets (D-048) | Paletten `primary`/`accent` (eventueel `neutral`) uit het merk; donkere modus draait mee met de merkkleur; logo's, app-iconen en splash uit `mark.svg`; pilotbestanden byte-voor-byte gelijk gebleven |
+| Android | Application ID en naam onder het icoon uit `brand.properties`; release-ondertekening uit omgevingsvariabelen |
+| iOS | Bundle ID en naam onder het icoon uit `Brand.xcconfig` |
+| App | Naam, slug en privacylink uit `brand.g.dart`; `MosqueApp` in plaats van `NoeroelIslamApp`; privacyverklaring in Profiel als het merk een link heeft; pushtoken aangemeld voor de moskee van de app |
+| Portaal | Naam uit het merk (titel, logo, navigatie); *Moskee toevoegen* voor platformbeheerders (slug volgt de naam, controle op formaat en dubbele slug) |
+| Backend (D-049) | V13: `push_device.mosque_id`; `PUT /me/devices` vraagt `mosqueSlug`; versturen en bereik tellen alleen toestellen in de app van de moskee |
+| Testmoskee | `brands/voorbeeldmoskee/`: ander palet, beeldmerk en ID's; fictief, niet publiceren |
+| CI | Merken valideren en `check`; per merk een job met analyse, tests en een getekende release-AAB (wegwerpsleutel, controle op handtekening en application ID); per merk een iOS-simulatorbuild met controle op bundle ID en naam |
+| Release (D-051) | `.github/workflows/release-app.yml`: handmatig per merk en platform, sleutels en Firebase-waarden uit een GitHub Environment, artifact zonder store-upload; iOS ongetekend tot er een Apple-account is |
+| Documentatie | WHITE_LABEL.md (wat per moskee, wat centraal, runbook, ondertekening, release, isolatie, uitbreiden), D-046 t/m D-051, API.md, DATABASE.md, READMEs, BRAND_GUIDELINES.md |
+
+### Tests en controles
+
+| Controle | Commando | Resultaat (16 okt 2026) |
+|---|---|---|
+| Backend, nieuw: melding alleen naar de app van de verzendende moskee, token verhuist met de app, `mosqueSlug` verplicht en onbekende moskee `404`; nieuwe moskee geeft niemand toegang, (de)activeren en moskee aanmaken alleen door platformbeheerder, rol van B niet via A te wijzigen | `./mvnw verify` | Geslaagd lokaal tegen PostgreSQL: 70 unit- en 82 integratietests |
+| Migratie V13, overzetten van bestaande tokens | Los uitgevoerd in een tijdelijke database | Eén moskee: tokens krijgen die moskee; twee moskeeën: blijven leeg |
+| Merken | `brand.mjs validate`, `brand.mjs check` | Geslaagd: beide merken geldig, 107 van 107 kleurparen per merk; repository geeft `noeroel-islam` weer |
+| App met elk merk | `dart format`, `flutter analyze`, `flutter test` | Geslaagd lokaal met `noeroel-islam` en met `voorbeeldmoskee`: 164 tests, geen analysemeldingen |
+| Portaal | `npm test`, `npm run lint`, `npm run format:check`, `npm run build` | Geslaagd lokaal: 26 bestanden, 121 tests; eerste bundel 331,27 kB; ook gebouwd met het testmerk (licht en donker bekeken) |
+| Heen en terug wisselen van merk | `apply voorbeeldmoskee`, daarna `apply` | Alle bestanden weer exact gelijk aan de repository |
+| Android-release per merk (AAB, getekend) | CI-job "Flutter-app (merk)" | Niet lokaal (geen Android SDK); CI |
+| iOS-build per merk | CI-job "iOS-build (merk)" | Niet lokaal (geen macOS); CI |
+| Release-workflow | `release-app.yml` | Niet uitgevoerd: er zijn nog geen Environments, sleutels of Firebase-apps; `noeroel-islam` heeft nog geen `backend.apiBaseUrl` |
+
+### Beperkingen en open punten
+
+- Geen echte release gebouwd of getekend: Play Console-account, uploadsleutel, Apple Developer-account, Firebase-apps
+  en productie-API-adres ontbreken nog. De release-workflow faalt bewust zolang die er niet zijn.
+- iOS wordt ongetekend gebouwd; ondertekenen en uploaden vragen een Apple Developer-account.
+- Het portaal draagt het merk van Noeroel Islam, ook voor beheerders van andere moskeeën (D-050).
+- Typografie en categorieën zijn voor alle moskeeën gelijk; uitbreiden staat in WHITE_LABEL.md.
+- Het beeldmerk van de testmoskee is een eenvoudige tekening, bedoeld voor tests.
+
+### Acceptatiecriteria fase 7
+
+- [x] Merk- en moskeespecifieke instellingen gescheiden van de functionaliteit, in een gevalideerd formaat met
+  duidelijke standaardwaarden (naam, ID's, logo's en iconen, kleuren, links, backend; typografie, contact,
+  categorieën en push bewust centraal, gedocumenteerd).
+- [x] Reproduceerbaar proces: merk aanmaken, controleren, assets genereren, bouwen per platform, testen, release
+  voorbereiden; sleutels en certificaten buiten de repository; geen automatische store-publicatie.
+- [x] Expliciet getest dat een beheerder van moskee A niets van moskee B kan lezen of wijzigen, ook niet via een
+  nieuwe moskee of via pushmeldingen; vastgelegd wat per moskee wordt gegenereerd en wat centraal is.
+- [x] Tweede testmoskee zonder kopie van de codebase (`brands/voorbeeldmoskee/`), lokaal getest; builds per merk in CI.
 
 ## Fase 8 — Latere uitbreidingen
 

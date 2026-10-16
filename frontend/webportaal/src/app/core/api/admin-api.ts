@@ -75,6 +75,11 @@ export class AdminApi {
 
   // ---------- moskee
 
+  /** Alleen platformbeheerder. De slug is dezelfde als die van de app (brands/<slug>/brand.json). */
+  createMosque(slug: string, details: MosqueDetailsRequest): Observable<AdminMosque> {
+    return this.http.post<AdminMosque>(`${this.base}/mosques`, { slug, details });
+  }
+
   updateMosque(mosqueId: string, request: MosqueDetailsRequest): Observable<AdminMosque> {
     return this.http.put<AdminMosque>(this.mosque(mosqueId), request);
   }

@@ -4,6 +4,7 @@ import { MatMenuModule } from '@angular/material/menu';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 
 import { AuthService } from '../../core/auth/auth.service';
+import { BRAND } from '../../core/brand/brand.generated';
 import { MosqueContext } from '../../core/mosque/mosque-context';
 import { BrandLogo } from '../../shared/ui/brand-logo';
 import { ThemeToggle } from '../../shared/ui/theme-toggle';
@@ -31,6 +32,7 @@ interface NavItem {
   styleUrl: './shell.scss',
 })
 export class Shell {
+  protected readonly brandName = BRAND.name;
   protected readonly auth = inject(AuthService);
   protected readonly context = inject(MosqueContext);
   private readonly router = inject(Router);

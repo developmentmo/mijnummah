@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'push_messaging.dart';
 
 /// Firebase-instellingen per build, meegegeven met `--dart-define`. Ze staan niet in de repository: elke moskee-app
-/// heeft een eigen Firebase-project.
+/// is een eigen app in het Firebase-project van het platform (D-049).
 ///
 /// | Instelling | |
 /// |---|---|

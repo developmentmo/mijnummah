@@ -72,6 +72,7 @@ import { StatusMessage } from '../../shared/ui/status-message';
     @if (auth.isPlatformAdmin()) {
       <p class="platform mu-body-medium">
         Als platformbeheerder zie je alle moskeeën.
+        <a matButton routerLink="/moskeeen/nieuw">Moskee toevoegen</a>
         <a matButton routerLink="/accounts">Accounts beheren</a>
       </p>
     }

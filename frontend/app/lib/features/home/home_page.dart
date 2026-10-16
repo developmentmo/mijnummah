@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/api/api_client.dart';
+import '../../core/brand/brand.g.dart';
 import '../../core/design/design.dart';
 import '../../core/providers.dart';
 import '../../core/widgets/content_width.dart';
@@ -177,7 +178,7 @@ class _Welcome extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final text = Theme.of(context).textTheme;
     final name = ref.watch(authControllerProvider).value?.displayName;
-    final mosqueName = ref.watch(mosqueProvider).value?.data.name ?? 'Noeroel Islam';
+    final mosqueName = ref.watch(mosqueProvider).value?.data.name ?? Brand.name;
     return Padding(
       padding: const EdgeInsets.only(top: TokSpace.s2),
       child: Column(

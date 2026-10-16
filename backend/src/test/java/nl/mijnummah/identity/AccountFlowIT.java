@@ -82,7 +82,9 @@ class AccountFlowIT extends AbstractIntegrationTest {
         Account visitor = user("bezoeker");
         api.put("/api/v1/me/follows/" + mosqueId, null, visitor.token());
         api.put("/api/v1/me/follows/" + mosqueId + "/notifications", Map.of("events", false), visitor.token());
-        api.put("/api/v1/me/devices", Map.of("token", "token-van-bezoeker", "platform", "ANDROID"), visitor.token());
+        api.put("/api/v1/me/devices",
+                Map.of("token", "token-van-bezoeker", "platform", "ANDROID", "mosqueSlug", "noeroel-islam"),
+                visitor.token());
         assertThat(api.post("/api/v1/events/" + eventId + "/registrations", null, visitor.token()).status())
                 .isEqualTo(201);
 

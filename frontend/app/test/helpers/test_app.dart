@@ -104,7 +104,7 @@ Future<void> pumpApp(
           (videoId, onUnavailable) => FakeVideoPlayer(videoId: videoId, onUnavailable: onUnavailable),
         ),
       ],
-      child: NoeroelIslamApp(initialLocation: location),
+      child: MosqueApp(initialLocation: location),
     ),
   );
   await settle(tester);

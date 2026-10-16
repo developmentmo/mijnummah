@@ -1,0 +1,46 @@
+{
+  "$schema": "../brand.schema.json",
+  "slug": "voorbeeldmoskee",
+  "name": "Voorbeeldmoskee",
+  "launcherName": "Voorbeeld",
+  "android": {
+    "applicationId": "nl.mijnummah.voorbeeldmoskee"
+  },
+  "ios": {
+    "bundleId": "nl.mijnummah.voorbeeldmoskee"
+  },
+  "colors": {
+    "primary": {
+      "50": "#EEF4FB",
+      "100": "#D6E4F7",
+      "200": "#AEC8EC",
+      "300": "#82A7DC",
+      "400": "#5684C5",
+      "500": "#3A6AAC",
+      "600": "#2C558C",
+      "700": "#214370",
+      "800": "#1F3A5F",
+      "900": "#0F223C",
+      "950": "#081629"
+    },
+    "accent": {
+      "50": "#FFF4EE",
+      "100": "#FEE3D5",
+      "200": "#FEC8AB",
+      "300": "#FAAC7F",
+      "400": "#E39364",
+      "500": "#C8794A",
+      "600": "#A1603A",
+      "700": "#7F4B2D",
+      "800": "#613A23",
+      "900": "#43291A"
+    }
+  },
+  "logo": {
+    "mark": "mark.svg"
+  },
+  "links": {
+    "privacyPolicyUrl": "https://voorbeeldmoskee.example/privacy",
+    "website": "https://voorbeeldmoskee.example"
+  }
+}
