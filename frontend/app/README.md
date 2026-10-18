@@ -14,15 +14,16 @@ backend in `backend/`; zonder verbinding toont hij de laatst opgehaalde publieke
 
 ```bash
 flutter pub get
-# Android-emulator (10.0.2.2 is de computer zelf; dit is ook de standaard):
-flutter run --dart-define=API_BASE_URL=http://10.0.2.2:8082
-# iOS-simulator of desktop:
-flutter run --dart-define=API_BASE_URL=http://localhost:8082
+flutter run        # Android-emulator, iOS-simulator of desktop: de app vindt de backend op deze computer zelf
 ```
+
+Zonder `API_BASE_URL` gebruikt de Android-emulator `http://10.0.2.2:8082` (zo heet de computer vanuit de emulator)
+en de iOS-simulator en desktop `http://localhost:8082`. Controleer bij geen verbinding eerst op de Mac dat de
+backend draait: `curl localhost:8082/api/v1/public/mosques/noeroel-islam`.
 
 | Instelling | Standaard | |
 |---|---|---|
-| `API_BASE_URL` | `http://10.0.2.2:8082` | Basis-URL van de backend, zonder `/api/v1` |
+| `API_BASE_URL` | Android-emulator `http://10.0.2.2:8082`, anders `http://localhost:8082` | Basis-URL van de backend, zonder `/api/v1` |
 | `MOSQUE_SLUG` | slug van het toegepaste merk | Alleen om tijdelijk een andere moskee te tonen; normaal pas je het merk toe |
 
 Http zonder TLS werkt alleen in Android-debugbuilds (`android/app/src/debug/AndroidManifest.xml`) en op iOS alleen

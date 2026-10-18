@@ -1,21 +1,31 @@
+import 'package:flutter/foundation.dart';
+
 import '../brand/brand.g.dart';
 
 /// Instellingen die per build worden meegegeven met `--dart-define`.
 ///
 /// ```bash
-/// flutter run --dart-define=API_BASE_URL=http://10.0.2.2:8082
+/// flutter run --dart-define=API_BASE_URL=https://api.voorbeeld.nl
 /// ```
 ///
-/// De standaard-URL wijst vanuit de Android-emulator naar de backend op de eigen computer (profiel `local`). De moskee
-/// is standaard die van het toegepaste merk ([Brand.slug]); `MOSQUE_SLUG` is alleen nodig om tijdelijk een andere
-/// moskee uit dezelfde backend te tonen.
+/// Zonder `API_BASE_URL` wijst de app naar de backend op de eigen computer (profiel `local`): vanuit de
+/// Android-emulator is dat `10.0.2.2`, vanuit de iOS-simulator en desktop `localhost` (zie [localApiBaseUrl]). De
+/// moskee is standaard die van het toegepaste merk ([Brand.slug]); `MOSQUE_SLUG` is alleen nodig om tijdelijk een
+/// andere moskee uit dezelfde backend te tonen.
 class AppConfig {
   const AppConfig({required this.apiBaseUrl, required this.mosqueSlug});
 
-  factory AppConfig.fromEnvironment() => const AppConfig(
-    apiBaseUrl: String.fromEnvironment('API_BASE_URL', defaultValue: 'http://10.0.2.2:8082'),
-    mosqueSlug: String.fromEnvironment('MOSQUE_SLUG', defaultValue: Brand.slug),
+  factory AppConfig.fromEnvironment() => AppConfig(
+    apiBaseUrl: _apiBaseUrl.isNotEmpty ? _apiBaseUrl : localApiBaseUrl(defaultTargetPlatform),
+    mosqueSlug: const String.fromEnvironment('MOSQUE_SLUG', defaultValue: Brand.slug),
   );
+
+  static const _apiBaseUrl = String.fromEnvironment('API_BASE_URL');
+
+  /// De backend op de eigen computer, gezien vanaf [platform]. De Android-emulator bereikt de computer via
+  /// `10.0.2.2`; de iOS-simulator en desktop delen het netwerk van de computer.
+  static String localApiBaseUrl(TargetPlatform platform) =>
+      platform == TargetPlatform.android ? 'http://10.0.2.2:8082' : 'http://localhost:8082';
 
   /// Basis-URL van de backend, zonder `/api/v1`.
   final String apiBaseUrl;
