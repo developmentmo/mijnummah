@@ -16,4 +16,5 @@ dezelfde code: zie [WHITE_LABEL.md](WHITE_LABEL.md).
 
 De repository is nog in opbouw. Zie [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) voor de fases en de
 voortgang, en [DECISIONS.md](DECISIONS.md) voor de architectuur- en ontwerpbeslissingen. Privacy en AVG:
-[PRIVACY.md](PRIVACY.md). Productie: [DEPLOYMENT.md](DEPLOYMENT.md).
+[PRIVACY.md](PRIVACY.md). Productie: [DEPLOYMENT.md](DEPLOYMENT.md). Latere uitbreidingen (lidmaatschap,
+live-streaming, betalingen): [EXTENSIONS.md](EXTENSIONS.md).

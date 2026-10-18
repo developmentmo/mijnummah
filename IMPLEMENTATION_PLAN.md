@@ -18,8 +18,8 @@ uit het masterprompt (code, tests, build, regressies, documentatie, beperkingen,
 | 4 | Beheerportaal (Angular) | Voltooid en goedgekeurd (PR #6 gemerged) |
 | 5 | Accounts, volgen en notificaties | Voltooid en goedgekeurd (PR #7 gemerged); echte e-mail en push niet getest (geen credentials) |
 | 6 | Testen, privacy, beveiliging, productievoorbereiding | Voltooid en goedgekeurd (PR #9 gemerged); productieblokkades gedocumenteerd |
-| 7 | Voorbereiding white-label automatisering | Getest en geslaagd (lokaal); Android- en iOS-builds per merk alleen in CI; wacht op beoordeling |
-| 8 | Latere uitbreidingen (niet implementeren) | Alleen documentatie |
+| 7 | Voorbereiding white-label automatisering | Voltooid en goedgekeurd (PR #10 gemerged; CI groen, ook Android en iOS per merk) |
+| 8 | Latere uitbreidingen (niet implementeren) | Gedocumenteerd in EXTENSIONS.md; wacht op beoordeling |
 
 ---
 
@@ -572,8 +572,8 @@ stores), staat onder "Productieblokkades" in [DEPLOYMENT.md](DEPLOYMENT.md#produ
 
 **Afhankelijkheden:** stabiele pilot (fase 1 t/m 6).
 
-**Status:** Getest en geslaagd lokaal. De Android- en iOS-builds per merk kunnen hier niet (geen Android SDK, geen
-macOS) en draaien in CI. Werkwijze en runbook: [WHITE_LABEL.md](WHITE_LABEL.md).
+**Status:** Voltooid en goedgekeurd (PR #10 gemerged). Lokaal getest; de Android- en iOS-builds per merk zijn in CI
+geslaagd. Werkwijze en runbook: [WHITE_LABEL.md](WHITE_LABEL.md).
 
 ### Aanpak
 
@@ -612,8 +612,8 @@ macOS) en draaien in CI. Werkwijze en runbook: [WHITE_LABEL.md](WHITE_LABEL.md).
 | App met elk merk | `dart format`, `flutter analyze`, `flutter test` | Geslaagd lokaal met `noeroel-islam` en met `voorbeeldmoskee`: 164 tests, geen analysemeldingen |
 | Portaal | `npm test`, `npm run lint`, `npm run format:check`, `npm run build` | Geslaagd lokaal: 26 bestanden, 121 tests; eerste bundel 331,27 kB; ook gebouwd met het testmerk (licht en donker bekeken) |
 | Heen en terug wisselen van merk | `apply voorbeeldmoskee`, daarna `apply` | Alle bestanden weer exact gelijk aan de repository |
-| Android-release per merk (AAB, getekend) | CI-job "Flutter-app (merk)" | Niet lokaal (geen Android SDK); CI |
-| iOS-build per merk | CI-job "iOS-build (merk)" | Niet lokaal (geen macOS); CI |
+| Android-release per merk (AAB, getekend) | CI-job "Flutter-app (merk)" | Geslaagd in CI voor beide merken (niet lokaal: geen Android SDK) |
+| iOS-build per merk | CI-job "iOS-build (merk)" | Geslaagd in CI voor beide merken (niet lokaal: geen macOS) |
 | Release-workflow | `release-app.yml` | Niet uitgevoerd: er zijn nog geen Environments, sleutels of Firebase-apps; `noeroel-islam` heeft nog geen `backend.apiBaseUrl` |
 
 ### Beperkingen en open punten
@@ -634,9 +634,31 @@ macOS) en draaien in CI. Werkwijze en runbook: [WHITE_LABEL.md](WHITE_LABEL.md).
   voorbereiden; sleutels en certificaten buiten de repository; geen automatische store-publicatie.
 - [x] Expliciet getest dat een beheerder van moskee A niets van moskee B kan lezen of wijzigen, ook niet via een
   nieuwe moskee of via pushmeldingen; vastgelegd wat per moskee wordt gegenereerd en wat centraal is.
-- [x] Tweede testmoskee zonder kopie van de codebase (`brands/voorbeeldmoskee/`), lokaal getest; builds per merk in CI.
+- [x] Tweede testmoskee zonder kopie van de codebase (`brands/voorbeeldmoskee/`), lokaal getest; builds per merk in CI
+  geslaagd.
 
 ## Fase 8 — Latere uitbreidingen
 
-Niet implementeren. Lidmaatschap, live-streaming en betalingen worden alleen gedocumenteerd als
-uitbreidingspunten (zie D-011).
+**Status:** Gedocumenteerd, niet gebouwd (D-011). Uitwerking: [EXTENSIONS.md](EXTENSIONS.md).
+
+### Opgeleverd
+
+| Uitbreiding | Waar het past | Eerst nodig |
+|---|---|---|
+| Officieel lidmaatschap | Nieuwe module `membership` naast `follow`; permissie voor ledenbeheer | Grondslag art. 9 AVG, statuten van de moskee, bewaartermijn |
+| Live-streaming | `media`-module via `VideoProvider` (YouTube-livestreams), nieuw pushonderwerp | YouTube-kanaal met livestreaming, afspraken over beeld en geluid, opstelling in de moskee |
+| Betalingen | Nieuwe module `payment`, altijd via een betaaldienst met eigen betaalpagina en webhook; geld naar de rekening van de moskee | Store-regels voor giften, ANBI en administratie, contract met een betaaldienst, beveiligingsreview |
+
+Verder in EXTENSIONS.md: de bestaande bouwstenen (modulegrenzen, tenant, rechten, bewaartermijnen, push per
+onderwerp), risico's per uitbreiding en een voorgestelde volgorde.
+
+### Tests en controles
+
+Geen code gewijzigd, dus geen nieuwe tests. Verwijzingen in EXTENSIONS.md naar bestaande code (modules, klassen,
+kolommen) zijn nagelopen.
+
+### Acceptatiecriteria fase 8
+
+- [x] Lidmaatschap, live-streaming en betalingen beschreven, met waar de huidige architectuur uitbreiding mogelijk
+  maakt.
+- [x] Niets gebouwd: geen lege modules of abstracties zonder concreet doel.

@@ -100,10 +100,13 @@ Belangrijke architectuur- en ontwerpbeslissingen. Status: **Voorgesteld** (wacht
 
 ## D-011 — Uitbreidingspunten voor fase 8 alleen documenteren
 
-- **Status:** Voorgesteld
+- **Status:** Besloten (fase 8)
 - **Besluit:** Volgen (`mosque_follow`) en lidmaatschap blijven gescheiden concepten zodat lidmaatschap later
-  een eigen module wordt. Media-items krijgen een type zodat livestreams later passen. Er worden nu geen
-  lege modules of abstracties voor lidmaatschap, live-streaming of betalingen gebouwd.
+  een eigen module wordt. Er worden nu geen lege modules, tabellen of abstracties voor lidmaatschap, live-streaming
+  of betalingen gebouwd. Hoe ze later passen staat in [EXTENSIONS.md](EXTENSIONS.md).
+- **Bijgesteld:** het eerdere voornemen om media-items alvast een type (opname of live) te geven is niet uitgevoerd:
+  zonder livestreams diende het geen doel. Livestreams passen via de bestaande `VideoProvider`; het type komt met
+  de migratie die live-streaming toevoegt.
 
 ## D-012 — Fonts: statische instanties voor Flutter, variabele WOFF2 voor het web
 
