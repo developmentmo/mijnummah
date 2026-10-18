@@ -13,6 +13,10 @@ in ontwikkelmodus op `/design`.
 
 ## Commando's
 
+Zonder Node: `docker compose up -d --build` in de root start database, backend en portaal samen
+(portaal op http://localhost:4200). Om aan het portaal te werken, start je daar alleen database en backend
+(`docker compose up -d --build postgres backend`) en draai je hier:
+
 ```bash
 npm ci
 npm start                # ontwikkelserver op http://localhost:4200 (backend volgens public/config.json)
