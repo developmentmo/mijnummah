@@ -96,7 +96,7 @@ export function slugFrom(name: string): string {
       }
       <div class="mu-form-actions">
         <button matButton="filled" type="submit" [disabled]="busy()">Moskee toevoegen</button>
-        <a matButton routerLink="/moskeeen" [queryParams]="{ kies: 1 }">Annuleren</a>
+        <a matButton routerLink="/moskeeen/beheer">Annuleren</a>
       </div>
     </form>
   `,

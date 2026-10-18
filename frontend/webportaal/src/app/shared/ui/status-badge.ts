@@ -8,6 +8,7 @@ const TONES: Record<string, BadgeTone> = {
   CANCELLED: 'cancelled',
   BLOCKED: 'cancelled',
   ACTIVE: 'published',
+  INACTIVE: 'neutral',
 };
 
 /** Status als tekstlabel met een kleur. De tekst draagt de betekenis; de kleur ondersteunt alleen. */

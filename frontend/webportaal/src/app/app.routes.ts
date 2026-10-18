@@ -29,6 +29,13 @@ export const routes: Routes = [
           import('./features/mosques/mosque-picker-page').then((m) => m.MosquePickerPage),
       },
       {
+        path: 'moskeeen/beheer',
+        title: title('Alle moskeeën'),
+        canActivate: [platformAdminGuard],
+        loadComponent: () =>
+          import('./features/mosques/mosques-admin-page').then((m) => m.MosquesAdminPage),
+      },
+      {
         path: 'moskeeen/nieuw',
         title: title('Moskee toevoegen'),
         canActivate: [platformAdminGuard],
