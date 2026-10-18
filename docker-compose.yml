@@ -1,0 +1,48 @@
+# Alles lokaal in één keer: database, backend en beheerportaal, gebouwd uit de code in deze repository.
+#
+#   docker compose up -d --build     # starten (na codewijzigingen opnieuw met --build)
+#   docker compose logs -f backend   # log van de backend (lokaal ook herstelcodes en pushmeldingen)
+#   docker compose down              # stoppen; de database blijft bewaard (down -v wist hem)
+#
+# Portaal: http://localhost:4200   API: http://localhost:8082   Database: localhost:5434
+# De backend draait met het profiel `local`: wegwerpgegevens voor een ontwikkelmachine, nooit voor productie
+# (productie: deploy/docker-compose.prod.yml, zie DEPLOYMENT.md).
+#
+# Alleen de database (backend vanuit de IDE of met ./mvnw): docker compose up -d postgres
+
+name: mijnummah
+
+include:
+  - backend/docker-compose.yml
+
+services:
+  backend:
+    image: mijnummah-backend:local
+    build: backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      # In de container op 8080 (daar kijkt de healthcheck van het image); buiten de container op 8082.
+      SERVER_PORT: "8080"
+      DATABASE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-mijnummah}
+      DATABASE_USERNAME: ${POSTGRES_USER:-mijnummah}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-mijnummah}
+      CORS_ALLOWED_ORIGINS: http://localhost:4200
+    ports:
+      - "127.0.0.1:${BACKEND_PORT:-8082}:8080"
+    restart: unless-stopped
+
+  webportaal:
+    image: mijnummah-webportaal:local
+    build: frontend/webportaal
+    depends_on:
+      backend:
+        condition: service_healthy
+    environment:
+      # Het adres waarop de browser de backend bereikt.
+      API_BASE_URL: http://localhost:${BACKEND_PORT:-8082}
+    ports:
+      - "127.0.0.1:4200:8080"
+    restart: unless-stopped

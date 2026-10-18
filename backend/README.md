@@ -12,7 +12,8 @@ Spring Modulith · springdoc-openapi · JUnit · Testcontainers · Maven
 
 ## Lokaal draaien
 
-Alle commando's vanuit `backend/`. Vereist: JDK 21 en Docker (of een eigen PostgreSQL 16+).
+Alleen gebruiken? Start alles in containers vanuit de root: `docker compose up -d --build` (zie de README in de root).
+Om aan de backend te werken: alle commando's vanuit `backend/`. Vereist: JDK 21 en Docker (of een eigen PostgreSQL 16+).
 
 ```bash
 cd backend
