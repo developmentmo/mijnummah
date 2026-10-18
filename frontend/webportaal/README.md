@@ -1,7 +1,7 @@
 # Beheerportaal (Angular)
 
 Beheeromgeving voor bestuurders en contentbeheerders: activiteiten, aanmeldingen, lezingen en video's,
-aankondigingen, moskeegegevens, beheerders en (voor platformbeheerders) moskeeën toevoegen en accounts. Eén portaal
+aankondigingen, moskeegegevens, beheerders en (voor platformbeheerders) alle moskeeën: toevoegen, beheren en (de)activeren, en accounts. Eén portaal
 voor alle moskeeën; naam en kleuren komen van het standaardmerk in `brands/` (D-050, [WHITE_LABEL.md](../../WHITE_LABEL.md)). De designpreview uit fase 1 staat
 in ontwikkelmodus op `/design`.
 

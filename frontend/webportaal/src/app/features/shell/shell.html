@@ -37,6 +37,7 @@
           }
         </div>
         @if (auth.isPlatformAdmin()) {
+          <a mat-menu-item routerLink="/moskeeen/beheer">Alle moskeeën</a>
           <a mat-menu-item routerLink="/moskeeen/nieuw">Moskee toevoegen</a>
           <a mat-menu-item routerLink="/accounts">Accounts beheren</a>
         }

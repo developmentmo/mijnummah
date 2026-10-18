@@ -80,6 +80,11 @@ export class AdminApi {
     return this.http.post<AdminMosque>(`${this.base}/mosques`, { slug, details });
   }
 
+  /** Alleen platformbeheerder. Inactief verbergt de moskee en al haar content in de app; er wordt niets gewist. */
+  setMosqueActive(mosqueId: string, active: boolean): Observable<AdminMosque> {
+    return this.http.put<AdminMosque>(this.mosque(mosqueId, '/active'), { active });
+  }
+
   updateMosque(mosqueId: string, request: MosqueDetailsRequest): Observable<AdminMosque> {
     return this.http.put<AdminMosque>(this.mosque(mosqueId), request);
   }

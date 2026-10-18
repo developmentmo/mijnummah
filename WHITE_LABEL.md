@@ -77,7 +77,8 @@ Voorbeeld: Moskee Al-Fath in Utrecht. Stap 1 t/m 4 in de repository, 5 en 6 eenm
 
 4. **Pull request** met alleen `brands/al-fath/`. CI bouwt en test de nieuwe app naast de bestaande.
 
-5. **Moskee in de backend**: een platformbeheerder kiest in het portaal *Moskee toevoegen* (menu rechtsboven) en
+5. **Moskee in de backend**: een platformbeheerder kiest in het portaal *Moskee toevoegen* (menu rechtsboven, of
+   op de pagina *Alle moskeeën*, waar je moskeeën ook opent en (de)activeert) en
    gebruikt **dezelfde slug** als de map. Vul daarna de moskeegegevens in en voeg een beheerder toe bij Beheerders
    (een nieuw account maak je bij Accounts). Een nieuwe moskee geeft niemand toegang tot iets anders: dat is getest
    in `TenantIsolationIT`.
