@@ -65,6 +65,8 @@ Concepten zijn nooit publiek. Geannuleerde activiteiten blijven zichtbaar met `s
 | PUT / DELETE | `/me/follows/{mosqueId}` | Volgen / ontvolgen (beide idempotent) |
 | GET | `/me/follows/{mosqueId}` | Eén gevolgde moskee |
 | PUT | `/me/follows/{mosqueId}/notifications` | `{announcements?, events?, media?}`; weggelaten onderwerpen blijven gelijk |
+| PUT | `/me/devices` | Pushtoken van dit toestel `{token, platform, mosqueSlug}` (`204`, idempotent); `mosqueSlug` is de moskee van de app |
+| POST | `/me/devices/remove` | Pushtoken afmelden `{token}` (`204`, idempotent; body in plaats van URL zodat tokens niet in logs komen) |
 
 Aanmelden kan alleen voor een gepubliceerde, zichtbare activiteit met aanmelding aan, die nog niet begonnen is en
 niet vol zit. De capaciteit wordt bewaakt met een rijvergrendeling op de activiteit, ook bij gelijktijdige
@@ -87,6 +89,10 @@ Nieuwe content is altijd eerst een concept. Regels: een activiteit met aanmeldin
 (annuleer haar), alleen concepten zonder aanmeldingen kunnen worden verwijderd, annuleren is definitief, de
 capaciteit kan niet onder het aantal aanmeldingen. Een aankondiging publiceren verstuurt geen pushmelding.
 Een video wordt opgegeven als YouTube-link of video-ID; de backend slaat alleen de verwijzing op.
+
+Een pushmelding (POST `/{events|media|announcements}/{id}/push`, ADMIN) gaat naar de actieve volgers van deze
+moskee met het onderwerp aan, en alleen naar hun toestellen in de app van deze moskee. Volgt iemand ook een andere
+moskee met diens eigen app, dan komt de melding daar niet (white-label, D-049).
 
 ### Platform
 

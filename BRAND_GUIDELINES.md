@@ -1,8 +1,10 @@
 # Huisstijl Noeroel Islam
 
-Deze richtlijnen beschrijven de huisstijl van de Noeroel Islam-app en het beheerportaal. Alle waarden komen uit
-één bron: [`design/tokens/tokens.json`](design/tokens/tokens.json). Pas waarden daar aan en draai
-`node design/tokens/build.mjs`; nooit rechtstreeks in de app of het portaal.
+Deze richtlijnen beschrijven de huisstijl van de Noeroel Islam-app en het beheerportaal. De merkkleuren, naam en het
+beeldmerk staan in [`brands/noeroel-islam/`](brands/noeroel-islam/brand.json); al het andere (typografie, maten,
+status- en neutrale kleuren) in [`design/tokens/tokens.json`](design/tokens/tokens.json). Pas waarden daar aan en
+draai `node tools/brand/brand.mjs apply`; nooit rechtstreeks in de app of het portaal. Andere moskeeën hebben een
+eigen merk met dezelfde regels voor gebruik en contrast, zie [WHITE_LABEL.md](WHITE_LABEL.md).
 
 **Merkbelofte:** een toegankelijke digitale verbinding tussen de moskee en de gemeenschap.
 **Uitstraling:** modern, warm, betrouwbaar, spiritueel en toegankelijk. Rustig in plaats van druk: geen zware
@@ -52,10 +54,10 @@ Alle bestanden worden gegenereerd door `design/branding/build_branding.py`.
 
 | Naam | Hex | Token | Rol |
 |---|---|---|---|
-| Donkergroen | `#123C32` | `palette.green.800` | Primaire merkkleur, knoppen, koppen op licht |
-| Jadegroen | `#2F7965` | `palette.green.500` | Secundaire acties, focus, accenten |
+| Donkergroen | `#123C32` | `palette.primary.800` | Primaire merkkleur, knoppen, koppen op licht |
+| Jadegroen | `#2F7965` | `palette.primary.500` | Secundaire acties, focus, accenten |
 | Warm ivoor | `#F7F3E9` | `palette.neutral.50` | Achtergrond van app en portaal |
-| Gedempt goud | `#C6A45A` | `palette.gold.400` | Accent: vlam, dunne lijnen, highlights op donkergroen |
+| Gedempt goud | `#C6A45A` | `palette.accent.400` | Accent: vlam, dunne lijnen, highlights op donkergroen |
 | Donkergrijs | `#242A27` | `palette.neutral.900` | Tekst |
 | Wit | `#FFFFFF` | `palette.neutral.0` | Kaarten en oppervlakken |
 
@@ -72,11 +74,11 @@ Gebruik in de code altijd de **semantische** namen, nooit een paletkleur. Zo wer
 | `surface` | wit | `#12271F` | Kaarten, invoervelden, navigatie |
 | `onSurface` | donkergrijs | `#F2EEE4` | Tekst |
 | `onSurfaceMuted` | `neutral.600` | `#B4BEB8` | Toelichting, metadata |
-| `primary` / `onPrimary` | donkergroen / wit | `green.200` / `green.900` | Primaire knoppen |
-| `secondary` | jadegroen | `green.300` | Secundaire acties |
+| `primary` / `onPrimary` | donkergroen / wit | `primary.200` / `primary.900` | Primaire knoppen |
+| `secondary` | jadegroen | `primary.300` | Secundaire acties |
 | `accent` | goud | goud | Decoratief accent, nooit voor tekst op licht |
-| `accentText` | `gold.700` | `gold.300` | Gouden tekst (labels) die wel leesbaar is |
-| `focus` | jadegroen | `gold.300` | Focusring van toetsenbordnavigatie |
+| `accentText` | `accent.700` | `accent.300` | Gouden tekst (labels) die wel leesbaar is |
+| `focus` | jadegroen | `accent.300` | Focusring van toetsenbordnavigatie |
 | `border` / `borderStrong` | `neutral.200` / `neutral.500` | `#2B463D` / `#6F8C81` | Scheidingslijnen / randen van invoervelden |
 | `success`, `warning`, `error`, `info` (+ `…Container`, `on…Container`) | | | Meldingen en statussen |
 

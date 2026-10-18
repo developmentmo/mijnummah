@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mijnummah_app/core/brand/brand.g.dart';
 import 'package:mijnummah_app/core/design/design.dart';
 
 void main() {
@@ -51,7 +52,7 @@ void main() {
         ),
       );
       final picture = tester.widget<SvgPicture>(find.byType(SvgPicture));
-      expect(picture.semanticsLabel, 'Noeroel Islam');
+      expect(picture.semanticsLabel, Brand.name);
     });
   });
 }

@@ -72,7 +72,7 @@ void main() {
     await tapVisible(tester, find.widgetWithText(FilledButton, 'Volgen'));
     expect(push.permissionRequests, 1);
     expect(registered(backend), [
-      {'token': 'fcm-token-1', 'platform': 'ANDROID'},
+      {'token': 'fcm-token-1', 'platform': 'ANDROID', 'mosqueSlug': slug},
     ]);
   });
 

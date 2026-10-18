@@ -7,20 +7,21 @@ import 'package:go_router/go_router.dart';
 
 import 'core/design/design.dart';
 import 'core/providers.dart';
+import 'core/brand/brand.g.dart';
 import 'core/push/push_messaging.dart';
 import 'core/routing/app_router.dart';
 
-class NoeroelIslamApp extends ConsumerStatefulWidget {
-  const NoeroelIslamApp({super.key, this.initialLocation = '/'});
+class MosqueApp extends ConsumerStatefulWidget {
+  const MosqueApp({super.key, this.initialLocation = '/'});
 
   /// Alleen voor tests: het scherm waarmee de app start.
   final String initialLocation;
 
   @override
-  ConsumerState<NoeroelIslamApp> createState() => _NoeroelIslamAppState();
+  ConsumerState<MosqueApp> createState() => _MosqueAppState();
 }
 
-class _NoeroelIslamAppState extends ConsumerState<NoeroelIslamApp> {
+class _MosqueAppState extends ConsumerState<MosqueApp> {
   late final GoRouter _router = buildRouter(initialLocation: widget.initialLocation);
   final _messenger = GlobalKey<ScaffoldMessengerState>();
   final _subscriptions = <StreamSubscription<PushNotice>>[];
@@ -69,7 +70,7 @@ class _NoeroelIslamAppState extends ConsumerState<NoeroelIslamApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      title: 'Noeroel Islam',
+      title: Brand.name,
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,

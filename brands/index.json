@@ -1,0 +1,4 @@
+{
+  "$description": "Merk dat in de repository is toegepast (gegenereerde bestanden) en dat CI controleert.",
+  "default": "noeroel-islam"
+}

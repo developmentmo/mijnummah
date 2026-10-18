@@ -5,33 +5,29 @@ import 'package:flutter/material.dart';
 
 /// Primitieve kleuren. Gebruik in widgets de semantische kleuren via `AppColors`.
 abstract final class TokPalette {
-  static const green50 = Color(0xFFEEF5F2);
-  static const green100 = Color(0xFFD5E7E0);
-  static const green200 = Color(0xFFADCFC2);
-  static const green300 = Color(0xFF7FB2A0);
-  static const green400 = Color(0xFF4F927D);
-  /// Jadegroen
-  static const green500 = Color(0xFF2F7965);
-  static const green600 = Color(0xFF24614F);
-  static const green700 = Color(0xFF1A4D3F);
-  /// Donkergroen, primaire merkkleur
-  static const green800 = Color(0xFF123C32);
-  static const green900 = Color(0xFF0B2820);
-  static const green950 = Color(0xFF061A14);
-  static const gold50 = Color(0xFFFBF6EA);
-  static const gold100 = Color(0xFFF4E9CC);
-  static const gold200 = Color(0xFFE9D49E);
-  static const gold300 = Color(0xFFDCBD77);
-  /// Gedempt goud, alleen als accent
-  static const gold400 = Color(0xFFC6A45A);
-  static const gold500 = Color(0xFFAD8A40);
-  static const gold600 = Color(0xFF8C6E31);
-  static const gold700 = Color(0xFF6E5627);
-  static const gold800 = Color(0xFF54421F);
-  static const gold900 = Color(0xFF3B2E17);
+  static const primary50 = Color(0xFFEEF5F2);
+  static const primary100 = Color(0xFFD5E7E0);
+  static const primary200 = Color(0xFFADCFC2);
+  static const primary300 = Color(0xFF7FB2A0);
+  static const primary400 = Color(0xFF4F927D);
+  static const primary500 = Color(0xFF2F7965);
+  static const primary600 = Color(0xFF24614F);
+  static const primary700 = Color(0xFF1A4D3F);
+  static const primary800 = Color(0xFF123C32);
+  static const primary900 = Color(0xFF0B2820);
+  static const primary950 = Color(0xFF061A14);
+  static const accent50 = Color(0xFFFBF6EA);
+  static const accent100 = Color(0xFFF4E9CC);
+  static const accent200 = Color(0xFFE9D49E);
+  static const accent300 = Color(0xFFDCBD77);
+  static const accent400 = Color(0xFFC6A45A);
+  static const accent500 = Color(0xFFAD8A40);
+  static const accent600 = Color(0xFF8C6E31);
+  static const accent700 = Color(0xFF6E5627);
+  static const accent800 = Color(0xFF54421F);
+  static const accent900 = Color(0xFF3B2E17);
   static const neutral0 = Color(0xFFFFFFFF);
   static const neutral25 = Color(0xFFFBF9F4);
-  /// Warm ivoor
   static const neutral50 = Color(0xFFF7F3E9);
   static const neutral100 = Color(0xFFEFEAE0);
   static const neutral200 = Color(0xFFE2DCD0);
@@ -41,7 +37,6 @@ abstract final class TokPalette {
   static const neutral600 = Color(0xFF5D5E58);
   static const neutral700 = Color(0xFF454945);
   static const neutral800 = Color(0xFF333834);
-  /// Donkergrijs
   static const neutral900 = Color(0xFF242A27);
   static const neutral950 = Color(0xFF161A18);
   static const red50 = Color(0xFFFBEAE8);

@@ -112,6 +112,33 @@ class TenantIsolationIT extends AbstractIntegrationTest {
     }
 
     @Test
+    void aNewMosqueGivesNobodyAccessAndOnlyThePlatformAdminCreatesOne() {
+        ApiResponse byAdminA = api.post("/api/v1/admin/mosques", Map.of("slug", "moskee-c",
+                "details", Map.of("name", "Moskee C")), adminA.token());
+        assertThat(byAdminA.status()).isEqualTo(403);
+
+        ApiResponse created = api.post("/api/v1/admin/mosques", Map.of("slug", "moskee-c",
+                "details", Map.of("name", "Moskee C")), platformAdmin.token());
+        assertThat(created.status()).isEqualTo(201);
+        String mosqueC = created.field("id");
+
+        for (Account admin : List.of(adminA, adminB)) {
+            assertThat(api.get("/api/v1/admin/mosques", admin.token()).body().findValuesAsString("slug"))
+                    .as("mosques of %s", admin.email()).hasSize(1).doesNotContain("moskee-c");
+            assertThat(api.get("/api/v1/admin/mosques/" + mosqueC, admin.token()).status()).isEqualTo(403);
+        }
+        assertThat(api.put("/api/v1/admin/mosques/" + mosqueB + "/active", Map.of("active", false), adminA.token())
+                .status()).isEqualTo(403);
+        assertThat(api.put("/api/v1/admin/mosques/" + mosqueA + "/active", Map.of("active", false), adminA.token())
+                .status()).as("activating is for the platform admin only, also for the own mosque").isEqualTo(403);
+        String rowOfB = api.get(adminPath(mosqueB, "administrators"), adminB.token()).body().get(0).get("id").asString();
+        assertThat(api.put(adminPath(mosqueB, "administrators/" + rowOfB), Map.of("role", "EDITOR"), adminA.token())
+                .status()).isEqualTo(403);
+        assertThat(api.put(adminPath(mosqueA, "administrators/" + rowOfB), Map.of("role", "EDITOR"), adminA.token())
+                .status()).isEqualTo(404);
+    }
+
+    @Test
     void relatedEventMustBelongToTheSameMosque() {
         ApiResponse attempt = api.post(adminPath(mosqueA, "media"), Map.of("title", "Lezing A", "category", "LECTURE",
                 "videoUrl", "https://youtu.be/aaaaaaaaaaa", "relatedEventId", eventB.toString()), adminA.token());

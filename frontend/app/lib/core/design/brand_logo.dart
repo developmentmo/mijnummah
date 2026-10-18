@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-/// Varianten van het Noeroel Islam-logo. Zie BRAND_GUIDELINES.md voor gebruik.
+import '../brand/brand.g.dart';
+
+/// Varianten van het logo van de moskee (uit `brands/<slug>/`, zie WHITE_LABEL.md). Zie BRAND_GUIDELINES.md voor gebruik.
 enum BrandLogoVariant {
   /// Beeldmerk naast de woordmark; voor headers.
   horizontal('logo-horizontal'),
@@ -24,7 +26,7 @@ class BrandLogo extends StatelessWidget {
   final BrandLogoVariant variant;
   final double height;
 
-  static const semanticLabel = 'Noeroel Islam';
+  static const semanticLabel = Brand.name;
 
   static String assetFor(BrandLogoVariant variant, Brightness brightness) =>
       'assets/branding/${variant.fileStem}-${brightness == Brightness.dark ? 'dark' : 'light'}.svg';

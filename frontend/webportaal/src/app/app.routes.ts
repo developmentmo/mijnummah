@@ -2,10 +2,11 @@ import { isDevMode } from '@angular/core';
 import { Routes } from '@angular/router';
 
 import { authGuard, guestGuard, platformAdminGuard } from './core/auth/guards';
+import { BRAND } from './core/brand/brand.generated';
 import { mosqueAdminGuard, mosqueGuard } from './core/mosque/mosque-guards';
 import { unsavedChangesGuard } from './shared/forms/unsaved-changes.guard';
 
-const TITLE = 'Noeroel Islam · Beheer';
+const TITLE = `${BRAND.name} · Beheer`;
 const title = (page: string) => `${page} · ${TITLE}`;
 
 export const routes: Routes = [
@@ -26,6 +27,14 @@ export const routes: Routes = [
         title: title('Moskee kiezen'),
         loadComponent: () =>
           import('./features/mosques/mosque-picker-page').then((m) => m.MosquePickerPage),
+      },
+      {
+        path: 'moskeeen/nieuw',
+        title: title('Moskee toevoegen'),
+        canActivate: [platformAdminGuard],
+        canDeactivate: [unsavedChangesGuard],
+        loadComponent: () =>
+          import('./features/mosques/mosque-create-page').then((m) => m.MosqueCreatePage),
       },
       {
         path: 'accounts',

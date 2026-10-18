@@ -1,7 +1,8 @@
-# Noeroel Islam-beheerportaal (Angular)
+# Beheerportaal (Angular)
 
 Beheeromgeving voor bestuurders en contentbeheerders: activiteiten, aanmeldingen, lezingen en video's,
-aankondigingen, moskeegegevens, beheerders en (voor platformbeheerders) accounts. De designpreview uit fase 1 staat
+aankondigingen, moskeegegevens, beheerders en (voor platformbeheerders) moskeeën toevoegen en accounts. Eén portaal
+voor alle moskeeën; naam en kleuren komen van het standaardmerk in `brands/` (D-050, [WHITE_LABEL.md](../../WHITE_LABEL.md)). De designpreview uit fase 1 staat
 in ontwikkelmodus op `/design`.
 
 ## Vereisten
@@ -50,7 +51,8 @@ Configuratie in `docker/`; de volledige productieopzet staat in [DEPLOYMENT.md](
 
 | Pad | Inhoud |
 |---|---|
-| `src/styles/tokens.generated.css` | Gegenereerde CSS-variabelen (`--mu-*`); bron is `design/tokens/tokens.json` |
+| `src/styles/tokens.generated.css` | Gegenereerde CSS-variabelen (`--mu-*`); bron is `design/tokens/tokens.json` met het merk |
+| `src/app/core/brand/brand.generated.ts` | Naam en slug van het merk (gegenereerd) |
 | `src/styles/_material-theme.scss` | Angular Material M3, gekoppeld aan de tokens |
 | `src/styles/_base.scss` | Basisstijlen en typografieklassen (`.mu-title-large` enz.) |
 | `src/styles/fonts.css` | Meegeleverde fonts (`public/fonts/`) |

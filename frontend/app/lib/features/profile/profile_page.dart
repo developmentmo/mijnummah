@@ -4,10 +4,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/api/api_exception.dart';
+import '../../core/brand/brand.g.dart';
 import '../../core/design/design.dart';
 import '../../core/format/dates.dart';
 import '../../core/providers.dart';
 import '../../core/widgets/content_width.dart';
+import '../../core/widgets/external_links.dart';
 import '../../core/widgets/section_header.dart';
 import '../../data/models.dart';
 import '../agenda/agenda_providers.dart';
@@ -47,6 +49,10 @@ class ProfilePage extends ConsumerWidget {
                 _Statuses(signedIn: user != null),
                 const SectionHeader(title: 'Weergave'),
                 const _ThemeSetting(),
+                if (Brand.privacyPolicyUrl case final url?) ...[
+                  const SectionHeader(title: 'Privacy'),
+                  PrivacyPolicyTile(url: Uri.parse(url)),
+                ],
                 if (kDebugMode) ...[
                   const SectionHeader(title: 'Ontwikkeling'),
                   ListTile(
@@ -64,6 +70,22 @@ class ProfilePage extends ConsumerWidget {
       ),
     );
   }
+}
+
+/// Link naar de privacyverklaring van de moskee (uit de merkconfiguratie, `links.privacyPolicyUrl`).
+class PrivacyPolicyTile extends StatelessWidget {
+  const PrivacyPolicyTile({super.key, required this.url});
+
+  final Uri url;
+
+  @override
+  Widget build(BuildContext context) => ListTile(
+    leading: const Icon(Icons.privacy_tip_outlined),
+    title: const Text('Privacyverklaring'),
+    subtitle: Text(url.host),
+    trailing: const Icon(Icons.open_in_new),
+    onTap: () => openExternal(context, url),
+  );
 }
 
 class _Visitor extends StatelessWidget {

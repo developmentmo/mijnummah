@@ -15,6 +15,7 @@ export function controlError(control: AbstractControl | null): string {
   if (errors['httpUrl']) return 'Gebruik een link die met http:// of https:// begint.';
   if (errors['duration']) return 'Gebruik u:mm:ss, mm:ss of een aantal minuten.';
   if (errors['countryCode']) return 'Gebruik een landcode van twee letters, bijv. NL.';
+  if (errors['slug']) return 'Gebruik kleine letters, cijfers en streepjes, bijv. noeroel-islam.';
   if (errors['youtube']) return 'Plak een YouTube-link, bijv. https://www.youtube.com/watch?v=…';
   if (errors['server']) return errors['server'];
   return 'Controleer dit veld.';
@@ -25,6 +26,10 @@ export const httpsUrl: ValidatorFn = (control): ValidationErrors | null =>
 
 export const httpUrl: ValidatorFn = (control): ValidationErrors | null =>
   !control.value || /^https?:\/\/\S+$/.test(control.value) ? null : { httpUrl: true };
+
+/** Een slug zoals de backend die accepteert: kleine letters en cijfers, gescheiden door losse streepjes. */
+export const slug: ValidatorFn = (control): ValidationErrors | null =>
+  !control.value || /^[a-z0-9]+(-[a-z0-9]+)*$/.test(control.value) ? null : { slug: true };
 
 /** Een YouTube-link of los video-ID (11 tekens); de backend controleert de link definitief. */
 export const youtubeUrl: ValidatorFn = (control): ValidationErrors | null => {
