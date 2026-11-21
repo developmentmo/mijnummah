@@ -4,6 +4,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.UUID;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -13,6 +14,7 @@ import nl.mijnummah.announcement.domain.Announcement;
 import nl.mijnummah.announcement.domain.AnnouncementDetails;
 import nl.mijnummah.announcement.domain.AnnouncementStatus;
 import nl.mijnummah.announcement.infrastructure.AnnouncementRepository;
+import nl.mijnummah.common.audit.AuditEvent;
 import nl.mijnummah.common.error.NotFoundException;
 import nl.mijnummah.identity.AuthenticatedUser;
 import nl.mijnummah.mosque.MosqueAccessService;
@@ -34,14 +36,17 @@ public class AnnouncementService {
     private final MosqueDirectory mosques;
     private final MosqueAccessService access;
     private final PushNotifications push;
+    private final ApplicationEventPublisher audit;
     private final Clock clock;
 
     public AnnouncementService(AnnouncementRepository announcements, MosqueDirectory mosques,
-                               MosqueAccessService access, PushNotifications push, Clock clock) {
+                               MosqueAccessService access, PushNotifications push, ApplicationEventPublisher audit,
+                               Clock clock) {
         this.announcements = announcements;
         this.mosques = mosques;
         this.access = access;
         this.push = push;
+        this.audit = audit;
         this.clock = clock;
     }
 
@@ -83,7 +88,9 @@ public class AnnouncementService {
     public AnnouncementView create(AuthenticatedUser actor, UUID mosqueId, AnnouncementDetails details) {
         access.require(actor, mosqueId, MosquePermission.MANAGE_CONTENT);
         Instant now = Instant.now(clock);
-        return AnnouncementView.of(announcements.save(Announcement.draft(mosqueId, details, actor.id(), now)), now);
+        Announcement announcement = announcements.save(Announcement.draft(mosqueId, details, actor.id(), now));
+        audit.publishEvent(AuditEvent.of(actor.id(), mosqueId, "ANNOUNCEMENT_CREATED", "ANNOUNCEMENT", announcement.getId()));
+        return AnnouncementView.of(announcement, now);
     }
 
     @Transactional
@@ -93,6 +100,7 @@ public class AnnouncementService {
         Announcement announcement = load(mosqueId, announcementId);
         Instant now = Instant.now(clock);
         announcement.update(details, actor.id(), now);
+        audit.publishEvent(AuditEvent.of(actor.id(), mosqueId, "ANNOUNCEMENT_UPDATED", "ANNOUNCEMENT", announcementId));
         return AnnouncementView.of(announcement, now);
     }
 
@@ -103,6 +111,7 @@ public class AnnouncementService {
         Announcement announcement = load(mosqueId, announcementId);
         Instant now = Instant.now(clock);
         announcement.publish(actor.id(), now);
+        audit.publishEvent(AuditEvent.of(actor.id(), mosqueId, "ANNOUNCEMENT_PUBLISHED", "ANNOUNCEMENT", announcementId));
         return AnnouncementView.of(announcement, now);
     }
 
@@ -112,6 +121,7 @@ public class AnnouncementService {
         Announcement announcement = load(mosqueId, announcementId);
         Instant now = Instant.now(clock);
         announcement.unpublish(actor.id(), now);
+        audit.publishEvent(AuditEvent.of(actor.id(), mosqueId, "ANNOUNCEMENT_UNPUBLISHED", "ANNOUNCEMENT", announcementId));
         return AnnouncementView.of(announcement, now);
     }
 
@@ -136,6 +146,7 @@ public class AnnouncementService {
     public void delete(AuthenticatedUser actor, UUID mosqueId, UUID announcementId) {
         access.require(actor, mosqueId, MosquePermission.MANAGE_CONTENT);
         announcements.delete(load(mosqueId, announcementId));
+        audit.publishEvent(AuditEvent.of(actor.id(), mosqueId, "ANNOUNCEMENT_DELETED", "ANNOUNCEMENT", announcementId));
     }
 
     private Announcement load(UUID mosqueId, UUID announcementId) {

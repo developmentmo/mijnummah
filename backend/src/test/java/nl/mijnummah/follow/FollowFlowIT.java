@@ -69,7 +69,8 @@ class FollowFlowIT extends AbstractIntegrationTest {
         assertThat(api.put("/api/v1/me/follows/" + UUID.randomUUID(), null, visitor.token()).status()).isEqualTo(404);
 
         api.put("/api/v1/me/follows/" + mosqueId, null, visitor.token());
-        api.put("/api/v1/admin/mosques/" + mosqueId + "/active", Map.of("active", false), platformAdmin.token());
+        api.patch("/api/v1/admin/mosques/" + mosqueId + "/status", Map.of("status", "INACTIVE"),
+                platformAdmin.token());
         assertThat(api.get("/api/v1/me/follows", visitor.token()).body().size()).isZero();
         assertThat(api.put("/api/v1/me/follows/" + mosqueId, null, visitor.token()).status()).isEqualTo(404);
     }

@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 import nl.mijnummah.mosque.MosqueRole;
+import nl.mijnummah.mosque.MosqueStatus;
 import nl.mijnummah.mosque.application.MosqueView;
 
 /** Public profile of a mosque. */
@@ -25,12 +26,12 @@ record MosqueResponse(UUID id, String slug, String name, String description, Add
 
     /** Admin view: public profile plus status and the caller's own role. */
     record Admin(UUID id, String slug, String name, String description, Address address, Contact contact,
-                 String timeZone, boolean active, MosqueRole myRole, Instant createdAt, Instant updatedAt) {
+                 String timeZone, MosqueStatus status, MosqueRole myRole, Instant createdAt, Instant updatedAt) {
 
         static Admin from(MosqueView view) {
             var p = MosqueResponse.from(view);
             return new Admin(p.id(), p.slug(), p.name(), p.description(), p.address(), p.contact(), p.timeZone(),
-                    view.active(), view.myRole(), view.createdAt(), view.updatedAt());
+                    view.status(), view.myRole(), view.createdAt(), view.updatedAt());
         }
     }
 }

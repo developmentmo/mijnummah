@@ -88,6 +88,7 @@ mijnummah:
     event-registrations: ${RETENTION_EVENT_REGISTRATIONS:P365D}
     inactive-push-devices: ${RETENTION_INACTIVE_PUSH_DEVICES:P270D}
     push-sending-timeout: ${RETENTION_PUSH_SENDING_TIMEOUT:PT30M}
+    audit-log: ${RETENTION_AUDIT_LOG:P730D}
   api-docs:
     # OpenAPI document (/v3/api-docs) and Swagger UI (/swagger-ui.html). Off by default in real environments.
     enabled: ${API_DOCS_ENABLED:false}

@@ -40,19 +40,47 @@ class MosqueAdminIT extends AbstractIntegrationTest {
     }
 
     @Test
-    void onlyAPlatformAdminCreatesOrDeactivatesMosques() {
+    void onlyAPlatformAdminCreatesMosquesOrChangesTheirStatus() {
         UUID id = mosque("as-salaam");
         Account admin = mosqueAdmin(id, "admin");
         assertThat(api.post("/api/v1/admin/mosques", Map.of("slug", "nieuw", "details", Map.of("name", "Nieuw")),
                 admin.token()).status()).isEqualTo(403);
-        assertThat(api.put("/api/v1/admin/mosques/" + id + "/active", Map.of("active", false), admin.token()).status())
-                .isEqualTo(403);
+        assertThat(api.patch(statusPath(id), Map.of("status", "INACTIVE"), admin.token()).status()).isEqualTo(403);
 
-        ApiResponse deactivated = api.put("/api/v1/admin/mosques/" + id + "/active", Map.of("active", false),
-                platformAdmin.token());
+        ApiResponse deactivated = api.patch(statusPath(id), Map.of("status", "INACTIVE"), platformAdmin.token());
         assertThat(deactivated.status()).isEqualTo(200);
+        assertThat(deactivated.field("status")).isEqualTo("INACTIVE");
         assertThat(api.get("/api/v1/public/mosques/as-salaam").status()).isEqualTo(404);
         assertThat(api.get("/api/v1/public/mosques/as-salaam/events").status()).isEqualTo(404);
+        assertThat(api.get("/api/v1/admin/mosques/" + id, admin.token()).status())
+                .as("an inactive mosque can still be prepared by its administrators").isEqualTo(200);
+
+        ApiResponse invalid = api.patch(statusPath(id), Map.of("status", "GONE"), platformAdmin.token());
+        assertThat(invalid.status()).isEqualTo(400);
+    }
+
+    @Test
+    void aBlockedMosqueIsHiddenAndOnlyThePlatformAdminManagesIt() {
+        UUID id = mosque("al-ikhlas");
+        Account admin = mosqueAdmin(id, "admin");
+        UUID event = publishedEvent(id, admin.token());
+
+        assertThat(api.patch(statusPath(id), Map.of("status", "BLOCKED"), platformAdmin.token()).field("status"))
+                .isEqualTo("BLOCKED");
+        assertThat(api.get("/api/v1/public/mosques/al-ikhlas").status()).isEqualTo(404);
+        assertThat(api.get("/api/v1/admin/mosques", admin.token()).body().findValuesAsString("slug")).isEmpty();
+        assertThat(api.get("/api/v1/admin/mosques/" + id, admin.token()).status()).isEqualTo(403);
+        assertThat(api.post(adminPath(id, "events/" + event + "/unpublish"), null, admin.token()).status())
+                .isEqualTo(403);
+        assertThat(api.get(adminPath(id, "events/" + event), platformAdmin.token()).status()).isEqualTo(200);
+
+        api.patch(statusPath(id), Map.of("status", "ACTIVE"), platformAdmin.token());
+        assertThat(api.get("/api/v1/admin/mosques/" + id, admin.token()).status()).isEqualTo(200);
+        assertThat(api.get("/api/v1/public/mosques/al-ikhlas").status()).isEqualTo(200);
+    }
+
+    private static String statusPath(UUID mosqueId) {
+        return "/api/v1/admin/mosques/" + mosqueId + "/status";
     }
 
     @Test

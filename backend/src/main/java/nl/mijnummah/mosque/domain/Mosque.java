@@ -6,9 +6,13 @@ import java.util.UUID;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
+
+import nl.mijnummah.mosque.MosqueStatus;
 
 /** A mosque (tenant). Its slug is fixed after creation: it is part of public URLs and app configuration. */
 @Entity
@@ -51,8 +55,9 @@ public class Mosque {
     @Column(name = "time_zone", nullable = false, length = 50)
     private String timeZone;
 
-    @Column(name = "active", nullable = false)
-    private boolean active;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false, length = 20)
+    private MosqueStatus status;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
@@ -72,7 +77,7 @@ public class Mosque {
         Mosque mosque = new Mosque();
         mosque.id = UUID.randomUUID();
         mosque.slug = Objects.requireNonNull(slug, "slug");
-        mosque.active = true;
+        mosque.status = MosqueStatus.ACTIVE;
         mosque.createdAt = Objects.requireNonNull(now, "now");
         mosque.apply(details, now);
         return mosque;
@@ -82,8 +87,8 @@ public class Mosque {
         apply(details, now);
     }
 
-    public void setActive(boolean active, Instant now) {
-        this.active = active;
+    public void setStatus(MosqueStatus status, Instant now) {
+        this.status = Objects.requireNonNull(status, "status");
         this.updatedAt = now;
     }
 
@@ -122,8 +127,17 @@ public class Mosque {
         return timeZone;
     }
 
+    public MosqueStatus getStatus() {
+        return status;
+    }
+
+    /** Visible in the app. */
     public boolean isActive() {
-        return active;
+        return status == MosqueStatus.ACTIVE;
+    }
+
+    public boolean isBlocked() {
+        return status == MosqueStatus.BLOCKED;
     }
 
     public Instant getCreatedAt() {

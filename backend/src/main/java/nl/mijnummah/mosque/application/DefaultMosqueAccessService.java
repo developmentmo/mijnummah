@@ -30,10 +30,8 @@ class DefaultMosqueAccessService implements MosqueAccessService {
     @Override
     @Transactional(readOnly = true)
     public void require(AuthenticatedUser actor, UUID mosqueId, MosquePermission permission) {
-        if (!mosques.existsById(mosqueId)) {
-            throw MosqueNotFound.exception();
-        }
-        if (!granted(actor, mosqueId, permission)) {
+        Mosque mosque = mosques.findById(mosqueId).orElseThrow(MosqueNotFound::exception);
+        if (!granted(actor, mosque, permission)) {
             throw new MosqueAccessDeniedException();
         }
     }
@@ -41,7 +39,7 @@ class DefaultMosqueAccessService implements MosqueAccessService {
     @Override
     @Transactional(readOnly = true)
     public boolean has(AuthenticatedUser actor, UUID mosqueId, MosquePermission permission) {
-        return mosques.existsById(mosqueId) && granted(actor, mosqueId, permission);
+        return mosques.findById(mosqueId).map(mosque -> granted(actor, mosque, permission)).orElse(false);
     }
 
     @Override
@@ -50,16 +48,24 @@ class DefaultMosqueAccessService implements MosqueAccessService {
         if (actor.isPlatformAdmin()) {
             return mosques.findAll().stream().map(Mosque::getId).collect(Collectors.toUnmodifiableSet());
         }
-        return administrators.findByUserId(actor.id()).stream()
+        Set<UUID> ids = administrators.findByUserId(actor.id()).stream()
                 .map(MosqueAdministrator::getMosqueId)
+                .collect(Collectors.toUnmodifiableSet());
+        return mosques.findAllById(ids).stream()
+                .filter(mosque -> !mosque.isBlocked())
+                .map(Mosque::getId)
                 .collect(Collectors.toUnmodifiableSet());
     }
 
-    private boolean granted(AuthenticatedUser actor, UUID mosqueId, MosquePermission permission) {
+    /** A platform administrator may do everything; nobody else may manage a blocked mosque. */
+    private boolean granted(AuthenticatedUser actor, Mosque mosque, MosquePermission permission) {
         if (actor.isPlatformAdmin()) {
             return true;
         }
-        return administrators.findByMosqueIdAndUserId(mosqueId, actor.id())
+        if (mosque.isBlocked()) {
+            return false;
+        }
+        return administrators.findByMosqueIdAndUserId(mosque.getId(), actor.id())
                 .map(administrator -> administrator.getRole().grants(permission))
                 .orElse(false);
     }

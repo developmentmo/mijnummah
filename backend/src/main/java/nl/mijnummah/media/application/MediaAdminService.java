@@ -5,6 +5,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -12,6 +13,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import nl.mijnummah.common.audit.AuditEvent;
 import nl.mijnummah.common.error.ApplicationException;
 import nl.mijnummah.common.error.ErrorCategory;
 import nl.mijnummah.event.EventDirectory;
@@ -43,16 +45,19 @@ public class MediaAdminService {
     private final EventDirectory events;
     private final MosqueAccessService access;
     private final PushNotifications push;
+    private final ApplicationEventPublisher audit;
     private final Clock clock;
 
     public MediaAdminService(MediaItemRepository items, MediaViews views, VideoProviders providers,
-                             EventDirectory events, MosqueAccessService access, PushNotifications push, Clock clock) {
+                             EventDirectory events, MosqueAccessService access, PushNotifications push,
+                             ApplicationEventPublisher audit, Clock clock) {
         this.items = items;
         this.views = views;
         this.providers = providers;
         this.events = events;
         this.access = access;
         this.push = push;
+        this.audit = audit;
         this.clock = clock;
     }
 
@@ -78,8 +83,9 @@ public class MediaAdminService {
     public MediaView create(AuthenticatedUser actor, UUID mosqueId, MediaInput input) {
         access.require(actor, mosqueId, MosquePermission.MANAGE_CONTENT);
         MediaDetails details = toDetails(mosqueId, input, null);
-        MediaItem item = MediaItem.draft(mosqueId, details, actor.id(), Instant.now(clock));
-        return views.of(saveUnique(item));
+        MediaItem item = saveUnique(MediaItem.draft(mosqueId, details, actor.id(), Instant.now(clock)));
+        audit.publishEvent(AuditEvent.of(actor.id(), mosqueId, "VIDEO_CREATED", "VIDEO", item.getId()));
+        return views.of(item);
     }
 
     @Transactional
@@ -87,7 +93,9 @@ public class MediaAdminService {
         access.require(actor, mosqueId, MosquePermission.MANAGE_CONTENT);
         MediaItem item = load(mosqueId, mediaId);
         item.update(toDetails(mosqueId, input, mediaId), actor.id(), Instant.now(clock));
-        return views.of(saveUnique(item));
+        MediaItem saved = saveUnique(item);
+        audit.publishEvent(AuditEvent.of(actor.id(), mosqueId, "VIDEO_UPDATED", "VIDEO", mediaId));
+        return views.of(saved);
     }
 
     @Transactional
@@ -95,6 +103,7 @@ public class MediaAdminService {
         access.require(actor, mosqueId, MosquePermission.MANAGE_CONTENT);
         MediaItem item = load(mosqueId, mediaId);
         item.publish(actor.id(), Instant.now(clock));
+        audit.publishEvent(AuditEvent.of(actor.id(), mosqueId, "VIDEO_PUBLISHED", "VIDEO", mediaId));
         return views.of(item);
     }
 
@@ -103,10 +112,10 @@ public class MediaAdminService {
         access.require(actor, mosqueId, MosquePermission.MANAGE_CONTENT);
         MediaItem item = load(mosqueId, mediaId);
         item.unpublish(actor.id(), Instant.now(clock));
+        audit.publishEvent(AuditEvent.of(actor.id(), mosqueId, "VIDEO_UNPUBLISHED", "VIDEO", mediaId));
         return views.of(item);
     }
 
-    /** Deletes only the reference; the video at the provider is not touched. */
     /**
      * Sends a push notification about a published item to the followers who want lectures and videos. By default
      * the title, and "Lezing van Imam X" (or the kind of video when there is no speaker).
@@ -135,10 +144,12 @@ public class MediaAdminService {
         return details.speaker() == null ? kind + " nu te bekijken in de app" : kind + " van " + details.speaker();
     }
 
+    /** Deletes only the reference; the video at the provider is not touched. */
     @Transactional
     public void delete(AuthenticatedUser actor, UUID mosqueId, UUID mediaId) {
         access.require(actor, mosqueId, MosquePermission.MANAGE_CONTENT);
         items.delete(load(mosqueId, mediaId));
+        audit.publishEvent(AuditEvent.of(actor.id(), mosqueId, "VIDEO_DELETED", "VIDEO", mediaId));
     }
 
     private MediaDetails toDetails(UUID mosqueId, MediaInput input, UUID currentId) {

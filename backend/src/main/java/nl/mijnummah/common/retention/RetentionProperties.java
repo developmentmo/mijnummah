@@ -15,11 +15,12 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @param eventRegistrations   registrations are kept this long after their event ended
  * @param inactivePushDevices  a push device the app has not reported for this long is removed
  * @param pushSendingTimeout   a push notification still "sending" after this long is marked as failed
+ * @param auditLog             entries of the audit log are kept this long
  */
 @ConfigurationProperties(prefix = "mijnummah.retention")
 public record RetentionProperties(Boolean enabled, String cron, Duration expiredSessions, Duration expiredResetCodes,
                                   Duration eventRegistrations, Duration inactivePushDevices,
-                                  Duration pushSendingTimeout) {
+                                  Duration pushSendingTimeout, Duration auditLog) {
 
     public RetentionProperties {
         enabled = enabled == null || enabled;
@@ -29,6 +30,7 @@ public record RetentionProperties(Boolean enabled, String cron, Duration expired
         eventRegistrations = positiveOr(eventRegistrations, Duration.ofDays(365));
         inactivePushDevices = positiveOr(inactivePushDevices, Duration.ofDays(270));
         pushSendingTimeout = positiveOr(pushSendingTimeout, Duration.ofMinutes(30));
+        auditLog = positiveOr(auditLog, Duration.ofDays(730));
     }
 
     private static Duration positiveOr(Duration value, Duration fallback) {

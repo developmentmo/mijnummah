@@ -125,6 +125,7 @@ class EndpointSecurityIT extends AbstractIntegrationTest {
                 case DELETE -> api.delete(concrete, token);
                 case PUT -> api.put(concrete, java.util.Map.of(), token);
                 case POST -> api.post(concrete, java.util.Map.of(), token);
+                case PATCH -> api.patch(concrete, java.util.Map.of(), token);
                 default -> throw new IllegalStateException("Unexpected method in " + this);
             };
         }
