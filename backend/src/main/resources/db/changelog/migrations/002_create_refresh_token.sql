@@ -1,3 +1,6 @@
+--liquibase formatted sql
+
+--changeset mijnummah:002-create-refresh-token
 -- Server-side state of opaque refresh tokens. Only the SHA-256 hash is stored, never the token itself.
 -- One family per login; every refresh revokes the presented token and links it to its successor.
 

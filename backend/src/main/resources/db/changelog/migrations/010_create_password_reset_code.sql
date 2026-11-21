@@ -1,3 +1,6 @@
+--liquibase formatted sql
+
+--changeset mijnummah:010-create-password-reset-code
 -- One-time codes for resetting a forgotten password (fase 5). The code is sent by email and typed into the app.
 -- Only a hash is stored. A code is valid for a short time, for a limited number of attempts, and only the newest
 -- unused code of a user counts (requesting a new code invalidates older ones).

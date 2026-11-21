@@ -1,3 +1,6 @@
+--liquibase formatted sql
+
+--changeset mijnummah:006-create-event-registration
 -- A user's registration for an event. One row per (event, user): cancelling keeps the row with status
 -- CANCELLED and registering again re-activates it, so the unique constraint prevents duplicates.
 

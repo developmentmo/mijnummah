@@ -1,3 +1,6 @@
+--liquibase formatted sql
+
+--changeset mijnummah:013-push-device-mosque
 -- Push tokens per app (fase 7, white-label).
 --
 -- Every mosque has its own app, and one person can follow several mosques. A push token belongs to one installed

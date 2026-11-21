@@ -1,6 +1,9 @@
+--liquibase formatted sql
+
+--changeset mijnummah:011-create-push-tables
 -- Push notifications (fase 5).
 --
--- push_device: the push token of an installed app, registered by a signed-in user. One token belongs to one user;
+-- push_device: the push token of an installed app, registered by a signed-in user. One token belongs to one user,
 -- when another user signs in on the same device the token moves to that user. Tokens that the push service reports
 -- as no longer valid are deleted.
 --

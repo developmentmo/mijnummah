@@ -1,3 +1,6 @@
+--liquibase formatted sql
+
+--changeset mijnummah:005-create-event
 -- Agenda items of a mosque (lectures, Friday programme, classes, ...).
 -- Only PUBLISHED events are visible outside the admin API; CANCELLED events stay visible with their status
 -- so people who planned to come see the cancellation. visibility REGISTERED_USERS hides an event from

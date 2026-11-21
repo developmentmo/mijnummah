@@ -54,14 +54,10 @@
             <scope>runtime</scope>
         </dependency>
 
-        <!-- Schema migrations. Boot 4 requires the starter; flyway-core alone no longer auto-configures. -->
+        <!-- Schema migrations (Liquibase, SQL changelogs in db/changelog). Boot 4 requires the starter. -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-flyway</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.flywaydb</groupId>
-            <artifactId>flyway-database-postgresql</artifactId>
+            <artifactId>spring-boot-starter-liquibase</artifactId>
         </dependency>
 
         <!-- Security: Spring Security + JWT (Nimbus JOSE) for issuing and validating access tokens. -->

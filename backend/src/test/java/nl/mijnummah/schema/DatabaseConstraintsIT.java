@@ -34,11 +34,11 @@ class DatabaseConstraintsIT extends AbstractIntegrationTest {
     @Test
     void allMigrationsAreAppliedInOrder() {
         Integer applied = jdbc.queryForObject(
-                "select count(*) from flyway_schema_history where success and version is not null", Integer.class);
+                "select count(*) from databasechangelog where exectype = 'EXECUTED'", Integer.class);
         String latest = jdbc.queryForObject(
-                "select version from flyway_schema_history order by installed_rank desc limit 1", String.class);
+                "select id from databasechangelog order by orderexecuted desc limit 1", String.class);
         assertThat(applied).isEqualTo(13);
-        assertThat(latest).isEqualTo("13");
+        assertThat(latest).isEqualTo("013-push-device-mosque");
     }
 
     @Test

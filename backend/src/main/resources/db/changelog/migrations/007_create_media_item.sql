@@ -1,3 +1,6 @@
+--liquibase formatted sql
+
+--changeset mijnummah:007-create-media-item
 -- Lectures and other recordings. The video itself is NEVER stored here (nor anywhere in this system): only a
 -- reference to an external provider (video_provider + video_id, e.g. YOUTUBE + the 11-character video ID).
 

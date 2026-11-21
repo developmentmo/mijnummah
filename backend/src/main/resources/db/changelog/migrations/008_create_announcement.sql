@@ -1,3 +1,6 @@
+--liquibase formatted sql
+
+--changeset mijnummah:008-create-announcement
 -- Short news items of a mosque. Publishing an announcement does NOT send a push notification; sending is a
 -- separate, explicit action (fase 5). Expired announcements (expires_at in the past) are hidden publicly.
 

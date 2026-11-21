@@ -1,3 +1,6 @@
+--liquibase formatted sql
+
+--changeset mijnummah:003-create-mosque
 -- The tenant. Every piece of mosque-specific data references this table through a mandatory mosque_id.
 -- The slug identifies the mosque in public URLs and in the app configuration (white-label).
 

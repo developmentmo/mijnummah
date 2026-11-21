@@ -1,3 +1,6 @@
+--liquibase formatted sql
+
+--changeset mijnummah:004-create-mosque-administrator
 -- Who may manage which mosque. ADMIN: everything for that mosque (details, administrators, registrations,
 -- content). EDITOR: content only (events, media, announcements). Rights never extend to other mosques.
 

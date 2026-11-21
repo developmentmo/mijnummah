@@ -1,3 +1,6 @@
+--liquibase formatted sql
+
+--changeset mijnummah:009-create-mosque-follow
 -- Following a mosque (not membership, see D-011): the user wants to see and, later, be notified about its
 -- content. Notification preferences per topic belong to a follow and disappear with it.
 

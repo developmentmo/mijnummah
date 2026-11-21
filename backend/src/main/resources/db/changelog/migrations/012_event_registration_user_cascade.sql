@@ -1,3 +1,6 @@
+--liquibase formatted sql
+
+--changeset mijnummah:012-event-registration-user-cascade
 -- Deleting an account (fase 5, AVG) removes the person's event registrations as well, which also frees their
 -- places. Accounts that administer a mosque or authored content cannot be deleted (those foreign keys stay
 -- restrictive); the application reports that instead.
