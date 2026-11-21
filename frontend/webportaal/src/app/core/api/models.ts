@@ -42,6 +42,10 @@ export interface Contact {
   websiteUrl: string | null;
 }
 
+/** ACTIVE: zichtbaar in de app. INACTIVE: verborgen, beheerders kunnen voorbereiden. BLOCKED: verborgen en alleen
+ * de platformbeheerder kan haar beheren. */
+export type MosqueStatus = 'ACTIVE' | 'INACTIVE' | 'BLOCKED';
+
 export interface AdminMosque {
   id: string;
   slug: string;
@@ -50,7 +54,7 @@ export interface AdminMosque {
   address: Address;
   contact: Contact;
   timeZone: string;
-  active: boolean;
+  status: MosqueStatus;
   /** Eigen rol; null voor een platformbeheerder zonder eigen rol (die mag alles). */
   myRole: MosqueRole | null;
   createdAt: string;

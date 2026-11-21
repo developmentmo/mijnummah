@@ -7,8 +7,10 @@
   @if (context.current(); as mosque) {
     <span class="mosque mu-title-small">
       {{ mosque.name }}
-      @if (!mosque.active) {
+      @if (mosque.status === 'INACTIVE') {
         <span class="inactive mu-label-small">inactief</span>
+      } @else if (mosque.status === 'BLOCKED') {
+        <span class="inactive mu-label-small">geblokkeerd</span>
       }
     </span>
     @if (canSwitchMosque()) {
