@@ -49,8 +49,8 @@ public abstract class AbstractIntegrationTest {
     @BeforeEach
     void resetDatabase() {
         jdbc.execute("""
-                TRUNCATE push_notification, push_device, password_reset_code, notification_preference, mosque_follow,
-                         announcement, media_item, event_registration, event, mosque_administrator, mosque,
+                TRUNCATE audit_log, push_notification, push_device, password_reset_code, notification_preference, mosque_follow,
+                         announcement, media_item, event_registration, event, mosque_administrator, mosque, image,
                          refresh_token, app_user""");
         api = new ApiTestClient(port, jsonMapper);
         platformAdmin = account("platform", PlatformRole.PLATFORM_ADMIN);

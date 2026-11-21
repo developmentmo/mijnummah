@@ -10,6 +10,8 @@ spring:
     password: ${TEST_DATABASE_PASSWORD:provided-by-testcontainers}
 
 mijnummah:
+  storage:
+    directory: ${java.io.tmpdir}/mijnummah-test-images
   security:
     jwt:
       secret: test-secret-only-used-by-automated-tests-0123456789

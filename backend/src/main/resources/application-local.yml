@@ -13,6 +13,8 @@ spring:
     password: ${DATABASE_PASSWORD:mijnummah}
 
 mijnummah:
+  storage:
+    directory: ${STORAGE_DIRECTORY:./data/images}
   security:
     jwt:
       # Local development only. Any real environment MUST set JWT_SECRET.

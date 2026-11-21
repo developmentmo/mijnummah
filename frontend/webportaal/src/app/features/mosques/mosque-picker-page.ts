@@ -53,8 +53,10 @@ import { StatusMessage } from '../../shared/ui/status-message';
                 <span class="mu-title-medium">{{ mosque.name }}</span>
                 <span class="mu-body-medium mu-muted">
                   {{ mosque.address.city || mosque.slug }} · {{ roleOf(mosque) }}
-                  @if (!mosque.active) {
+                  @if (mosque.status === 'INACTIVE') {
                     · inactief
+                  } @else if (mosque.status === 'BLOCKED') {
+                    · geblokkeerd
                   }
                 </span>
               </a>

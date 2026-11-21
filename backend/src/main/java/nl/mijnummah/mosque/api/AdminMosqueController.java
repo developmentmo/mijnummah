@@ -1,5 +1,7 @@
 package nl.mijnummah.mosque.api;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.List;
 import java.util.UUID;
 
@@ -10,21 +12,27 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import nl.mijnummah.identity.AuthenticatedUser;
+import nl.mijnummah.mosque.MosqueStatus;
 import nl.mijnummah.mosque.application.MosqueService;
+import nl.mijnummah.storage.StoredImageRef;
 
 @RestController
 @RequestMapping("/api/v1/admin/mosques")
@@ -64,11 +72,35 @@ class AdminMosqueController {
         return MosqueResponse.Admin.from(mosqueService.update(actor, mosqueId, request.toDetails()));
     }
 
-    @PutMapping("/{mosqueId}/active")
-    @Operation(summary = "Moskee activeren of deactiveren (alleen platformbeheerder)")
-    MosqueResponse.Admin setActive(@AuthenticationPrincipal AuthenticatedUser actor, @PathVariable UUID mosqueId,
-                                   @Valid @RequestBody ActiveRequest request) {
-        return MosqueResponse.Admin.from(mosqueService.setActive(actor, mosqueId, request.active()));
+    @PatchMapping("/{mosqueId}/status")
+    @Operation(summary = "Moskee activeren, deactiveren of blokkeren (alleen platformbeheerder)")
+    MosqueResponse.Admin setStatus(@AuthenticationPrincipal AuthenticatedUser actor, @PathVariable UUID mosqueId,
+                                   @Valid @RequestBody StatusRequest request) {
+        return MosqueResponse.Admin.from(mosqueService.setStatus(actor, mosqueId, request.status()));
+    }
+
+    @PostMapping(path = "/{mosqueId}/images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @ResponseStatus(HttpStatus.CREATED)
+    @Operation(summary = "Afbeelding uploaden (JPEG of PNG, beheerder of redacteur van deze moskee)")
+    StoredImageRef uploadImage(@AuthenticationPrincipal AuthenticatedUser actor, @PathVariable UUID mosqueId,
+                               @RequestPart("file") MultipartFile file) {
+        try {
+            return mosqueService.uploadImage(actor, mosqueId, file.getBytes());
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
+        }
+    }
+
+    @PutMapping("/{mosqueId}/images")
+    @Operation(summary = "Logo en omslagfoto instellen of verwijderen (beheerder van deze moskee)")
+    MosqueResponse.Admin setImages(@AuthenticationPrincipal AuthenticatedUser actor, @PathVariable UUID mosqueId,
+                                   @RequestBody ImagesRequest request) {
+        return MosqueResponse.Admin.from(mosqueService.setImages(actor, mosqueId, request.logoImageId(),
+                request.coverImageId()));
+    }
+
+    /** Null removes the logo or cover photo. */
+    record ImagesRequest(UUID logoImageId, UUID coverImageId) {
     }
 
     record CreateMosqueRequest(
@@ -78,6 +110,6 @@ class AdminMosqueController {
             @NotNull @Valid MosqueDetailsRequest details) {
     }
 
-    record ActiveRequest(@NotNull Boolean active) {
+    record StatusRequest(@NotNull MosqueStatus status) {
     }
 }

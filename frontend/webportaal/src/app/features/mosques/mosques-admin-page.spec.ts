@@ -21,7 +21,7 @@ const OTHER: AdminMosque = {
   id: 'm-2',
   slug: 'voorbeeldmoskee',
   name: 'Voorbeeldmoskee',
-  active: false,
+  status: 'INACTIVE',
   myRole: null,
 };
 
@@ -62,15 +62,41 @@ describe('MosquesAdminPage', () => {
     expect(ask).toHaveBeenCalledWith(
       expect.objectContaining({ title: 'Noeroel Islam deactiveren?', destructive: true }),
     );
-    const request = await respond(`${MOSQUES}/m-1/active`, { ...MOSQUE, active: false });
-    expect(request.request.method).toBe('PUT');
-    expect(request.request.body).toEqual({ active: false });
+    const request = await respond(`${MOSQUES}/m-1/status`, { ...MOSQUE, status: 'INACTIVE' });
+    expect(request.request.method).toBe('PATCH');
+    expect(request.request.body).toEqual({ status: 'INACTIVE' });
     await respond(
       (r) => r.url === MOSQUES && r.method === 'GET',
-      [{ ...MOSQUE, active: false }, OTHER],
+      [{ ...MOSQUE, status: 'INACTIVE' }, OTHER],
     );
     await fixture.whenStable();
     expect(text(fixture.nativeElement)).not.toContain('Deactiveren');
+  });
+
+  it('blokkeert een moskee en heft de blokkade weer op', async () => {
+    ask.mockResolvedValue(true);
+    const fixture = await render();
+    const el: HTMLElement = fixture.nativeElement;
+    el.querySelectorAll('tbody tr')[0].querySelectorAll('button')[1].click();
+    await fixture.whenStable();
+    expect(ask).toHaveBeenCalledWith(
+      expect.objectContaining({ title: 'Noeroel Islam blokkeren?', destructive: true }),
+    );
+    const blocked = { ...MOSQUE, status: 'BLOCKED' as const };
+    const request = await respond(`${MOSQUES}/m-1/status`, blocked);
+    expect(request.request.body).toEqual({ status: 'BLOCKED' });
+    await respond((r) => r.url === MOSQUES && r.method === 'GET', [blocked, OTHER]);
+    await fixture.whenStable();
+    expect(text(el)).toContain('Geblokkeerd');
+
+    buttonByText(el, 'Blokkade opheffen').click();
+    await fixture.whenStable();
+    expect(ask).toHaveBeenLastCalledWith(
+      expect.objectContaining({ title: 'Blokkade van Noeroel Islam opheffen?' }),
+    );
+    const lifted = await respond(`${MOSQUES}/m-1/status`, MOSQUE);
+    expect(lifted.request.body).toEqual({ status: 'ACTIVE' });
+    await respond((r) => r.url === MOSQUES && r.method === 'GET', [MOSQUE, OTHER]);
   });
 
   it('doet niets als de bevestiging wordt geannuleerd', async () => {
@@ -78,16 +104,16 @@ describe('MosquesAdminPage', () => {
     const fixture = await render();
     buttonByText(fixture.nativeElement, 'Activeren').click();
     await fixture.whenStable();
-    http().expectNone((r) => r.method === 'PUT');
+    http().expectNone((r) => r.method === 'PATCH');
   });
 
-  it('meldt een fout bij (de)activeren', async () => {
+  it('meldt een fout bij het wijzigen van de status', async () => {
     ask.mockResolvedValue(true);
     const fixture = await render();
     buttonByText(fixture.nativeElement, 'Activeren').click();
     await fixture.whenStable();
     const error = apiError('MOSQUE_ACCESS_DENIED', 403);
-    await respond(`${MOSQUES}/m-2/active`, error.body, error.options);
+    await respond(`${MOSQUES}/m-2/status`, error.body, error.options);
     await fixture.whenStable();
     expect(fixture.nativeElement.querySelector('mu-status-message')).not.toBeNull();
   });

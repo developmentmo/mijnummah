@@ -16,6 +16,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import nl.mijnummah.common.audit.AuditEvent;
 import nl.mijnummah.follow.FollowerDirectory;
 import nl.mijnummah.identity.AuthenticatedUser;
 import nl.mijnummah.identity.UserDirectory;
@@ -86,6 +87,8 @@ public class PushNotificationService implements PushNotifications {
             // sent concurrently (double click): the unique constraint keeps it at one
             throw new PushAlreadySentException();
         }
+        events.publishEvent(AuditEvent.of(actor.id(), request.mosqueId(), "PUSH_SENT", "PUSH_NOTIFICATION",
+                notification.getId()));
         if (!tokens.isEmpty()) {
             events.publishEvent(new PushNotificationAccepted(notification.getId(), message(notification), tokens));
         }

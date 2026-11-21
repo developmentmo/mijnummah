@@ -86,7 +86,7 @@ export const MOSQUE: AdminMosque = {
   address: { street: 'Straat 1', postalCode: '1234 AB', city: 'Voorbeeldstad', countryCode: 'NL' },
   contact: { email: 'info@example.org', phone: null, websiteUrl: null },
   timeZone: 'Europe/Amsterdam',
-  active: true,
+  status: 'ACTIVE',
   myRole: 'ADMIN',
   createdAt: '2026-01-01T00:00:00Z',
   updatedAt: '2026-01-01T00:00:00Z',

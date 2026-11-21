@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/developmentmo/mijnummah/brands/brand.schema.json",
   "title": "Merkconfiguratie van een moskee-app",
-  "description": "Eén bestand per moskee in brands/<slug>/brand.json. Gecontroleerd door `node tools/brand/brand.mjs validate`. Geen geheimen: Firebase- en signinggegevens staan in de GitHub-omgeving van de moskee (zie WHITE_LABEL.md).",
+  "description": "Het merk van het platform in brands/mijnummah/brand.json (één app voor alle moskeeën). Gecontroleerd door `node tools/brand/brand.mjs validate`. Geen geheimen: Firebase- en signinggegevens staan in de GitHub Environment productie (zie DEPLOYMENT.md).",
   "type": "object",
   "required": ["slug", "name", "android", "ios", "colors", "logo"],
   "additionalProperties": false,

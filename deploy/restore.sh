@@ -28,4 +28,4 @@ fi
 $COMPOSE exec -T postgres sh -c "createdb -U \"\$POSTGRES_USER\" '$database'"
 $COMPOSE exec -T postgres sh -c "pg_restore -U \"\$POSTGRES_USER\" -d '$database' --no-owner --exit-on-error" < "$dump"
 echo "restored $dump into $database"
-$COMPOSE exec -T postgres sh -c "psql -U \"\$POSTGRES_USER\" -d '$database' -c \"select version, description, success from flyway_schema_history order by installed_rank desc limit 3\""
+$COMPOSE exec -T postgres sh -c "psql -U \"\$POSTGRES_USER\" -d '$database' -c \"select id, dateexecuted from databasechangelog order by orderexecuted desc limit 3\""

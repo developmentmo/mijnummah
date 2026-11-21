@@ -19,14 +19,19 @@ import nl.mijnummah.identity.PlatformRole;
 import nl.mijnummah.mosque.MosqueAccessDeniedException;
 import nl.mijnummah.mosque.MosquePermission;
 import nl.mijnummah.mosque.MosqueRole;
+import nl.mijnummah.mosque.MosqueStatus;
+import nl.mijnummah.mosque.domain.Mosque;
 import nl.mijnummah.mosque.domain.MosqueAdministrator;
+import nl.mijnummah.mosque.domain.MosqueDetails;
 import nl.mijnummah.mosque.infrastructure.MosqueAdministratorRepository;
 import nl.mijnummah.mosque.infrastructure.MosqueRepository;
 
 class DefaultMosqueAccessServiceTest {
 
-    private final UUID mosqueA = UUID.randomUUID();
-    private final UUID mosqueB = UUID.randomUUID();
+    private final Mosque a = mosque("moskee-a");
+    private final Mosque b = mosque("moskee-b");
+    private final UUID mosqueA = a.getId();
+    private final UUID mosqueB = b.getId();
     private final AuthenticatedUser platformAdmin = user(PlatformRole.PLATFORM_ADMIN);
     private final AuthenticatedUser adminOfA = user(PlatformRole.USER);
     private final AuthenticatedUser editorOfA = user(PlatformRole.USER);
@@ -40,8 +45,8 @@ class DefaultMosqueAccessServiceTest {
     void setUp() {
         mosques = mock(MosqueRepository.class);
         administrators = mock(MosqueAdministratorRepository.class);
-        when(mosques.existsById(mosqueA)).thenReturn(true);
-        when(mosques.existsById(mosqueB)).thenReturn(true);
+        when(mosques.findById(mosqueA)).thenReturn(Optional.of(a));
+        when(mosques.findById(mosqueB)).thenReturn(Optional.of(b));
         when(administrators.findByMosqueIdAndUserId(mosqueA, adminOfA.id()))
                 .thenReturn(Optional.of(MosqueAdministrator.grant(mosqueA, adminOfA.id(), MosqueRole.ADMIN, null, Instant.now())));
         when(administrators.findByMosqueIdAndUserId(mosqueA, editorOfA.id()))
@@ -85,6 +90,20 @@ class DefaultMosqueAccessServiceTest {
     }
 
     @Test
+    void nobodyButThePlatformAdminManagesABlockedMosque() {
+        a.setStatus(MosqueStatus.BLOCKED, Instant.now());
+        for (MosquePermission permission : MosquePermission.values()) {
+            assertThat(access.has(adminOfA, mosqueA, permission)).isFalse();
+            assertThat(access.has(platformAdmin, mosqueA, permission)).isTrue();
+        }
+        assertThat(access.has(editorOfA, mosqueA, MosquePermission.MANAGE_CONTENT)).isFalse();
+
+        a.setStatus(MosqueStatus.INACTIVE, Instant.now());
+        assertThat(access.has(adminOfA, mosqueA, MosquePermission.MANAGE_CONTENT))
+                .as("an inactive mosque is still managed by its administrators").isTrue();
+    }
+
+    @Test
     void unknownMosqueIsNotFoundEvenForPlatformAdmin() {
         UUID unknown = UUID.randomUUID();
         assertThatThrownBy(() -> access.require(platformAdmin, unknown, MosquePermission.MANAGE_CONTENT))
@@ -95,5 +114,10 @@ class DefaultMosqueAccessServiceTest {
 
     private static AuthenticatedUser user(PlatformRole role) {
         return new AuthenticatedUser(UUID.randomUUID(), UUID.randomUUID() + "@example.com", role);
+    }
+
+    private static Mosque mosque(String slug) {
+        return Mosque.create(slug, new MosqueDetails("Moskee " + slug, null, null, null, null, "NL", null, null, null,
+                "Europe/Amsterdam"), Instant.now());
     }
 }

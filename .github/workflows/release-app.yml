@@ -1,20 +1,17 @@
-# Releasebuild van één moskee-app, alleen handmatig te starten. Bouwt en tekent; uploadt NIET naar de stores.
-# Publiceren gebeurt met de hand in Play Console of App Store Connect, na de releasecontrole in WHITE_LABEL.md.
+# Releasebuild van de MijnUmmah-app (één app voor alle moskeeën), alleen handmatig te starten. Bouwt en tekent;
+# uploadt NIET naar de stores. Publiceren gebeurt met de hand in Play Console of App Store Connect, na de
+# releasecontrole in DEPLOYMENT.md.
 #
-# Per merk een GitHub Environment met dezelfde naam als de slug (Settings > Environments), met:
+# Een GitHub Environment "productie" (Settings > Environments), met:
 #   secrets   ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD
 #             FIREBASE_ANDROID_API_KEY, FIREBASE_ANDROID_APP_ID, FIREBASE_IOS_API_KEY, FIREBASE_IOS_APP_ID
-#   variables FIREBASE_PROJECT_ID, FIREBASE_MESSAGING_SENDER_ID
+#   variables API_BASE_URL (https-adres van de API), FIREBASE_PROJECT_ID, FIREBASE_MESSAGING_SENDER_ID
 # Stel bij de Environment "Required reviewers" in, dan start een release pas na goedkeuring.
 name: Release-app
 
 on:
   workflow_dispatch:
     inputs:
-      brand:
-        description: Slug van het merk (map in brands/)
-        required: true
-        type: string
       platform:
         description: Platform
         required: true
@@ -25,41 +22,32 @@ permissions:
   contents: read
 
 concurrency:
-  group: release-${{ inputs.brand }}-${{ inputs.platform }}
+  group: release-${{ inputs.platform }}
   cancel-in-progress: false
 
 jobs:
   android:
     if: inputs.platform == 'android'
-    name: Android-release (${{ inputs.brand }})
+    name: Android-release
     runs-on: ubuntu-latest
-    environment: ${{ inputs.brand }}
+    environment: productie
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.13'
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: 3.47.7
           channel: stable
-      - name: Merk controleren en toepassen
+      - name: Backendadres controleren
         env:
-          BRAND: ${{ inputs.brand }}
+          URL: ${{ vars.API_BASE_URL }}
+        # Een release praat nooit met een standaardadres.
         run: |
-          pip install -r design/requirements.txt
-          node tools/brand/brand.mjs validate "$BRAND"
-          node tools/brand/brand.mjs apply "$BRAND"
-          # Faalt als brand.json geen backend.apiBaseUrl heeft: een release praat nooit met een standaardadres.
-          url="$(node tools/brand/brand.mjs show "$BRAND" backend.apiBaseUrl)"
-          echo "API_BASE_URL=$url" >> "$GITHUB_ENV"
+          case "$URL" in https://*) ;; *) echo "::error::API_BASE_URL (https) ontbreekt in Environment productie"; exit 1;; esac
+          echo "API_BASE_URL=$URL" >> "$GITHUB_ENV"
       - name: Tests
         working-directory: frontend/app
         run: |
@@ -80,7 +68,7 @@ jobs:
         run: |
           for name in ANDROID_KEYSTORE_BASE64 ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_ALIAS ANDROID_KEY_PASSWORD \
             FIREBASE_PROJECT_ID FIREBASE_MESSAGING_SENDER_ID FIREBASE_ANDROID_API_KEY FIREBASE_ANDROID_APP_ID; do
-            if [ -z "${!name}" ]; then echo "::error::$name ontbreekt in Environment ${{ inputs.brand }}"; exit 1; fi
+            if [ -z "${!name}" ]; then echo "::error::$name ontbreekt in Environment productie"; exit 1; fi
           done
           export ANDROID_KEYSTORE_PATH="$RUNNER_TEMP/release.jks"
           echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$ANDROID_KEYSTORE_PATH"
@@ -95,40 +83,28 @@ jobs:
           jarsigner -verify build/app/outputs/bundle/release/app-release.aab | grep -q "jar verified"
       - uses: actions/upload-artifact@v4
         with:
-          name: ${{ inputs.brand }}-android-${{ github.run_number }}
+          name: mijnummah-android-${{ github.run_number }}
           path: frontend/app/build/app/outputs/bundle/release/app-release.aab
           retention-days: 14
 
   ios:
     if: inputs.platform == 'ios'
-    name: iOS-build (${{ inputs.brand }})
+    name: iOS-build
     runs-on: macos-latest
-    environment: ${{ inputs.brand }}
+    environment: productie
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: 3.47.7
           channel: stable
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.13'
-      # De iconen worden met cairo gegenereerd; op macOS komt die uit Homebrew.
-      - name: Merk controleren en toepassen
+      - name: Backendadres controleren
         env:
-          BRAND: ${{ inputs.brand }}
+          URL: ${{ vars.API_BASE_URL }}
+        # Een release praat nooit met een standaardadres.
         run: |
-          brew install cairo
-          export DYLD_FALLBACK_LIBRARY_PATH="$(brew --prefix)/lib"
-          pip install -r design/requirements.txt
-          node tools/brand/brand.mjs validate "$BRAND"
-          node tools/brand/brand.mjs apply "$BRAND"
-          # Faalt als brand.json geen backend.apiBaseUrl heeft: een release praat nooit met een standaardadres.
-          url="$(node tools/brand/brand.mjs show "$BRAND" backend.apiBaseUrl)"
-          echo "API_BASE_URL=$url" >> "$GITHUB_ENV"
+          case "$URL" in https://*) ;; *) echo "::error::API_BASE_URL (https) ontbreekt in Environment productie"; exit 1;; esac
+          echo "API_BASE_URL=$URL" >> "$GITHUB_ENV"
       # Ondertekenen en uploaden vereisen een Apple Developer-account met certificaat en provisioningprofiel;
       # tot die er zijn, bouwt deze job een ongetekend archief om te controleren dat de release bouwt.
       - name: Bouwen (ongetekend)

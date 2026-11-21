@@ -127,10 +127,11 @@ class TenantIsolationIT extends AbstractIntegrationTest {
                     .as("mosques of %s", admin.email()).hasSize(1).doesNotContain("moskee-c");
             assertThat(api.get("/api/v1/admin/mosques/" + mosqueC, admin.token()).status()).isEqualTo(403);
         }
-        assertThat(api.put("/api/v1/admin/mosques/" + mosqueB + "/active", Map.of("active", false), adminA.token())
-                .status()).isEqualTo(403);
-        assertThat(api.put("/api/v1/admin/mosques/" + mosqueA + "/active", Map.of("active", false), adminA.token())
-                .status()).as("activating is for the platform admin only, also for the own mosque").isEqualTo(403);
+        Map<String, String> inactive = Map.of("status", "INACTIVE");
+        assertThat(api.patch("/api/v1/admin/mosques/" + mosqueB + "/status", inactive, adminA.token()).status())
+                .isEqualTo(403);
+        assertThat(api.patch("/api/v1/admin/mosques/" + mosqueA + "/status", inactive, adminA.token()).status())
+                .as("the status is for the platform admin only, also for the own mosque").isEqualTo(403);
         String rowOfB = api.get(adminPath(mosqueB, "administrators"), adminB.token()).body().get(0).get("id").asString();
         assertThat(api.put(adminPath(mosqueB, "administrators/" + rowOfB), Map.of("role", "EDITOR"), adminA.token())
                 .status()).isEqualTo(403);

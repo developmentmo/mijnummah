@@ -4,6 +4,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.UUID;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -11,6 +12,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import nl.mijnummah.common.audit.AuditEvent;
 import nl.mijnummah.identity.AuthenticatedUser;
 import nl.mijnummah.identity.PlatformRole;
 import nl.mijnummah.identity.domain.PasswordPolicy;
@@ -28,13 +30,15 @@ public class UserAdminService {
     private final UserRepository users;
     private final RefreshTokenRepository refreshTokens;
     private final PasswordEncoder passwordEncoder;
+    private final ApplicationEventPublisher audit;
     private final Clock clock;
 
     public UserAdminService(UserRepository users, RefreshTokenRepository refreshTokens,
-                            PasswordEncoder passwordEncoder, Clock clock) {
+                            PasswordEncoder passwordEncoder, ApplicationEventPublisher audit, Clock clock) {
         this.users = users;
         this.refreshTokens = refreshTokens;
         this.passwordEncoder = passwordEncoder;
+        this.audit = audit;
         this.clock = clock;
     }
 
@@ -42,7 +46,9 @@ public class UserAdminService {
     public UserProfile create(AuthenticatedUser actor, String email, String displayName, String password,
                               PlatformRole role) {
         requirePlatformAdmin(actor);
-        return createUnchecked(email, displayName, password, role);
+        UserProfile created = createUnchecked(email, displayName, password, role);
+        audit.publishEvent(AuditEvent.of(actor.id(), null, "ACCOUNT_CREATED", "ACCOUNT", created.id()));
+        return created;
     }
 
     /** Without an actor: only for the startup bootstrap of the first platform administrator. */
@@ -86,6 +92,7 @@ public class UserAdminService {
         Instant now = Instant.now(clock);
         user.block(now);
         refreshTokens.revokeAllOfUser(userId, now);
+        audit.publishEvent(AuditEvent.of(actor.id(), null, "ACCOUNT_BLOCKED", "ACCOUNT", userId));
         return UserProfile.of(user);
     }
 
@@ -94,6 +101,7 @@ public class UserAdminService {
         requirePlatformAdmin(actor);
         User user = users.findById(userId).orElseThrow(UserNotFoundException::new);
         user.unblock(Instant.now(clock));
+        audit.publishEvent(AuditEvent.of(actor.id(), null, "ACCOUNT_UNBLOCKED", "ACCOUNT", userId));
         return UserProfile.of(user);
     }
 

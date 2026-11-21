@@ -10,7 +10,7 @@ bijgewerkt.
 
 ## Rollen
 
-- **Verwerkingsverantwoordelijke:** de moskee (voor de pilot Noeroel Islam). Zij bepaalt waarvoor de app is en wat
+- **Verwerkingsverantwoordelijke:** de moskee (elke aangesloten moskee voor haar eigen gegevens). Zij bepaalt waarvoor de app is en wat
   erin komt.
 - **Verwerker:** de partij die het platform Mijn Ummah host en beheert. Hiervoor is een verwerkersovereenkomst
   met de moskee nodig (zie "Open punten").
@@ -47,10 +47,12 @@ bijgewerkt.
 | Verzonden pushmeldingen (titel, tekst, aantallen) | `push_notification` | Status tonen, dubbel versturen voorkomen | Gerechtvaardigd belang | Beheerders van die moskee | Zolang de content bestaat (geen persoonsgegevens behalve de auteur) | Met de moskee |
 | Lokaal op het toestel: sessie en profiel | Beveiligde opslag (Keychain / Android Keystore) | Ingelogd blijven | Overeenkomst | Alleen de app | Tot uitloggen | Uitloggen, app verwijderen |
 | Lokaal op het toestel: offline-kopie van openbare lijsten, themakeuze | `shared_preferences` | Werken zonder verbinding | Gerechtvaardigd belang | Alleen de app | Tot uitloggen (cache) of app verwijderen | Uitloggen wist de cache |
-| Back-ups van de database | Back-upmap op de server en een externe kopie | Herstel na storing of fout | Gerechtvaardigd belang | Alleen de beheerder van de server | 30 dagen (instelbaar, `BACKUP_KEEP_DAYS`) | Oudere back-ups worden automatisch verwijderd; een verwijderd account verdwijnt dus na uiterlijk 30 dagen ook uit de back-ups |
+| Auditlog: wie (account-ID), wanneer, welke actie, op welk item en welke moskee | `audit_log` | Verantwoording en controle van beheeracties | Gerechtvaardigd belang | ADMIN van die moskee (eigen moskee), platformbeheerder (alles) | 730 dagen, daarna nachtelijk verwijderd (`RETENTION_AUDIT_LOG`) | Automatisch; bij verwijderen van het account blijft de regel zonder account-ID staan; bij verwijderen van de moskee verdwijnt hij |
+| Geüploade afbeeldingen (logo, omslagfoto) | `image` en de map `STORAGE_DIRECTORY` | Moskee herkenbaar maken in app en portaal | Gerechtvaardigd belang | Openbaar voor wie het (niet te raden) adres kent | Zolang de moskee bestaat | Met de moskee; bij opslaan opnieuw gecodeerd, zodat EXIF-gegevens (zoals locatie en toestel) verdwijnen |
+| Back-ups van de database en de afbeeldingen | Back-upmap op de server en een externe kopie | Herstel na storing of fout | Gerechtvaardigd belang | Alleen de beheerder van de server | 30 dagen (instelbaar, `BACKUP_KEEP_DAYS`) | Oudere back-ups worden automatisch verwijderd; een verwijderd account verdwijnt dus na uiterlijk 30 dagen ook uit de back-ups |
 
 De bewaartermijnen voor sessies, herstelcodes, aanmeldingen en pushtokens worden elke nacht (03:30 Europe/Amsterdam)
-toegepast door de backend (`IdentityRetention`, `RegistrationRetention`, `PushRetention`) en zijn instelbaar met
+toegepast door de backend (`IdentityRetention`, `RegistrationRetention`, `PushRetention`, `AuditRetention`) en zijn instelbaar met
 `RETENTION_*` (zie `backend/.env.example`). De termijn van 365 dagen voor aanmeldingen en 270 dagen voor pushtokens
 is een voorstel; de moskee kan ze aanpassen zonder codewijziging.
 

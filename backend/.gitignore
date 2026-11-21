@@ -1,5 +1,8 @@
 # Build
 target/
+
+# Uploaded images of the local profile
+data/
 !.mvn/wrapper/maven-wrapper.jar
 
 # IDE

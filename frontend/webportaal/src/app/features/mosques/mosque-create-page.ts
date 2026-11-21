@@ -33,8 +33,8 @@ export function slugFrom(name: string): string {
 }
 
 /**
- * Platformbeheer: een nieuwe moskee op het gedeelde platform. De slug moet gelijk zijn aan die van de app van de
- * moskee (brands/<slug>/brand.json, zie WHITE_LABEL.md). De overige gegevens vult de beheerder daarna in.
+ * Platformbeheer: een nieuwe moskee op het platform. De slug is haar vaste adres in de app en de API. De overige
+ * gegevens vult de beheerder daarna in.
  */
 @Component({
   selector: 'mu-mosque-create-page',
@@ -51,7 +51,7 @@ export function slugFrom(name: string): string {
   template: `
     <mu-page-header
       heading="Moskee toevoegen"
-      subtitle="Platformbeheer: een nieuwe moskee op het platform, met een eigen app."
+      subtitle="Platformbeheer: een nieuwe moskee op het platform, zichtbaar in de MijnUmmah-app."
     />
 
     <form class="mu-form" [formGroup]="form" (ngSubmit)="create()" novalidate>
@@ -83,9 +83,7 @@ export function slugFrom(name: string): string {
             autocomplete="off"
             spellcheck="false"
           />
-          <mat-hint>
-            Vast na aanmaken. Gelijk aan de slug van de app van deze moskee (brands/&lt;slug&gt;).
-          </mat-hint>
+          <mat-hint> Vast na aanmaken: het adres van de moskee in de app. </mat-hint>
           @if (form.controls.slug.invalid) {
             <mat-error>{{ controlError(form.controls.slug) }}</mat-error>
           }

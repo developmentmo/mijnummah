@@ -11,7 +11,8 @@ import nl.mijnummah.identity.AuthenticatedUser;
  * client is therefore never trusted on its own.
  * <p>
  * Rules: a platform administrator may do everything for every mosque. Anyone else needs a
- * {@code mosque_administrator} row for exactly that mosque, whose {@link MosqueRole} grants the permission.
+ * {@code mosque_administrator} row for exactly that mosque, whose {@link MosqueRole} grants the permission, and the
+ * mosque must not be {@link MosqueStatus#BLOCKED}.
  */
 public interface MosqueAccessService {
 
@@ -24,6 +25,6 @@ public interface MosqueAccessService {
     /** Whether the caller has the permission for this mosque (false when the mosque does not exist). */
     boolean has(AuthenticatedUser actor, UUID mosqueId, MosquePermission permission);
 
-    /** IDs of the mosques the caller administers (all mosques for a platform administrator). */
+    /** IDs of the mosques the caller may manage: all for a platform administrator, never blocked ones otherwise. */
     Set<UUID> administeredMosqueIds(AuthenticatedUser actor);
 }

@@ -1,13 +1,13 @@
-// GEGENEREERD BESTAND, NIET HANDMATIG AANPASSEN. Bron: brands/noeroel-islam/brand.json (node tools/brand/brand.mjs apply)
+// GEGENEREERD BESTAND, NIET HANDMATIG AANPASSEN. Bron: brands/mijnummah/brand.json (node tools/brand/brand.mjs apply)
 // ignore_for_file: unnecessary_nullable_for_final_variable_declarations
 
-/// De moskee waarvoor deze app is gebouwd. Zie WHITE_LABEL.md.
+/// Het merk van de app (het platform, niet een moskee). Zie design/README.md.
 abstract final class Brand {
-  /// Slug van de moskee in de backend.
-  static const slug = 'noeroel-islam';
+  /// Map van het merk in brands/.
+  static const slug = 'mijnummah';
 
-  /// Naam van de moskee en de app.
-  static const name = 'Noeroel Islam';
+  /// Naam van de app.
+  static const name = 'MijnUmmah';
 
   /// Privacyverklaring; zonder adres toont de app geen link.
   static const String? privacyPolicyUrl = null;

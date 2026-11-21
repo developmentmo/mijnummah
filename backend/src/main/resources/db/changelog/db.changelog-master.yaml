@@ -1,0 +1,12 @@
+# Alle schemawijzigingen, in volgorde. Liquibase voert ze bij het starten uit (D-052).
+#
+# Regels voor een nieuwe wijziging:
+#   * nieuw bestand migrations/NNN_omschrijving.sql, beginnend met "--liquibase formatted sql" en één changeset
+#     "--changeset mijnummah:NNN-omschrijving"
+#   * een changeset die ergens is uitgevoerd wordt nooit meer aangepast; maak een nieuwe
+#   * UUID-sleutels uit de applicatie, snake_case, enkelvoudige tabelnamen, TIMESTAMPTZ, benoemde constraints
+#     (pk_*, fk_*, uk_*, ix_*, ck_*)
+databaseChangeLog:
+  - includeAll:
+      path: migrations/
+      relativeToChangelogFile: true

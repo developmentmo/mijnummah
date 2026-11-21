@@ -5,7 +5,7 @@ import { firstValueFrom } from 'rxjs';
 
 import { AdminApi } from '../../core/api/admin-api';
 import { describeError } from '../../core/api/api-error';
-import { AdminMosque } from '../../core/api/models';
+import { AdminMosque, MosqueStatus } from '../../core/api/models';
 import { MosqueContext } from '../../core/mosque/mosque-context';
 import { Confirm } from '../../shared/ui/confirm-dialog';
 import { Notifier } from '../../shared/ui/notifier';
@@ -14,9 +14,35 @@ import { Skeleton } from '../../shared/ui/skeleton';
 import { StatusBadge } from '../../shared/ui/status-badge';
 import { StatusMessage } from '../../shared/ui/status-message';
 
+const STATUS_LABELS: Record<MosqueStatus, string> = {
+  ACTIVE: 'Actief',
+  INACTIVE: 'Inactief',
+  BLOCKED: 'Geblokkeerd',
+};
+
+interface StatusAction {
+  to: MosqueStatus;
+  label: string;
+  destructive: boolean;
+}
+
+/** Wat je per status kunt doen. */
+const ACTIONS: Record<MosqueStatus, StatusAction[]> = {
+  ACTIVE: [
+    { to: 'INACTIVE', label: 'Deactiveren', destructive: true },
+    { to: 'BLOCKED', label: 'Blokkeren', destructive: true },
+  ],
+  INACTIVE: [
+    { to: 'ACTIVE', label: 'Activeren', destructive: false },
+    { to: 'BLOCKED', label: 'Blokkeren', destructive: true },
+  ],
+  BLOCKED: [{ to: 'ACTIVE', label: 'Blokkade opheffen', destructive: false }],
+};
+
 /**
- * Platformbeheer: alle moskeeën op het platform, ook inactieve. Toevoegen, openen om te beheren, en activeren of
- * deactiveren. Deactiveren verbergt de moskee en al haar content in de app; er wordt niets gewist.
+ * Platformbeheer: alle moskeeën op het platform, ook inactieve en geblokkeerde. Toevoegen, openen om te beheren, en
+ * de status wijzigen. Inactief en geblokkeerd verbergen de moskee en al haar content in de app; geblokkeerd sluit
+ * ook haar eigen beheerders buiten. Er wordt niets gewist.
  */
 @Component({
   selector: 'mu-mosques-admin-page',
@@ -64,22 +90,21 @@ import { StatusMessage } from '../../shared/ui/status-message';
                 </td>
                 <td>{{ m.address.city || '–' }}</td>
                 <td>
-                  <mu-status-badge
-                    [status]="m.active ? 'ACTIVE' : 'INACTIVE'"
-                    [label]="m.active ? 'Actief' : 'Inactief'"
-                  />
+                  <mu-status-badge [status]="m.status" [label]="statusLabels[m.status]" />
                 </td>
                 <td class="actions">
                   <a matButton [routerLink]="['/m', m.id]">Beheren</a>
-                  <button
-                    matButton
-                    type="button"
-                    [class.mu-danger-button]="m.active"
-                    [disabled]="busy()"
-                    (click)="toggleActive(m)"
-                  >
-                    {{ m.active ? 'Deactiveren' : 'Activeren' }}
-                  </button>
+                  @for (action of actions[m.status]; track action.to) {
+                    <button
+                      matButton
+                      type="button"
+                      [class.mu-danger-button]="action.destructive"
+                      [disabled]="busy()"
+                      (click)="changeStatus(m, action.to)"
+                    >
+                      {{ action.label }}
+                    </button>
+                  }
                 </td>
               </tr>
             }
@@ -114,6 +139,8 @@ export class MosquesAdminPage implements OnInit {
   protected readonly error = signal<string | null>(null);
   protected readonly rowError = signal<string | null>(null);
   protected readonly busy = signal(false);
+  protected readonly statusLabels = STATUS_LABELS;
+  protected readonly actions = ACTIONS;
 
   ngOnInit(): void {
     void this.load();
@@ -128,37 +155,57 @@ export class MosquesAdminPage implements OnInit {
     }
   }
 
-  protected async toggleActive(mosque: AdminMosque): Promise<void> {
+  protected async changeStatus(mosque: AdminMosque, to: MosqueStatus): Promise<void> {
     if (this.busy()) return;
-    const deactivate = mosque.active;
-    const ok = await this.confirm.ask(
-      deactivate
-        ? {
-            title: `${mosque.name} deactiveren?`,
-            message:
-              'De moskee en al haar activiteiten, lezingen en aankondigingen verdwijnen uit de app. Er wordt niets gewist; je kunt haar later weer activeren.',
-            confirmLabel: 'Deactiveren',
-            destructive: true,
-          }
-        : {
-            title: `${mosque.name} activeren?`,
-            message: 'De moskee en haar gepubliceerde content zijn weer zichtbaar in de app.',
-            confirmLabel: 'Activeren',
-          },
-    );
+    const ok = await this.confirm.ask(this.question(mosque, to));
     if (!ok) return;
     this.busy.set(true);
     this.rowError.set(null);
     try {
-      const updated = await firstValueFrom(this.api.setMosqueActive(mosque.id, !deactivate));
+      const updated = await firstValueFrom(this.api.setMosqueStatus(mosque.id, to));
       this.mosques.set(await this.context.load(true));
-      this.notifier.success(
-        updated.active ? `${updated.name} is geactiveerd.` : `${updated.name} is gedeactiveerd.`,
-      );
+      this.notifier.success(`${updated.name} is ${DONE[updated.status]}.`);
     } catch (error) {
       this.rowError.set(describeError(error));
     } finally {
       this.busy.set(false);
     }
   }
+
+  private question(mosque: AdminMosque, to: MosqueStatus) {
+    switch (to) {
+      case 'INACTIVE':
+        return {
+          title: `${mosque.name} deactiveren?`,
+          message:
+            'De moskee en al haar activiteiten, lezingen en aankondigingen verdwijnen uit de app. Haar beheerders kunnen verder voorbereiden. Er wordt niets gewist.',
+          confirmLabel: 'Deactiveren',
+          destructive: true,
+        };
+      case 'BLOCKED':
+        return {
+          title: `${mosque.name} blokkeren?`,
+          message:
+            'De moskee verdwijnt uit de app en haar eigen beheerders en redacteuren kunnen niet meer bij het beheer. Alleen platformbeheerders kunnen haar nog openen. Er wordt niets gewist.',
+          confirmLabel: 'Blokkeren',
+          destructive: true,
+        };
+      case 'ACTIVE':
+        return {
+          title:
+            mosque.status === 'BLOCKED'
+              ? `Blokkade van ${mosque.name} opheffen?`
+              : `${mosque.name} activeren?`,
+          message:
+            'De moskee en haar gepubliceerde content zijn weer zichtbaar in de app, en haar beheerders kunnen weer beheren.',
+          confirmLabel: mosque.status === 'BLOCKED' ? 'Blokkade opheffen' : 'Activeren',
+        };
+    }
+  }
 }
+
+const DONE: Record<MosqueStatus, string> = {
+  ACTIVE: 'actief',
+  INACTIVE: 'gedeactiveerd',
+  BLOCKED: 'geblokkeerd',
+};

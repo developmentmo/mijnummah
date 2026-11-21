@@ -124,7 +124,10 @@ class EndpointSecurityIT extends AbstractIntegrationTest {
                 case GET -> api.get(concrete, token);
                 case DELETE -> api.delete(concrete, token);
                 case PUT -> api.put(concrete, java.util.Map.of(), token);
-                case POST -> api.post(concrete, java.util.Map.of(), token);
+                // uploads are multipart; a JSON body would be refused (415) before authorization is checked
+                case POST -> path.endsWith("/images") ? api.upload(concrete, "x.png", new byte[] {1}, token)
+                        : api.post(concrete, java.util.Map.of(), token);
+                case PATCH -> api.patch(concrete, java.util.Map.of(), token);
                 default -> throw new IllegalStateException("Unexpected method in " + this);
             };
         }

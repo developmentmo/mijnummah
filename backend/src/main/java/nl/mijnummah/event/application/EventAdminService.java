@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -15,6 +16,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import nl.mijnummah.common.audit.AuditEvent;
 import nl.mijnummah.common.error.ApplicationException;
 import nl.mijnummah.common.error.ErrorCategory;
 import nl.mijnummah.event.domain.Event;
@@ -52,17 +54,19 @@ public class EventAdminService {
     private final MosqueAccessService access;
     private final MosqueDirectory mosques;
     private final PushNotifications push;
+    private final ApplicationEventPublisher audit;
     private final Clock clock;
 
     public EventAdminService(EventRepository events, EventRegistrationRepository registrations, EventViews views,
                              MosqueAccessService access, MosqueDirectory mosques, PushNotifications push,
-                             Clock clock) {
+                             ApplicationEventPublisher audit, Clock clock) {
         this.events = events;
         this.registrations = registrations;
         this.views = views;
         this.access = access;
         this.mosques = mosques;
         this.push = push;
+        this.audit = audit;
         this.clock = clock;
     }
 
@@ -88,6 +92,7 @@ public class EventAdminService {
     public EventView create(AuthenticatedUser actor, UUID mosqueId, EventDetails details) {
         access.require(actor, mosqueId, MosquePermission.MANAGE_CONTENT);
         Event event = events.save(Event.draft(mosqueId, details, actor.id(), Instant.now(clock)));
+        audit.publishEvent(AuditEvent.of(actor.id(), mosqueId, "EVENT_CREATED", "EVENT", event.getId()));
         return views.of(event, null);
     }
 
@@ -101,6 +106,7 @@ public class EventAdminService {
                     "Capacity cannot be lower than the " + confirmed + " confirmed registrations.");
         }
         event.update(details, actor.id(), Instant.now(clock));
+        audit.publishEvent(AuditEvent.of(actor.id(), mosqueId, "EVENT_UPDATED", "EVENT", eventId));
         return views.of(event, null);
     }
 
@@ -109,6 +115,7 @@ public class EventAdminService {
         access.require(actor, mosqueId, MosquePermission.MANAGE_CONTENT);
         Event event = load(mosqueId, eventId);
         event.publish(actor.id(), Instant.now(clock));
+        audit.publishEvent(AuditEvent.of(actor.id(), mosqueId, "EVENT_PUBLISHED", "EVENT", eventId));
         return views.of(event, null);
     }
 
@@ -121,6 +128,7 @@ public class EventAdminService {
             throw new EventHasRegistrationsException("Cancel the event instead: people are registered for it.");
         }
         event.unpublish(actor.id(), Instant.now(clock));
+        audit.publishEvent(AuditEvent.of(actor.id(), mosqueId, "EVENT_UNPUBLISHED", "EVENT", eventId));
         return views.of(event, null);
     }
 
@@ -129,6 +137,7 @@ public class EventAdminService {
         access.require(actor, mosqueId, MosquePermission.MANAGE_CONTENT);
         Event event = load(mosqueId, eventId);
         event.cancel(actor.id(), Instant.now(clock));
+        audit.publishEvent(AuditEvent.of(actor.id(), mosqueId, "EVENT_CANCELLED", "EVENT", eventId));
         return views.of(event, null);
     }
 
@@ -145,6 +154,7 @@ public class EventAdminService {
             throw new EventHasRegistrationsException("This event has registrations and cannot be deleted.");
         }
         events.delete(event);
+        audit.publishEvent(AuditEvent.of(actor.id(), mosqueId, "EVENT_DELETED", "EVENT", eventId));
     }
 
     /**

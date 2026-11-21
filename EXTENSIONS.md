@@ -16,7 +16,8 @@ gebouwd: geen lege modules, tabellen, schermen of abstracties (D-011).
 | Video bij een externe dienst | `VideoProvider` in de `media`-module (YouTube, D-009) | Een livestream is ook een video bij een externe dienst; geen eigen videoserver nodig |
 | Pushmeldingen per onderwerp | `PushContentType` en `NotificationTopic` | Een nieuw onderwerp (bijv. "live") is een extra waarde met een eigen voorkeur |
 | Bewaartermijnen | `common/retention`, D-040 | Nieuwe persoonsgegevens krijgen een eigen termijn in dezelfde opschoning |
-| Merk per moskee | `brands/<slug>/`, WHITE_LABEL.md | Per moskee aan of uit zetten hoort in de backend (moskee-instelling), niet in het merk, zodat het zonder nieuwe app-versie kan |
+| Eén app, moskee als gegevens | `brands/mijnummah/`, D-053; logo en omslagfoto per moskee in de backend | Iets per moskee aan of uit zetten hoort in de backend (moskee-instelling), niet in de app, zodat het zonder nieuwe app-versie kan |
+| Auditlog | `audit`-module, `AuditEvent`, D-055 | Een nieuwe beheeractie publiceert een `AuditEvent` en komt vanzelf in het log |
 
 ## Officieel lidmaatschap
 
@@ -30,7 +31,7 @@ kan later contributies koppelen.
 - Nieuwe permissie, bijvoorbeeld `MANAGE_MEMBERS`, standaard alleen voor ADMIN.
 
 **Wat er dan nieuw nodig is**
-- Tabellen (via een Flyway-migratie): lidmaatschap per (moskee, gebruiker) met status (`AANGEVRAAGD`, `ACTIEF`,
+- Tabellen (via een Liquibase-changeset): lidmaatschap per (moskee, gebruiker) met status (`AANGEVRAAGD`, `ACTIEF`,
   `GEWEIGERD`, `BEËINDIGD`), datums en wie besliste; alleen de velden die het bestuur echt nodig heeft (naam en
   e-mail staan al bij het account; adres of geboortedatum alleen als de statuten dat eisen).
 - App: lid worden vanaf Profiel, eigen status zien, lidmaatschap opzeggen.

@@ -35,7 +35,7 @@ abstract final class FirebaseConfig {
       appId: appId,
       messagingSenderId: _senderId,
       projectId: _projectId,
-      iosBundleId: defaultTargetPlatform == TargetPlatform.iOS ? 'nl.mijnummah.noeroelislam' : null,
+      iosBundleId: defaultTargetPlatform == TargetPlatform.iOS ? 'nl.mijnummah.app' : null,
     );
   }
 }

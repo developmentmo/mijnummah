@@ -18,18 +18,22 @@ spring:
     # Never hold a DB connection for the whole web request; transactions live in application services.
     open-in-view: false
     hibernate:
-      # Flyway owns the schema. Hibernate only checks that entities match it.
+      # Liquibase owns the schema. Hibernate only checks that entities match it.
       ddl-auto: validate
     properties:
       hibernate:
         jdbc:
           time_zone: UTC
 
-  flyway:
+  liquibase:
     enabled: true
-    locations: classpath:db/migration
-    # Guard against accidental data loss: `flyway clean` must never run against a real database.
-    clean-disabled: true
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+
+  servlet:
+    multipart:
+      # Uploaded images (logo, cover photo); they are scaled down and re-encoded after upload.
+      max-file-size: 10MB
+      max-request-size: 11MB
 
   mvc:
     problemdetails:
@@ -46,6 +50,9 @@ server:
     include-message: never
 
 mijnummah:
+  storage:
+    # Directory for uploaded images. Required; in production a Docker volume that the backup includes.
+    directory: ${STORAGE_DIRECTORY}
   security:
     jwt:
       # HS256 signing secret, at least 32 bytes. Generate with: openssl rand -base64 48
@@ -90,6 +97,7 @@ mijnummah:
     event-registrations: ${RETENTION_EVENT_REGISTRATIONS:P365D}
     inactive-push-devices: ${RETENTION_INACTIVE_PUSH_DEVICES:P270D}
     push-sending-timeout: ${RETENTION_PUSH_SENDING_TIMEOUT:PT30M}
+    audit-log: ${RETENTION_AUDIT_LOG:P730D}
   api-docs:
     # OpenAPI document (/v3/api-docs) and Swagger UI (/swagger-ui.html). Off by default in real environments.
     enabled: ${API_DOCS_ENABLED:false}

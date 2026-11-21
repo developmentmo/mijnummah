@@ -6,10 +6,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import nl.mijnummah.common.audit.AuditEvent;
 import nl.mijnummah.identity.AuthenticatedUser;
 import nl.mijnummah.identity.UserDirectory;
 import nl.mijnummah.identity.UserSummary;
@@ -26,13 +28,15 @@ public class MosqueAdministratorService {
     private final MosqueAdministratorRepository administrators;
     private final MosqueAccessService access;
     private final UserDirectory userDirectory;
+    private final ApplicationEventPublisher audit;
     private final Clock clock;
 
     public MosqueAdministratorService(MosqueAdministratorRepository administrators, MosqueAccessService access,
-                                      UserDirectory userDirectory, Clock clock) {
+                                      UserDirectory userDirectory, ApplicationEventPublisher audit, Clock clock) {
         this.administrators = administrators;
         this.access = access;
         this.userDirectory = userDirectory;
+        this.audit = audit;
         this.clock = clock;
     }
 
@@ -59,6 +63,8 @@ public class MosqueAdministratorService {
         } catch (DataIntegrityViolationException ex) {
             throw new AdministratorAlreadyExistsException();
         }
+        audit.publishEvent(AuditEvent.of(actor.id(), mosqueId, "ADMINISTRATOR_ADDED", "ADMINISTRATOR",
+                administrator.getId()));
         return view(administrator, user);
     }
 
@@ -78,6 +84,8 @@ public class MosqueAdministratorService {
             requireAnotherAdmin(mosqueId);
         }
         administrator.changeRole(role);
+        audit.publishEvent(AuditEvent.of(actor.id(), mosqueId, "ADMINISTRATOR_ROLE_CHANGED", "ADMINISTRATOR",
+                administratorId));
         return view(administrator, userDirectory.findByIds(List.of(administrator.getUserId()))
                 .get(administrator.getUserId()));
     }
@@ -90,6 +98,8 @@ public class MosqueAdministratorService {
             requireAnotherAdmin(mosqueId);
         }
         administrators.delete(administrator);
+        audit.publishEvent(AuditEvent.of(actor.id(), mosqueId, "ADMINISTRATOR_REMOVED", "ADMINISTRATOR",
+                administratorId));
     }
 
     /** Lookup by (mosque, id): an administrator ID of another mosque is "not found", never touched. */
