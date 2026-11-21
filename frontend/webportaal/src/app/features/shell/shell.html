@@ -38,34 +38,38 @@
             <span class="mu-muted">{{ roleLabel() }}</span>
           }
         </div>
-        @if (auth.isPlatformAdmin()) {
-          <a mat-menu-item routerLink="/moskeeen/beheer">Alle moskeeën</a>
-          <a mat-menu-item routerLink="/moskeeen/nieuw">Moskee toevoegen</a>
-          <a mat-menu-item routerLink="/accounts">Accounts beheren</a>
-        }
         <button mat-menu-item type="button" (click)="logout()">Uitloggen</button>
       </mat-menu>
     }
   </div>
 </header>
 
-<div class="layout" [class.with-nav]="navItems().length > 0">
-  @if (navItems().length > 0) {
+<div class="layout" [class.with-nav]="navGroups().length > 0">
+  @if (navGroups().length > 0) {
     <nav aria-label="Hoofdmenu">
-      <ul>
-        @for (item of navItems(); track item.path) {
-          <li>
-            <a
-              class="mu-label-large"
-              [routerLink]="item.path"
-              routerLinkActive="active"
-              [routerLinkActiveOptions]="{ exact: item.exact ?? false }"
-              ariaCurrentWhenActive="page"
-              >{{ item.label }}</a
-            >
-          </li>
+      <div class="inner">
+        @for (group of navGroups(); track group.heading) {
+          <div class="group">
+            <h2 class="heading mu-label-medium mu-muted" [id]="'nav-' + $index">
+              {{ group.heading }}
+            </h2>
+            <ul [attr.aria-labelledby]="'nav-' + $index">
+              @for (item of group.items; track item.path) {
+                <li>
+                  <a
+                    class="mu-label-large"
+                    [routerLink]="item.path"
+                    routerLinkActive="active"
+                    [routerLinkActiveOptions]="{ exact: item.exact ?? false }"
+                    ariaCurrentWhenActive="page"
+                    >{{ item.label }}</a
+                  >
+                </li>
+              }
+            </ul>
+          </div>
         }
-      </ul>
+      </div>
     </nav>
   }
   <main id="inhoud" tabindex="-1">

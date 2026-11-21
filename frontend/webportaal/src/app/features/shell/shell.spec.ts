@@ -2,7 +2,14 @@ import { TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { AuthService } from '../../core/auth/auth.service';
-import { MOSQUE, USER, configureTesting, selectMosque, text } from '../../testing/harness';
+import {
+  MOSQUE,
+  PLATFORM_ADMIN,
+  USER,
+  configureTesting,
+  selectMosque,
+  text,
+} from '../../testing/harness';
 import { Shell } from './shell';
 
 describe('Shell', () => {
@@ -41,6 +48,24 @@ describe('Shell', () => {
       'Lezingen en video’s',
       'Aankondigingen',
     ]);
+  });
+
+  it('toont een platformbeheerder de groep Platform en daarna de gekozen moskee', async () => {
+    const auth = TestBed.inject(AuthService);
+    vi.spyOn(auth, 'user').mockReturnValue(PLATFORM_ADMIN);
+    vi.spyOn(auth, 'isPlatformAdmin').mockReturnValue(true);
+    await selectMosque({ ...MOSQUE, myRole: null });
+    const fixture = TestBed.createComponent(Shell);
+    await fixture.whenStable();
+    const headings = Array.from(
+      fixture.nativeElement.querySelectorAll('nav h2') as NodeListOf<HTMLElement>,
+    ).map(text);
+    expect(headings).toEqual(['Platform', 'Noeroel Islam']);
+    const labels = Array.from(
+      fixture.nativeElement.querySelectorAll('nav a') as NodeListOf<HTMLElement>,
+    ).map(text);
+    expect(labels.slice(0, 4)).toEqual(['Dashboard', 'Moskeeën', 'Accounts', 'Auditlog']);
+    expect(labels).toContain('Beheerders');
   });
 
   it('heeft een skiplink naar de inhoud', async () => {

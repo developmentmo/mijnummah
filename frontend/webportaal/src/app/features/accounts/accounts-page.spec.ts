@@ -36,11 +36,37 @@ describe('AccountsPage', () => {
     return fixture;
   }
 
-  it('eist een wachtwoord van minstens 12 tekens', async () => {
+  function fill(el: HTMLElement) {
+    typeInto(el.querySelector('input[formcontrolname=displayName]')!, 'Nieuwe beheerder');
+    typeInto(el.querySelector('input[formcontrolname=email]')!, 'nieuw@example.org');
+  }
+
+  it('maakt standaard een account met een uitnodiging per e-mail', async () => {
     const fixture = await render();
     const el: HTMLElement = fixture.nativeElement;
-    typeInto(el.querySelector('input[formcontrolname=displayName]')!, 'Nieuwe beheerder');
-    typeInto(el.querySelector('input[type=email]')!, 'nieuw@example.org');
+    fill(el);
+    expect(el.querySelector('input[type=password]')).toBeNull();
+    buttonByText(el, 'Account aanmaken').click();
+    const request = await respond((r) => r.url === USERS && r.method === 'POST', {
+      ...USER,
+      id: 'u-2',
+      lastLoginAt: null,
+    });
+    expect(request.request.body).toEqual({
+      email: 'nieuw@example.org',
+      displayName: 'Nieuwe beheerder',
+      password: null,
+      platformRole: 'USER',
+    });
+    await respond((r) => r.url === USERS && r.method === 'GET', page([USER]));
+  });
+
+  it('eist zonder uitnodiging een wachtwoord van minstens 12 tekens', async () => {
+    const fixture = await render();
+    const el: HTMLElement = fixture.nativeElement;
+    el.querySelector<HTMLButtonElement>('mat-slide-toggle button')!.click();
+    await fixture.whenStable();
+    fill(el);
     typeInto(el.querySelector('input[type=password]')!, 'kort');
     buttonByText(el, 'Account aanmaken').click();
     await fixture.whenStable();
@@ -48,16 +74,36 @@ describe('AccountsPage', () => {
     http().expectNone((r) => r.method === 'POST');
   });
 
-  it('blokkeert een account pas na bevestiging', async () => {
+  it('zoekt op naam of e-mailadres', async () => {
+    const fixture = await render();
+    typeInto(fixture.nativeElement.querySelector('input[type=search]')!, 'fatima');
+    await new Promise((resolve) => setTimeout(resolve, 350));
+    const request = await respond((r) => r.url === USERS && r.method === 'GET', page([USER]));
+    expect(request.request.params.get('q')).toBe('fatima');
+  });
+
+  it('deactiveert een account pas na bevestiging', async () => {
     ask.mockResolvedValue(true);
     const fixture = await render();
-    buttonByText(fixture.nativeElement, 'Blokkeren').click();
+    buttonByText(fixture.nativeElement, 'Deactiveren').click();
     await fixture.whenStable();
     expect(ask).toHaveBeenCalledWith(
-      expect.objectContaining({ title: 'Account blokkeren?', destructive: true }),
+      expect.objectContaining({ title: 'Account deactiveren?', destructive: true }),
     );
     await respond(`${USERS}/u-1/block`, { ...USER, status: 'BLOCKED' });
     await fixture.whenStable();
-    expect(text(fixture.nativeElement.querySelector('tbody'))).toContain('Geblokkeerd');
+    expect(text(fixture.nativeElement.querySelector('tbody'))).toContain('Gedeactiveerd');
+  });
+
+  it('stuurt na bevestiging een code voor een nieuw wachtwoord', async () => {
+    ask.mockResolvedValue(true);
+    const fixture = await render();
+    buttonByText(fixture.nativeElement, 'Code sturen').click();
+    await fixture.whenStable();
+    const request = await respond(`${USERS}/u-1/password-code`, null, {
+      status: 204,
+      statusText: 'No Content',
+    });
+    expect(request.request.method).toBe('POST');
   });
 });

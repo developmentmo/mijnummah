@@ -11,21 +11,29 @@ import {
   Administrator,
   AnnouncementRequest,
   AnnouncementStatus,
+  AuditEntry,
+  CreateMosqueRequest,
   CreateUserRequest,
+  CreatedMosque,
   CurrentUser,
   EventRequest,
   EventStatus,
   MediaRequest,
   MediaStatus,
+  MosqueCounts,
   MosqueDetailsRequest,
   MosqueRole,
+  MosqueSettings,
   MosqueStatus,
   Page,
+  PlatformTotals,
   PushAudience,
   PushContentType,
   PushNotification,
   PushText,
   Registrant,
+  StoredImage,
+  UserStatus,
 } from './models';
 
 const PUSH_PATHS: Record<PushContentType, string> = {
@@ -58,6 +66,19 @@ export interface MediaQuery {
   size?: number;
 }
 
+export interface UserQuery {
+  q?: string | null;
+  status?: UserStatus | null;
+  page?: number;
+  size?: number;
+}
+
+export interface AuditQuery {
+  mosqueId?: string | null;
+  page?: number;
+  size?: number;
+}
+
 export interface AnnouncementQuery {
   status?: AnnouncementStatus | null;
   page?: number;
@@ -76,9 +97,57 @@ export class AdminApi {
 
   // ---------- moskee
 
-  /** Alleen platformbeheerder. De slug is dezelfde als die van de app (brands/<slug>/brand.json). */
-  createMosque(slug: string, details: MosqueDetailsRequest): Observable<AdminMosque> {
-    return this.http.post<AdminMosque>(`${this.base}/mosques`, { slug, details });
+  /**
+   * Alleen platformbeheerder. Maakt de moskee met haar configuratie en eventueel haar eerste beheerder in één keer;
+   * zonder slug maakt de backend er een uit de naam.
+   */
+  createMosque(request: CreateMosqueRequest): Observable<CreatedMosque> {
+    return this.http.post<CreatedMosque>(`${this.base}/mosques`, request);
+  }
+
+  mosqueSettings(mosqueId: string): Observable<MosqueSettings> {
+    return this.http.get<MosqueSettings>(this.mosque(mosqueId, '/settings'));
+  }
+
+  /** Alleen platformbeheerder. */
+  updateMosqueSettings(mosqueId: string, settings: MosqueSettings): Observable<MosqueSettings> {
+    return this.http.put<MosqueSettings>(this.mosque(mosqueId, '/settings'), settings);
+  }
+
+  /** JPEG of PNG, hooguit 10 MB. De afbeelding telt pas mee als het logo of de omslag ernaar verwijst. */
+  uploadImage(mosqueId: string, file: File): Observable<StoredImage> {
+    const body = new FormData();
+    body.append('file', file);
+    return this.http.post<StoredImage>(this.mosque(mosqueId, '/images'), body);
+  }
+
+  /** Null verwijdert het logo of de omslagfoto. */
+  setMosqueImages(
+    mosqueId: string,
+    logoImageId: string | null,
+    coverImageId: string | null,
+  ): Observable<AdminMosque> {
+    return this.http.put<AdminMosque>(this.mosque(mosqueId, '/images'), {
+      logoImageId,
+      coverImageId,
+    });
+  }
+
+  // ---------- platformoverzicht (alleen platformbeheerder)
+
+  platformTotals(): Observable<PlatformTotals> {
+    return this.http.get<PlatformTotals>(`${this.base}/platform/dashboard`);
+  }
+
+  platformMosques(): Observable<MosqueCounts[]> {
+    return this.http.get<MosqueCounts[]>(`${this.base}/platform/mosques`);
+  }
+
+  /** Zonder moskee: het hele platform (alleen platformbeheerder). Nieuwste eerst. */
+  auditLog(query: AuditQuery = {}): Observable<Page<AuditEntry>> {
+    return this.http.get<Page<AuditEntry>>(`${this.base}/audit-log`, {
+      params: params({ ...query }),
+    });
   }
 
   /** Alleen platformbeheerder. Inactief verbergt de moskee en al haar content in de app; er wordt niets gewist. */
@@ -230,10 +299,15 @@ export class AdminApi {
 
   // ---------- accounts (platformbeheer)
 
-  users(page = 0, size = 20): Observable<Page<CurrentUser>> {
+  users(query: UserQuery = {}): Observable<Page<CurrentUser>> {
     return this.http.get<Page<CurrentUser>>(`${this.base}/users`, {
-      params: params({ page, size }),
+      params: params({ ...query }),
     });
+  }
+
+  /** Stuurt het account per e-mail een code om een nieuw wachtwoord in te stellen (72 uur geldig). */
+  sendPasswordCode(userId: string): Observable<void> {
+    return this.http.post<void>(`${this.base}/users/${userId}/password-code`, null);
   }
 
   createUser(request: CreateUserRequest): Observable<CurrentUser> {

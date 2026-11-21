@@ -51,6 +51,15 @@ nginx levert `config.json` uit `API_BASE_URL`, zet beveiligingsheaders en een Co
 per verzoek (de placeholder `CSP_NONCE_PLACEHOLDER` in `src/index.html`), en stuurt onbekende paden naar de app.
 Configuratie in `docker/`; de volledige productieopzet staat in [DEPLOYMENT.md](../../DEPLOYMENT.md).
 
+## Schermen
+
+| Route | Voor wie |
+|---|---|
+| `/inloggen`, `/wachtwoord-instellen` | Iedereen; de tweede met een code uit een uitnodiging of herstel-e-mail |
+| `/platform` | Platformbeheerder: dashboard; daaronder `moskeeen`, `moskeeen/nieuw`, `accounts`, `auditlog` |
+| `/moskeeen` | Moskee kiezen (beheerders van meer dan één moskee) |
+| `/m/:mosqueId/…` | Beheer van één moskee: gegevens (met logo, omslagfoto en configuratie), agenda, media, aankondigingen, beheerders |
+
 ## Structuur
 
 | Pad | Inhoud |

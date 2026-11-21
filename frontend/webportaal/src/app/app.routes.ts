@@ -1,6 +1,7 @@
-import { isDevMode } from '@angular/core';
+import { inject, isDevMode } from '@angular/core';
 import { Routes } from '@angular/router';
 
+import { AuthService } from './core/auth/auth.service';
 import { authGuard, guestGuard, platformAdminGuard } from './core/auth/guards';
 import { BRAND } from './core/brand/brand.generated';
 import { mosqueAdminGuard, mosqueGuard } from './core/mosque/mosque-guards';
@@ -17,11 +18,21 @@ export const routes: Routes = [
     loadComponent: () => import('./features/auth/login-page').then((m) => m.LoginPage),
   },
   {
+    // Geen guestGuard: ook wie al is ingelogd kan met een code een ander account activeren.
+    path: 'wachtwoord-instellen',
+    title: title('Wachtwoord instellen'),
+    loadComponent: () => import('./features/auth/set-password-page').then((m) => m.SetPasswordPage),
+  },
+  {
     path: '',
     canActivate: [authGuard],
     loadComponent: () => import('./features/shell/shell').then((m) => m.Shell),
     children: [
-      { path: '', pathMatch: 'full', redirectTo: 'moskeeen' },
+      {
+        path: '',
+        pathMatch: 'full',
+        redirectTo: () => (inject(AuthService).isPlatformAdmin() ? 'platform' : 'moskeeen'),
+      },
       {
         path: 'moskeeen',
         title: title('Moskee kiezen'),
@@ -29,27 +40,48 @@ export const routes: Routes = [
           import('./features/mosques/mosque-picker-page').then((m) => m.MosquePickerPage),
       },
       {
-        path: 'moskeeen/beheer',
-        title: title('Alle moskeeën'),
+        path: 'platform',
         canActivate: [platformAdminGuard],
-        loadComponent: () =>
-          import('./features/mosques/mosques-admin-page').then((m) => m.MosquesAdminPage),
+        children: [
+          {
+            path: '',
+            title: title('Platform'),
+            loadComponent: () =>
+              import('./features/platform/platform-dashboard-page').then(
+                (m) => m.PlatformDashboardPage,
+              ),
+          },
+          {
+            path: 'moskeeen',
+            title: title('Moskeeën'),
+            loadComponent: () =>
+              import('./features/mosques/mosques-admin-page').then((m) => m.MosquesAdminPage),
+          },
+          {
+            path: 'moskeeen/nieuw',
+            title: title('Moskee registreren'),
+            canDeactivate: [unsavedChangesGuard],
+            loadComponent: () =>
+              import('./features/mosques/mosque-create-page').then((m) => m.MosqueCreatePage),
+          },
+          {
+            path: 'accounts',
+            title: title('Accounts'),
+            loadComponent: () =>
+              import('./features/accounts/accounts-page').then((m) => m.AccountsPage),
+          },
+          {
+            path: 'auditlog',
+            title: title('Auditlog'),
+            loadComponent: () =>
+              import('./features/platform/audit-log-page').then((m) => m.AuditLogPage),
+          },
+        ],
       },
-      {
-        path: 'moskeeen/nieuw',
-        title: title('Moskee toevoegen'),
-        canActivate: [platformAdminGuard],
-        canDeactivate: [unsavedChangesGuard],
-        loadComponent: () =>
-          import('./features/mosques/mosque-create-page').then((m) => m.MosqueCreatePage),
-      },
-      {
-        path: 'accounts',
-        title: title('Accounts'),
-        canActivate: [platformAdminGuard],
-        loadComponent: () =>
-          import('./features/accounts/accounts-page').then((m) => m.AccountsPage),
-      },
+      // Oude adressen uit fase 4 tot en met A.
+      { path: 'moskeeen/beheer', redirectTo: 'platform/moskeeen' },
+      { path: 'moskeeen/nieuw', redirectTo: 'platform/moskeeen/nieuw' },
+      { path: 'accounts', redirectTo: 'platform/accounts' },
       {
         path: 'm/:mosqueId',
         canActivate: [mosqueGuard],

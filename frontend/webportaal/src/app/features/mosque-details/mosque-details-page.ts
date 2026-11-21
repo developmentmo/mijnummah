@@ -25,11 +25,16 @@ import { HasUnsavedChanges } from '../../shared/forms/unsaved-changes.guard';
 import { Notifier } from '../../shared/ui/notifier';
 import { PageHeader } from '../../shared/ui/page-header';
 import { StatusMessage } from '../../shared/ui/status-message';
+import { MosqueImages } from './mosque-images';
+import { MosqueSettingsPanel } from './mosque-settings-panel';
 
 const countryCode: ValidatorFn = (control): ValidationErrors | null =>
   !control.value || /^[A-Za-z]{2}$/.test(control.value) ? null : { countryCode: true };
 
-/** Profiel van de moskee zoals de app het toont op Ontdekken. Alleen voor de rol Beheerder. */
+/**
+ * Profiel van de moskee zoals de app het toont op Ontdekken, met logo en omslagfoto en (alleen te lezen, of voor
+ * de platformbeheerder te wijzigen) de instellingen. Alleen voor de rol Beheerder.
+ */
 @Component({
   selector: 'mu-mosque-details-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -37,11 +42,23 @@ const countryCode: ValidatorFn = (control): ValidationErrors | null =>
     MatButton,
     MatFormFieldModule,
     MatInput,
+    MosqueImages,
+    MosqueSettingsPanel,
     PageHeader,
     ReactiveFormsModule,
     StatusMessage,
   ],
   templateUrl: './mosque-details-page.html',
+  styles: `
+    :host {
+      display: grid;
+      gap: var(--mu-space-8);
+    }
+    .panel {
+      padding-top: var(--mu-space-6);
+      border-top: 1px solid var(--mu-color-divider);
+    }
+  `,
 })
 export class MosqueDetailsPage implements OnInit, HasUnsavedChanges {
   private readonly api = inject(AdminApi);

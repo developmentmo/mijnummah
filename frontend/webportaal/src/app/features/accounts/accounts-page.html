@@ -1,6 +1,6 @@
 <mu-page-header
   heading="Accounts"
-  subtitle="Platformbeheer: accounts voor beheerders en redacteuren."
+  subtitle="Alle accounts op het platform: gebruikers van de app, beheerders en redacteuren."
 />
 
 <section aria-labelledby="nieuw">
@@ -31,21 +31,26 @@
           }
         </mat-form-field>
       </div>
+      <mat-slide-toggle formControlName="invite"
+        >Uitnodiging per e-mail: de persoon kiest zelf een wachtwoord</mat-slide-toggle
+      >
       <div class="mu-form-row">
-        <mat-form-field appearance="outline">
-          <mat-label>Tijdelijk wachtwoord</mat-label>
-          <input
-            matInput
-            type="password"
-            formControlName="password"
-            required
-            autocomplete="new-password"
-          />
-          <mat-hint>Minstens 12 tekens. Geef het veilig door, niet per gewone e-mail.</mat-hint>
-          @if (form.controls.password.invalid) {
-            <mat-error>{{ controlError(form.controls.password) }}</mat-error>
-          }
-        </mat-form-field>
+        @if (!invite()) {
+          <mat-form-field appearance="outline">
+            <mat-label>Tijdelijk wachtwoord</mat-label>
+            <input
+              matInput
+              type="password"
+              formControlName="password"
+              required
+              autocomplete="new-password"
+            />
+            <mat-hint>Minstens 12 tekens. Geef het veilig door, niet per gewone e-mail.</mat-hint>
+            @if (form.controls.password.invalid) {
+              <mat-error>{{ controlError(form.controls.password) }}</mat-error>
+            }
+          </mat-form-field>
+        }
         <mat-form-field appearance="outline">
           <mat-label>Soort account</mat-label>
           <mat-select formControlName="platformRole">
@@ -67,6 +72,25 @@
 
 <section aria-labelledby="lijst">
   <h2 id="lijst" class="mu-title-medium">Alle accounts</h2>
+  <div class="filters">
+    <mat-form-field appearance="outline">
+      <mat-label>Zoeken</mat-label>
+      <input
+        matInput
+        type="search"
+        placeholder="Naam of e-mailadres"
+        (input)="search($any($event.target).value)"
+      />
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>Status</mat-label>
+      <mat-select [value]="statusFilter()" (valueChange)="filterStatus($event)">
+        <mat-option [value]="null">Alle</mat-option>
+        <mat-option value="ACTIVE">Actief</mat-option>
+        <mat-option value="BLOCKED">Gedeactiveerd</mat-option>
+      </mat-select>
+    </mat-form-field>
+  </div>
   @if (rowError(); as message) {
     <mu-status-message kind="error" [message]="message" />
   }
@@ -90,6 +114,7 @@
             <th scope="col">Soort</th>
             <th scope="col">Status</th>
             <th scope="col">Sinds</th>
+            <th scope="col">Laatst ingelogd</th>
             <th scope="col"><span class="mu-visually-hidden">Acties</span></th>
           </tr>
         </thead>
@@ -102,12 +127,18 @@
               <td>
                 <mu-status-badge
                   [status]="u.status"
-                  [label]="u.status === 'ACTIVE' ? 'Actief' : 'Geblokkeerd'"
+                  [label]="u.status === 'ACTIVE' ? 'Actief' : 'Gedeactiveerd'"
                 />
               </td>
               <td class="nowrap">{{ since(u.createdAt) }}</td>
-              <td>
+              <td class="nowrap">{{ lastLogin(u.lastLoginAt) }}</td>
+              <td class="actions">
                 @if (u.id !== myUserId()) {
+                  @if (u.status === 'ACTIVE') {
+                    <button matButton type="button" [disabled]="busy()" (click)="sendCode(u)">
+                      Code sturen
+                    </button>
+                  }
                   <button
                     matButton
                     type="button"
@@ -115,12 +146,16 @@
                     [disabled]="busy()"
                     (click)="toggleBlocked(u)"
                   >
-                    {{ u.status === 'ACTIVE' ? 'Blokkeren' : 'Blokkade opheffen' }}
+                    {{ u.status === 'ACTIVE' ? 'Deactiveren' : 'Activeren' }}
                   </button>
                 } @else {
                   <span class="mu-muted mu-body-small">Jouw account</span>
                 }
               </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="7" class="mu-muted">Geen accounts gevonden.</td>
             </tr>
           }
         </tbody>

@@ -102,10 +102,15 @@ centrale app wordt dat de gebruiker.)
 | Methode | Pad | |
 |---|---|---|
 | GET | `/admin/mosques` | De moskeeën die ik beheer (platformbeheerder: alle), met mijn rol |
-| POST | `/admin/mosques` | Moskee aanmaken `{slug, details}` (platformbeheerder) |
+| POST | `/admin/mosques` | Moskee registreren `{slug?, details, firstAdministrator?: {email, displayName}, settings?: {registrationsEnabled, pushEnabled}}` (platformbeheerder). Zonder slug maakt de backend een unieke uit de naam (`-2`, `-3` …). Een onbekend e-mailadres krijgt een account met uitnodiging per e-mail; een bestaand account wordt ADMIN; een geblokkeerd account geeft `409 ACCOUNT_BLOCKED`. Alles in één transactie. Antwoord: `{mosque, settings, firstAdministrator: {userId, invited} \| null}` |
+| GET, PUT | `/admin/mosques/{id}/settings` | Configuratie `{registrationsEnabled, pushEnabled}`. Lezen: EDITOR van de moskee; wijzigen: platformbeheerder. Staat aanmelden uit, dan geeft aanmelden `422 REGISTRATIONS_DISABLED_FOR_MOSQUE`; staat push uit, dan geeft verzenden `422 PUSH_DISABLED_FOR_MOSQUE` |
 | PATCH | `/admin/mosques/{id}/status` | `{status}`: `ACTIVE`, `INACTIVE` (verborgen, beheerders kunnen voorbereiden) of `BLOCKED` (verborgen en alleen de platformbeheerder beheert) |
-| GET | `/admin/audit-log` | Beheeracties, nieuwste eerst; zonder `mosqueId` alleen platformbeheerder, met `mosqueId` ook ADMIN van die moskee |
-| GET, POST | `/admin/users` | Accounts tonen en aanmaken (platformbeheerder) |
+| GET | `/admin/audit-log` | Beheeracties, nieuwste eerst, met `mosqueName`; zonder `mosqueId` alleen platformbeheerder, met `mosqueId` ook ADMIN van die moskee |
+| GET | `/admin/platform/dashboard` | Totalen: moskeeën per status, accounts, nieuwe accounts (30 dagen), volgers, activiteiten, gepubliceerde video's en aankondigingen, pushmeldingen (30 dagen) (platformbeheerder) |
+| GET | `/admin/platform/mosques` | Alle moskeeën met aantallen beheerders, volgers, activiteiten, video's en aankondigingen (platformbeheerder) |
+| GET | `/admin/users` | Accounts zoeken: `q` (naam of e-mail), `status` (`ACTIVE`, `BLOCKED`), met `lastLoginAt` (platformbeheerder) |
+| POST | `/admin/users` | Account aanmaken `{email, displayName, password?, platformRole}`; zonder wachtwoord gaat er een uitnodiging per e-mail uit (vereist `MAIL_PROVIDER`) |
+| POST | `/admin/users/{id}/password-code` | `204`: stuurt een code van 72 uur om een nieuw wachtwoord in te stellen; het huidige wachtwoord blijft werken tot de code is gebruikt |
 | POST | `/admin/users/{id}/block`, `/unblock` | Blokkeren beëindigt alle sessies direct |
 
 ## Paginering

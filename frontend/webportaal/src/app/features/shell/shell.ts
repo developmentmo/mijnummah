@@ -15,7 +15,15 @@ interface NavItem {
   exact?: boolean;
 }
 
-/** Vaste schil van het portaal: kopbalk met account, navigatie per moskee en het inhoudsgebied. */
+interface NavGroup {
+  heading: string;
+  items: NavItem[];
+}
+
+/**
+ * Vaste schil van het portaal: kopbalk met account, zijbalk en het inhoudsgebied. De zijbalk heeft voor een
+ * platformbeheerder een groep Platform, en zodra er een moskee gekozen is een groep voor die moskee.
+ */
 @Component({
   selector: 'mu-shell',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -39,23 +47,37 @@ export class Shell {
 
   protected readonly canSwitchMosque = computed(() => (this.context.mosques()?.length ?? 0) > 1);
 
-  protected readonly navItems = computed<NavItem[]>(() => {
-    const mosque = this.context.current();
-    if (!mosque) return [];
-    const base = `/m/${mosque.id}`;
-    const items: NavItem[] = [
-      { label: 'Overzicht', path: base, exact: true },
-      { label: 'Agenda', path: `${base}/agenda` },
-      { label: 'Lezingen en video’s', path: `${base}/media` },
-      { label: 'Aankondigingen', path: `${base}/aankondigingen` },
-    ];
-    if (this.context.isAdmin()) {
-      items.push(
-        { label: 'Moskeegegevens', path: `${base}/gegevens` },
-        { label: 'Beheerders', path: `${base}/beheerders` },
-      );
+  protected readonly navGroups = computed<NavGroup[]>(() => {
+    const groups: NavGroup[] = [];
+    if (this.auth.isPlatformAdmin()) {
+      groups.push({
+        heading: 'Platform',
+        items: [
+          { label: 'Dashboard', path: '/platform', exact: true },
+          { label: 'Moskeeën', path: '/platform/moskeeen' },
+          { label: 'Accounts', path: '/platform/accounts' },
+          { label: 'Auditlog', path: '/platform/auditlog' },
+        ],
+      });
     }
-    return items;
+    const mosque = this.context.current();
+    if (mosque) {
+      const base = `/m/${mosque.id}`;
+      const items: NavItem[] = [
+        { label: 'Overzicht', path: base, exact: true },
+        { label: 'Agenda', path: `${base}/agenda` },
+        { label: 'Lezingen en video’s', path: `${base}/media` },
+        { label: 'Aankondigingen', path: `${base}/aankondigingen` },
+      ];
+      if (this.context.isAdmin()) {
+        items.push(
+          { label: 'Moskeegegevens', path: `${base}/gegevens` },
+          { label: 'Beheerders', path: `${base}/beheerders` },
+        );
+      }
+      groups.push({ heading: mosque.name, items });
+    }
+    return groups;
   });
 
   protected readonly roleLabel = computed(() => {

@@ -42,12 +42,24 @@ export class AuthService {
     return this.restoring;
   }
 
-  async login(email: string, password: string): Promise<CurrentUser> {
-    const tokens = await firstValueFrom(
-      this.http.post<TokenResponse>(this.url('/auth/login'), { email, password }),
-    ).catch((error) => {
-      throw ApiError.from(error);
-    });
+  login(email: string, password: string): Promise<CurrentUser> {
+    return this.signIn('/auth/login', { email, password });
+  }
+
+  /**
+   * Kiest een nieuw wachtwoord met de code uit de e-mail (uitnodiging of herstel) en logt direct in. Andere sessies
+   * van het account vervallen.
+   */
+  setPasswordWithCode(email: string, code: string, newPassword: string): Promise<CurrentUser> {
+    return this.signIn('/auth/password-reset/confirm', { email, code, newPassword });
+  }
+
+  private async signIn(path: string, body: object): Promise<CurrentUser> {
+    const tokens = await firstValueFrom(this.http.post<TokenResponse>(this.url(path), body)).catch(
+      (error) => {
+        throw ApiError.from(error);
+      },
+    );
     this.accept(tokens);
     try {
       const user = await this.fetchMe();

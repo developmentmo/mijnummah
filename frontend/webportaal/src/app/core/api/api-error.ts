@@ -64,6 +64,13 @@ const COMMON_MESSAGES: Record<string, string> = {
     'Iemand anders heeft dit tegelijk gewijzigd. Laad de pagina opnieuw en probeer het nog eens.',
   RATE_LIMITED: 'Te veel verzoeken achter elkaar. Wacht even en probeer het opnieuw.',
   INTERNAL_ERROR: 'Er ging iets mis op de server. Probeer het later opnieuw.',
+  ACCOUNT_BLOCKED: 'Dit account is geblokkeerd. Hef eerst de blokkade op bij Accounts.',
+  PASSWORD_RESET_UNAVAILABLE:
+    'E-mail is op deze server niet ingesteld, dus er kan geen uitnodiging of code worden verstuurd.',
+  PUSH_DISABLED_FOR_MOSQUE:
+    'Pushmeldingen staan voor deze moskee uit (instelling van het platform).',
+  INVALID_IMAGE: 'Dit bestand is geen bruikbare afbeelding. Gebruik een JPEG of PNG.',
+  FILE_TOO_LARGE: 'Dit bestand is te groot. Gebruik een afbeelding van hooguit 10 MB.',
 };
 
 /**

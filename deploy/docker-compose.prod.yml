@@ -42,6 +42,8 @@ services:
       FORWARD_HEADERS_STRATEGY: framework
       MAIL_PROVIDER: ${MAIL_PROVIDER:-none}
       MAIL_FROM: ${MAIL_FROM:-}
+      # Link in invitation and reset emails: the portal itself.
+      PORTAL_URL: ${PORTAL_ORIGIN}
       SPRING_MAIL_HOST: ${SPRING_MAIL_HOST:-}
       SPRING_MAIL_PORT: ${SPRING_MAIL_PORT:-587}
       SPRING_MAIL_USERNAME: ${SPRING_MAIL_USERNAME:-}

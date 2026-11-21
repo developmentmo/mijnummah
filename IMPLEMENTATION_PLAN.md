@@ -26,8 +26,8 @@ moskeeën. Het herontwerp (plan in `herontwerp/plan.md` in de projectbestanden) 
 
 | Fase | Onderwerp | Status |
 |---|---|---|
-| A | Fundament: Liquibase, één merk, moskeestatus, auditlog, afbeeldingsopslag | Geïmplementeerd; PR wacht op beoordeling |
-| B | Superuser-portaal | Nog niet begonnen |
+| A | Fundament: Liquibase, één merk, moskeestatus, auditlog, afbeeldingsopslag | Voltooid (PR #15 gemerged) |
+| B | Superuser-portaal | Geïmplementeerd; PR wacht op beoordeling |
 | C | Moskeebeheerportaal | Nog niet begonnen |
 | D | Centrale mobiele app | Nog niet begonnen |
 | E | Pilot Noeroel Islam als eerste tenant via het portaal | Nog niet begonnen |
@@ -59,6 +59,30 @@ moskeeën. Het herontwerp (plan in `herontwerp/plan.md` in de projectbestanden) 
   geen Android SDK, geen macOS); CI bouwt ze.
 
 ---
+
+## Fase B — Superuser-portaal
+
+Gebouwd:
+
+- Portaal: zijbalk met een groep Platform (Dashboard, Moskeeën, Accounts, Auditlog) voor de platformbeheerder,
+  routes `/platform/*`; een platformbeheerder komt na inloggen op het dashboard.
+- Dashboard met totalen (moskeeën per status, accounts, nieuwe accounts, volgers, activiteiten, video's,
+  aankondigingen, pushmeldingen) en recente activiteit uit het auditlog.
+- Moskee registreren: gegevens, automatische unieke slug, configuratie (aanmelden, push) en eerste ADMIN (bestaand
+  account of uitnodiging per e-mail), in één transactie (D-057).
+- Moskeeoverzicht met aantallen content per moskee, zoeken, filter op status, blokkeren, activeren, deactiveren.
+- Accounts: zoeken op naam of e-mail, filter op status, laatste login, aanmaken met uitnodiging of tijdelijk
+  wachtwoord, deactiveren en activeren, een code sturen om een nieuw wachtwoord in te stellen.
+- Pagina `/wachtwoord-instellen` voor uitnodigingen en codes.
+- Auditlog met filter op moskee en moskeenaam.
+- Logo en omslagfoto uploaden en verwijderen bij de moskeegegevens; configuratie per moskee (D-057).
+- Database: `017_create_mosque_settings`, `018_app_user_last_login` (alleen toevoegingen).
+
+Niet gedaan of afwijkend:
+
+- Routes onder `/admin/platform` en `/platform` in plaats van `/superadmin` (D-058).
+- De publieke activiteiten tonen nog niet dat aanmelden voor een moskee uit staat (fase D).
+- Geen browser-end-to-end-tests; wel unit- en integratietests.
 
 ---
 
