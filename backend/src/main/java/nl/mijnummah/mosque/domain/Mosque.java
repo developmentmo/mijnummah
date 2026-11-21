@@ -59,6 +59,12 @@ public class Mosque {
     @Column(name = "status", nullable = false, length = 20)
     private MosqueStatus status;
 
+    @Column(name = "logo_image_id")
+    private UUID logoImageId;
+
+    @Column(name = "cover_image_id")
+    private UUID coverImageId;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -89,6 +95,13 @@ public class Mosque {
 
     public void setStatus(MosqueStatus status, Instant now) {
         this.status = Objects.requireNonNull(status, "status");
+        this.updatedAt = now;
+    }
+
+    /** Logo and cover photo; null removes one. The caller has checked that the images belong to this mosque. */
+    public void setImages(UUID logoImageId, UUID coverImageId, Instant now) {
+        this.logoImageId = logoImageId;
+        this.coverImageId = coverImageId;
         this.updatedAt = now;
     }
 
@@ -138,6 +151,14 @@ public class Mosque {
 
     public boolean isBlocked() {
         return status == MosqueStatus.BLOCKED;
+    }
+
+    public UUID getLogoImageId() {
+        return logoImageId;
+    }
+
+    public UUID getCoverImageId() {
+        return coverImageId;
     }
 
     public Instant getCreatedAt() {

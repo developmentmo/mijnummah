@@ -60,6 +60,8 @@ services:
     volumes:
       # Firebase service-account key (only with PUSH_PROVIDER=fcm), read-only, outside the repository.
       - ${SECRETS_DIR:-./secrets}:/run/secrets:ro
+      # Uploaded images (logos, cover photos); included in backup.sh.
+      - images:/data/images
     ports:
       - "127.0.0.1:${BACKEND_PORT:-8080}:8080"
     restart: unless-stopped
@@ -85,3 +87,4 @@ services:
 
 volumes:
   postgres-data:
+  images:

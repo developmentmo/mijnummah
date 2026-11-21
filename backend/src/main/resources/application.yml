@@ -29,6 +29,12 @@ spring:
     enabled: true
     change-log: classpath:db/changelog/db.changelog-master.yaml
 
+  servlet:
+    multipart:
+      # Uploaded images (logo, cover photo); they are scaled down and re-encoded after upload.
+      max-file-size: 10MB
+      max-request-size: 11MB
+
   mvc:
     problemdetails:
       # We use our own ApiErrorResponse format (GlobalExceptionHandler), see D-016.
@@ -44,6 +50,9 @@ server:
     include-message: never
 
 mijnummah:
+  storage:
+    # Directory for uploaded images. Required; in production a Docker volume that the backup includes.
+    directory: ${STORAGE_DIRECTORY}
   security:
     jwt:
       # HS256 signing secret, at least 32 bytes. Generate with: openssl rand -base64 48

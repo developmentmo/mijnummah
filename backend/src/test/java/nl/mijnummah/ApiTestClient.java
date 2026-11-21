@@ -64,6 +64,33 @@ public final class ApiTestClient {
         return send(builder, bearerToken);
     }
 
+    /** Multipart upload of one file in the part {@code file}, as a browser form would send it. */
+    public ApiResponse upload(String path, String fileName, byte[] content, String bearerToken) {
+        String boundary = "mu-" + java.util.UUID.randomUUID();
+        var body = new java.io.ByteArrayOutputStream();
+        body.writeBytes(("--" + boundary + "\r\nContent-Disposition: form-data; name=\"file\"; filename=\"" + fileName
+                + "\"\r\nContent-Type: application/octet-stream\r\n\r\n").getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        body.writeBytes(content);
+        body.writeBytes(("\r\n--" + boundary + "--\r\n").getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        HttpRequest.Builder builder = request(path, bearerToken)
+                .header("Content-Type", "multipart/form-data; boundary=" + boundary)
+                .POST(HttpRequest.BodyPublishers.ofByteArray(body.toByteArray()));
+        return send(builder, bearerToken);
+    }
+
+    /** GET of a binary resource such as an image. */
+    public HttpResponse<byte[]> getBytes(String path) {
+        try {
+            return httpClient.send(HttpRequest.newBuilder(URI.create(baseUrl + path)).GET().build(),
+                    HttpResponse.BodyHandlers.ofByteArray());
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException(ex);
+        }
+    }
+
     private HttpRequest.Builder request(String path, String bearerToken) {
         HttpRequest.Builder builder = HttpRequest.newBuilder(URI.create(baseUrl + path))
                 .header("Accept", "application/json");

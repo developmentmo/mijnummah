@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Daily database backup: a compressed pg_dump (custom format) in BACKUP_DIR, older ones removed after
-# BACKUP_KEEP_DAYS. Run from cron on the server, for example:
+# Daily backup in BACKUP_DIR: the database as a compressed pg_dump (custom format) and the uploaded images as a
+# tar.gz, older ones removed after BACKUP_KEEP_DAYS. Run from cron on the server, for example:
 #   15 2 * * *  cd /opt/mijnummah/deploy && ./backup.sh >> backups/backup.log 2>&1
 # Copy BACKUP_DIR to storage outside this server as well (see DEPLOYMENT.md); a backup on the same disk is no backup.
 set -euo pipefail
@@ -23,4 +23,12 @@ mv "$partial" "$target"
 chmod 600 "$target"
 echo "$(date -u +%FT%TZ) backup written: $target ($(du -h "$target" | cut -f1))"
 
-find "$BACKUP_DIR" -maxdepth 1 -name 'mijnummah-*.dump' -type f -mtime +"$BACKUP_KEEP_DAYS" -print -delete
+images="${target%.dump}-images.tar.gz"
+$COMPOSE exec -T backend tar -C /data -czf - images > "$images.partial"
+tar -tzf "$images.partial" > /dev/null
+mv "$images.partial" "$images"
+chmod 600 "$images"
+echo "$(date -u +%FT%TZ) images written: $images ($(du -h "$images" | cut -f1))"
+
+find "$BACKUP_DIR" -maxdepth 1 \( -name 'mijnummah-*.dump' -o -name 'mijnummah-*-images.tar.gz' \) -type f \
+    -mtime +"$BACKUP_KEEP_DAYS" -print -delete

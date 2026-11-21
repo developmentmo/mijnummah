@@ -25,6 +25,8 @@ import nl.mijnummah.mosque.domain.MosqueAdministrator;
 import nl.mijnummah.mosque.domain.MosqueDetails;
 import nl.mijnummah.mosque.infrastructure.MosqueAdministratorRepository;
 import nl.mijnummah.mosque.infrastructure.MosqueRepository;
+import nl.mijnummah.storage.ImageStorage;
+import nl.mijnummah.storage.StoredImageRef;
 
 @Service
 public class MosqueService {
@@ -33,14 +35,17 @@ public class MosqueService {
     private final MosqueAdministratorRepository administrators;
     private final MosqueAccessService access;
     private final ApplicationEventPublisher audit;
+    private final ImageStorage images;
     private final Clock clock;
 
     public MosqueService(MosqueRepository mosques, MosqueAdministratorRepository administrators,
-                         MosqueAccessService access, ApplicationEventPublisher audit, Clock clock) {
+                         MosqueAccessService access, ApplicationEventPublisher audit, ImageStorage images,
+                         Clock clock) {
         this.mosques = mosques;
         this.administrators = administrators;
         this.access = access;
         this.audit = audit;
+        this.images = images;
         this.clock = clock;
     }
 
@@ -119,6 +124,29 @@ public class MosqueService {
         Mosque mosque = load(mosqueId);
         mosque.update(details, Instant.now(clock));
         audit.publishEvent(AuditEvent.of(actor.id(), mosqueId, "MOSQUE_UPDATED", "MOSQUE", mosqueId));
+        return view(actor, mosque);
+    }
+
+    /** Uploads an image for this mosque's content or profile; it is only shown once something refers to it. */
+    @Transactional
+    public StoredImageRef uploadImage(AuthenticatedUser actor, UUID mosqueId, byte[] content) {
+        access.require(actor, mosqueId, MosquePermission.MANAGE_CONTENT);
+        return images.store(mosqueId, actor.id(), content);
+    }
+
+    /** Sets or removes (null) the logo and cover photo, which must be images uploaded for this mosque. */
+    @Transactional
+    public MosqueView setImages(AuthenticatedUser actor, UUID mosqueId, UUID logoImageId, UUID coverImageId) {
+        access.require(actor, mosqueId, MosquePermission.MANAGE_MOSQUE);
+        if (logoImageId != null) {
+            images.requireOwnedBy(logoImageId, mosqueId);
+        }
+        if (coverImageId != null) {
+            images.requireOwnedBy(coverImageId, mosqueId);
+        }
+        Mosque mosque = load(mosqueId);
+        mosque.setImages(logoImageId, coverImageId, Instant.now(clock));
+        audit.publishEvent(AuditEvent.of(actor.id(), mosqueId, "MOSQUE_IMAGES_UPDATED", "MOSQUE", mosqueId));
         return view(actor, mosque);
     }
 
