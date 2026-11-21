@@ -21,6 +21,7 @@ import nl.mijnummah.identity.UserDirectory;
 import nl.mijnummah.identity.UserSummary;
 import nl.mijnummah.mosque.MosqueAccessDeniedException;
 import nl.mijnummah.mosque.MosqueAccessService;
+import nl.mijnummah.mosque.MosqueDirectory;
 import nl.mijnummah.mosque.MosquePermission;
 
 @Service
@@ -28,13 +29,16 @@ public class AuditLogService {
 
     private final AuditLogRepository entries;
     private final MosqueAccessService access;
+    private final MosqueDirectory mosques;
     private final UserDirectory users;
     private final Clock clock;
 
-    public AuditLogService(AuditLogRepository entries, MosqueAccessService access, UserDirectory users,
+    public AuditLogService(AuditLogRepository entries, MosqueAccessService access, MosqueDirectory mosques,
+                           UserDirectory users,
                            Clock clock) {
         this.entries = entries;
         this.access = access;
+        this.mosques = mosques;
         this.users = users;
         this.clock = clock;
     }
@@ -67,10 +71,13 @@ public class AuditLogService {
         }
         Map<UUID, UserSummary> actors = users.findByIds(page.getContent().stream()
                 .map(AuditLogEntry::getActorUserId).filter(Objects::nonNull).distinct().toList());
+        Map<UUID, String> mosqueNames = mosques.namesByIds(page.getContent().stream()
+                .map(AuditLogEntry::getMosqueId).filter(Objects::nonNull).distinct().toList());
         return page.map(entry -> {
             UserSummary user = entry.getActorUserId() == null ? null : actors.get(entry.getActorUserId());
             return new AuditEntryView(entry.getId(), entry.getOccurredAt(), entry.getActorUserId(),
-                    user == null ? null : user.displayName(), entry.getMosqueId(), entry.getAction(),
+                    user == null ? null : user.displayName(), entry.getMosqueId(),
+                    entry.getMosqueId() == null ? null : mosqueNames.get(entry.getMosqueId()), entry.getAction(),
                     entry.getTargetType(), entry.getTargetId());
         });
     }

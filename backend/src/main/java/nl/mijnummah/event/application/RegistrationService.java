@@ -73,6 +73,10 @@ public class RegistrationService {
             throw new EventRuleViolationException("REGISTRATION_NOT_ENABLED",
                     "Registration is not possible for this event.");
         }
+        if (!mosques.settings(mosque.id()).registrationsEnabled()) {
+            throw new EventRuleViolationException("REGISTRATIONS_DISABLED_FOR_MOSQUE",
+                    "Registration is switched off for this mosque.");
+        }
         if (event.hasStarted(now)) {
             throw new EventRuleViolationException("REGISTRATION_CLOSED", "This event has already started.");
         }

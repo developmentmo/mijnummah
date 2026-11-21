@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.UUID;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
@@ -30,8 +31,12 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import nl.mijnummah.identity.AuthenticatedUser;
+import nl.mijnummah.mosque.MosqueSettingsView;
 import nl.mijnummah.mosque.MosqueStatus;
 import nl.mijnummah.mosque.application.MosqueService;
+import nl.mijnummah.mosque.application.MosqueService.CreatedMosque;
+import nl.mijnummah.mosque.application.MosqueService.FirstAdministrator;
+import nl.mijnummah.mosque.application.MosqueService.NewMosque;
 import nl.mijnummah.storage.StoredImageRef;
 
 @RestController
@@ -54,9 +59,31 @@ class AdminMosqueController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Moskee aanmaken (alleen platformbeheerder)")
-    MosqueResponse.Admin create(@AuthenticationPrincipal AuthenticatedUser actor,
-                                @Valid @RequestBody CreateMosqueRequest request) {
-        return MosqueResponse.Admin.from(mosqueService.create(actor, request.slug(), request.details().toDetails()));
+    CreatedMosqueResponse create(@AuthenticationPrincipal AuthenticatedUser actor,
+                                 @Valid @RequestBody CreateMosqueRequest request) {
+        FirstAdministrator admin = request.firstAdministrator() == null ? null
+                : new FirstAdministrator(request.firstAdministrator().email(),
+                        request.firstAdministrator().displayName());
+        CreatedMosque created = mosqueService.create(actor, new NewMosque(request.slug(),
+                request.details().toDetails(), admin, request.settings()));
+        return new CreatedMosqueResponse(MosqueResponse.Admin.from(created.mosque()), created.settings(),
+                created.administratorUserId() == null ? null
+                        : new CreatedMosqueResponse.Administrator(created.administratorUserId(),
+                                created.administratorInvited()));
+    }
+
+    @GetMapping("/{mosqueId}/settings")
+    @Operation(summary = "Configuratie van de moskee (beheerder of redacteur van deze moskee)")
+    MosqueSettingsView settings(@AuthenticationPrincipal AuthenticatedUser actor, @PathVariable UUID mosqueId) {
+        return mosqueService.settings(actor, mosqueId);
+    }
+
+    @PutMapping("/{mosqueId}/settings")
+    @Operation(summary = "Configuratie van de moskee wijzigen (alleen platformbeheerder)")
+    MosqueSettingsView updateSettings(@AuthenticationPrincipal AuthenticatedUser actor, @PathVariable UUID mosqueId,
+                                      @Valid @RequestBody SettingsRequest request) {
+        return mosqueService.updateSettings(actor, mosqueId,
+                new MosqueSettingsView(request.registrationsEnabled(), request.pushEnabled()));
     }
 
     @GetMapping("/{mosqueId}")
@@ -103,11 +130,37 @@ class AdminMosqueController {
     record ImagesRequest(UUID logoImageId, UUID coverImageId) {
     }
 
+    /** Without a slug, one is made from the name; without a first administrator, none is added. */
     record CreateMosqueRequest(
-            @NotBlank @Size(max = 60)
+            @Size(max = 60)
             @Pattern(regexp = "^[a-z0-9]+(-[a-z0-9]+)*$", message = "must be lower-case letters, digits and hyphens")
             String slug,
-            @NotNull @Valid MosqueDetailsRequest details) {
+            @NotNull @Valid MosqueDetailsRequest details,
+            @Valid FirstAdministratorRequest firstAdministrator,
+            MosqueSettingsView settings) {
+    }
+
+    /** An existing account gets the ADMIN role; for a new address an account is made and invited by email. */
+    record FirstAdministratorRequest(
+            @NotBlank @Email @Size(max = 254) String email,
+            @NotBlank @Size(max = 100) String displayName) {
+
+        @Override
+        public String toString() {
+            return "FirstAdministratorRequest[***]";
+        }
+    }
+
+    record SettingsRequest(@NotNull Boolean registrationsEnabled, @NotNull Boolean pushEnabled) {
+    }
+
+    /** @param firstAdministrator null when none was asked for */
+    record CreatedMosqueResponse(MosqueResponse.Admin mosque, MosqueSettingsView settings,
+                                 Administrator firstAdministrator) {
+
+        /** @param invited true when a new account was made; it receives an invitation email */
+        record Administrator(UUID userId, boolean invited) {
+        }
     }
 
     record StatusRequest(@NotNull MosqueStatus status) {

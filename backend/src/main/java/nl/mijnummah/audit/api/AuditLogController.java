@@ -41,8 +41,8 @@ class AuditLogController {
         return PageResponse.of(auditLog.list(actor, mosqueId, pageable), AuditEntryResponse::from);
     }
 
-    record AuditEntryResponse(UUID id, Instant occurredAt, Actor actor, UUID mosqueId, String action,
-                              String targetType, UUID targetId) {
+    record AuditEntryResponse(UUID id, Instant occurredAt, Actor actor, UUID mosqueId, String mosqueName,
+                              String action, String targetType, UUID targetId) {
 
         /** Null when the account has since been deleted. */
         record Actor(UUID id, String displayName) {
@@ -50,8 +50,8 @@ class AuditLogController {
 
         static AuditEntryResponse from(AuditEntryView view) {
             Actor actor = view.actorUserId() == null ? null : new Actor(view.actorUserId(), view.actorDisplayName());
-            return new AuditEntryResponse(view.id(), view.occurredAt(), actor, view.mosqueId(), view.action(),
-                    view.targetType(), view.targetId());
+            return new AuditEntryResponse(view.id(), view.occurredAt(), actor, view.mosqueId(), view.mosqueName(),
+                    view.action(), view.targetType(), view.targetId());
         }
     }
 }

@@ -21,9 +21,11 @@ import nl.mijnummah.follow.FollowerDirectory;
 import nl.mijnummah.identity.AuthenticatedUser;
 import nl.mijnummah.identity.UserDirectory;
 import nl.mijnummah.mosque.MosqueAccessService;
+import nl.mijnummah.mosque.MosqueDirectory;
 import nl.mijnummah.mosque.MosquePermission;
 import nl.mijnummah.notification.PushAlreadySentException;
 import nl.mijnummah.notification.PushContentType;
+import nl.mijnummah.notification.PushDisabledForMosqueException;
 import nl.mijnummah.notification.PushNotConfiguredException;
 import nl.mijnummah.notification.PushNotificationView;
 import nl.mijnummah.notification.PushNotifications;
@@ -48,18 +50,20 @@ public class PushNotificationService implements PushNotifications {
     private final FollowerDirectory followers;
     private final UserDirectory users;
     private final MosqueAccessService access;
+    private final MosqueDirectory mosques;
     private final PushGateway gateway;
     private final ApplicationEventPublisher events;
     private final Clock clock;
 
     public PushNotificationService(PushNotificationRepository notifications, PushDeviceRepository devices,
                                    FollowerDirectory followers, UserDirectory users, MosqueAccessService access,
-                                   PushGateway gateway, ApplicationEventPublisher events, Clock clock) {
+                                   MosqueDirectory mosques, PushGateway gateway, ApplicationEventPublisher events, Clock clock) {
         this.notifications = notifications;
         this.devices = devices;
         this.followers = followers;
         this.users = users;
         this.access = access;
+        this.mosques = mosques;
         this.gateway = gateway;
         this.events = events;
         this.clock = clock;
@@ -71,6 +75,9 @@ public class PushNotificationService implements PushNotifications {
         access.require(actor, request.mosqueId(), MosquePermission.SEND_NOTIFICATIONS);
         if (!gateway.configured()) {
             throw new PushNotConfiguredException();
+        }
+        if (!mosques.settings(request.mosqueId()).pushEnabled()) {
+            throw new PushDisabledForMosqueException();
         }
         if (notifications.existsByContentTypeAndContentId(request.contentType(), request.contentId())) {
             throw new PushAlreadySentException();
@@ -117,7 +124,8 @@ public class PushNotificationService implements PushNotifications {
         access.require(actor, mosqueId, MosquePermission.MANAGE_CONTENT);
         Set<UUID> recipients = recipients(mosqueId, contentType);
         long deviceCount = recipients.isEmpty() ? 0 : devices.countByMosqueIdAndUserIdIn(mosqueId, recipients);
-        return new PushAudience(gateway.configured(), gateway.simulated(), recipients.size(),
+        return new PushAudience(gateway.configured(), gateway.simulated(),
+                mosques.settings(mosqueId).pushEnabled(), recipients.size(),
                 Math.toIntExact(deviceCount));
     }
 

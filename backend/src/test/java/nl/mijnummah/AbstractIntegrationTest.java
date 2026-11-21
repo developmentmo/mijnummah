@@ -50,7 +50,7 @@ public abstract class AbstractIntegrationTest {
     void resetDatabase() {
         jdbc.execute("""
                 TRUNCATE audit_log, push_notification, push_device, password_reset_code, notification_preference, mosque_follow,
-                         announcement, media_item, event_registration, event, mosque_administrator, mosque, image,
+                         announcement, media_item, event_registration, event, mosque_administrator, mosque_settings, mosque, image,
                          refresh_token, app_user""");
         api = new ApiTestClient(port, jsonMapper);
         platformAdmin = account("platform", PlatformRole.PLATFORM_ADMIN);
@@ -79,7 +79,7 @@ public abstract class AbstractIntegrationTest {
                 Map.of("slug", slug, "details", Map.of("name", "Moskee " + slug, "city", "Utrecht")),
                 platformAdmin.token());
         assertThat(created.status()).as("create mosque %s: %s", slug, created.body()).isEqualTo(201);
-        return UUID.fromString(created.field("id"));
+        return UUID.fromString(created.body().get("mosque").get("id").asString());
     }
 
     /** Gives an existing account a role (ADMIN or EDITOR) for a mosque. */

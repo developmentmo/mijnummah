@@ -19,4 +19,10 @@ public interface MosqueDirectory {
 
     /** Active mosques among the given IDs. */
     Map<UUID, MosqueRef> findActiveByIds(Collection<UUID> mosqueIds);
+
+    /** Names of the given mosques in any status, e.g. for the audit log; unknown IDs are left out. */
+    Map<UUID, String> namesByIds(Collection<UUID> mosqueIds);
+
+    /** The mosque's configuration; the defaults for an unknown mosque. */
+    MosqueSettingsView settings(UUID mosqueId);
 }

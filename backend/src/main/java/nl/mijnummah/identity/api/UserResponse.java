@@ -8,10 +8,10 @@ import nl.mijnummah.identity.application.UserProfile;
 import nl.mijnummah.identity.domain.UserStatus;
 
 record UserResponse(UUID id, String email, String displayName, PlatformRole platformRole, UserStatus status,
-                    Instant createdAt) {
+                    Instant createdAt, Instant lastLoginAt) {
 
     static UserResponse from(UserProfile profile) {
         return new UserResponse(profile.id(), profile.email(), profile.displayName(), profile.platformRole(),
-                profile.status(), profile.createdAt());
+                profile.status(), profile.createdAt(), profile.lastLoginAt());
     }
 }

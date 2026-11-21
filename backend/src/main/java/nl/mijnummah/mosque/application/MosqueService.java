@@ -14,17 +14,22 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import nl.mijnummah.common.audit.AuditEvent;
+import nl.mijnummah.identity.AccountProvisioning;
 import nl.mijnummah.identity.AuthenticatedUser;
 import nl.mijnummah.mosque.MosqueAccessDeniedException;
 import nl.mijnummah.mosque.MosqueAccessService;
 import nl.mijnummah.mosque.MosquePermission;
 import nl.mijnummah.mosque.MosqueRole;
+import nl.mijnummah.mosque.MosqueSettingsView;
 import nl.mijnummah.mosque.MosqueStatus;
 import nl.mijnummah.mosque.domain.Mosque;
 import nl.mijnummah.mosque.domain.MosqueAdministrator;
 import nl.mijnummah.mosque.domain.MosqueDetails;
+import nl.mijnummah.mosque.domain.MosqueSettings;
+import nl.mijnummah.mosque.domain.Slugs;
 import nl.mijnummah.mosque.infrastructure.MosqueAdministratorRepository;
 import nl.mijnummah.mosque.infrastructure.MosqueRepository;
+import nl.mijnummah.mosque.infrastructure.MosqueSettingsRepository;
 import nl.mijnummah.storage.ImageStorage;
 import nl.mijnummah.storage.StoredImageRef;
 
@@ -33,16 +38,20 @@ public class MosqueService {
 
     private final MosqueRepository mosques;
     private final MosqueAdministratorRepository administrators;
+    private final MosqueSettingsRepository settings;
     private final MosqueAccessService access;
+    private final AccountProvisioning accounts;
     private final ApplicationEventPublisher audit;
     private final ImageStorage images;
     private final Clock clock;
 
     public MosqueService(MosqueRepository mosques, MosqueAdministratorRepository administrators,
-                         MosqueAccessService access, ApplicationEventPublisher audit, ImageStorage images,
-                         Clock clock) {
+                         MosqueSettingsRepository settings, MosqueAccessService access, AccountProvisioning accounts,
+                         ApplicationEventPublisher audit, ImageStorage images, Clock clock) {
         this.mosques = mosques;
         this.administrators = administrators;
+        this.settings = settings;
+        this.accounts = accounts;
         this.access = access;
         this.audit = audit;
         this.images = images;
@@ -66,28 +75,96 @@ public class MosqueService {
                 .toList();
     }
 
+    /**
+     * Registers a mosque with its initial configuration, and optionally its first administrator (ADMIN). An empty
+     * slug is made from the name. All of it happens in one transaction: if anything fails, nothing is created and
+     * no invitation is sent.
+     */
     @Transactional
-    public MosqueView create(AuthenticatedUser actor, String slug, MosqueDetails details) {
+    public CreatedMosque create(AuthenticatedUser actor, NewMosque request) {
         if (!actor.isPlatformAdmin()) {
             throw new MosqueAccessDeniedException();
         }
-        Mosque mosque = createUnchecked(slug, details);
-        audit.publishEvent(AuditEvent.of(actor.id(), mosque.getId(), "MOSQUE_CREATED", "MOSQUE", mosque.getId()));
-        return MosqueView.of(mosque, null);
+        String slug = request.slug() == null || request.slug().isBlank()
+                ? Slugs.unique(Slugs.fromName(request.details().name()), mosques::existsBySlug)
+                : request.slug();
+        MosqueSettingsView initial = request.settings() == null ? MosqueSettingsView.DEFAULTS : request.settings();
+        Mosque mosque = createUnchecked(slug, request.details(), initial);
+        UUID mosqueId = mosque.getId();
+        audit.publishEvent(AuditEvent.of(actor.id(), mosqueId, "MOSQUE_CREATED", "MOSQUE", mosqueId));
+        AccountProvisioning.ProvisionedAccount administrator = null;
+        if (request.firstAdministrator() != null) {
+            administrator = accounts.findOrInvite(actor.id(), request.firstAdministrator().email(),
+                    request.firstAdministrator().displayName());
+            MosqueAdministrator row = administrators.save(MosqueAdministrator.grant(mosqueId, administrator.id(),
+                    MosqueRole.ADMIN, actor.id(), Instant.now(clock)));
+            audit.publishEvent(AuditEvent.of(actor.id(), mosqueId, "ADMINISTRATOR_ADDED", "ADMINISTRATOR",
+                    row.getId()));
+        }
+        return new CreatedMosque(MosqueView.of(mosque, null), initial,
+                administrator == null ? null : administrator.id(), administrator != null && administrator.invited());
+    }
+
+    /** What a platform administrator fills in for a new mosque; {@code slug}, admin and settings are optional. */
+    public record NewMosque(String slug, MosqueDetails details, FirstAdministrator firstAdministrator,
+                            MosqueSettingsView settings) {
+    }
+
+    public record FirstAdministrator(String email, String displayName) {
+    }
+
+    /** @param administratorInvited true when a new account was made and an invitation email will be sent */
+    public record CreatedMosque(MosqueView mosque, MosqueSettingsView settings, UUID administratorUserId,
+                                boolean administratorInvited) {
     }
 
     /** Without an actor: only for the startup bootstrap of the first mosque. */
     @Transactional
     public Mosque createUnchecked(String slug, MosqueDetails details) {
+        return createUnchecked(slug, details, MosqueSettingsView.DEFAULTS);
+    }
+
+    private Mosque createUnchecked(String slug, MosqueDetails details, MosqueSettingsView initial) {
         if (mosques.existsBySlug(slug)) {
             throw new SlugAlreadyTakenException();
         }
-        Mosque mosque = Mosque.create(slug, details, Instant.now(clock));
+        Instant now = Instant.now(clock);
+        Mosque mosque = Mosque.create(slug, details, now);
         try {
-            return mosques.saveAndFlush(mosque);
+            mosques.saveAndFlush(mosque);
         } catch (DataIntegrityViolationException ex) {
             throw new SlugAlreadyTakenException();
         }
+        settings.save(MosqueSettings.create(mosque.getId(), initial.registrationsEnabled(), initial.pushEnabled(),
+                now));
+        return mosque;
+    }
+
+    /** Readable by everyone who manages the mosque, so the portal can explain why something is switched off. */
+    @Transactional(readOnly = true)
+    public MosqueSettingsView settings(AuthenticatedUser actor, UUID mosqueId) {
+        access.require(actor, mosqueId, MosquePermission.MANAGE_CONTENT);
+        return settings.findById(mosqueId).map(MosqueService::settingsView).orElse(MosqueSettingsView.DEFAULTS);
+    }
+
+    /** Only a platform administrator changes the configuration. */
+    @Transactional
+    public MosqueSettingsView updateSettings(AuthenticatedUser actor, UUID mosqueId, MosqueSettingsView changed) {
+        if (!actor.isPlatformAdmin()) {
+            throw new MosqueAccessDeniedException();
+        }
+        load(mosqueId);
+        Instant now = Instant.now(clock);
+        MosqueSettings row = settings.findById(mosqueId)
+                .orElseGet(() -> MosqueSettings.create(mosqueId, true, true, now));
+        row.change(changed.registrationsEnabled(), changed.pushEnabled(), now);
+        settings.save(row);
+        audit.publishEvent(AuditEvent.of(actor.id(), mosqueId, "MOSQUE_SETTINGS_UPDATED", "MOSQUE", mosqueId));
+        return settingsView(row);
+    }
+
+    static MosqueSettingsView settingsView(MosqueSettings row) {
+        return new MosqueSettingsView(row.isRegistrationsEnabled(), row.isPushEnabled());
     }
 
     @Transactional(readOnly = true)

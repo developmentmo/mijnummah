@@ -25,7 +25,7 @@ import nl.mijnummah.common.mail.Mailer;
 
 /** Forgotten password with a code by email. Emails are captured instead of sent. */
 @Import(PasswordResetIT.CapturingMail.class)
-class PasswordResetIT extends AbstractIntegrationTest {
+public class PasswordResetIT extends AbstractIntegrationTest {
 
     private static final Pattern CODE = Pattern.compile("\\b([A-Z2-9]{4}-[A-Z2-9]{4})\\b");
     private static final String NEW_PASSWORD = "mijn nieuwe wachtwoord";
@@ -140,9 +140,10 @@ class PasswordResetIT extends AbstractIntegrationTest {
         return matcher.group(1);
     }
 
-    static final class CapturingMailer implements Mailer {
+    /** Also used by other flow tests that send email. */
+    public static final class CapturingMailer implements Mailer {
 
-        final List<MailMessage> sent = new CopyOnWriteArrayList<>();
+        public final List<MailMessage> sent = new CopyOnWriteArrayList<>();
 
         @Override
         public boolean available() {
@@ -156,7 +157,7 @@ class PasswordResetIT extends AbstractIntegrationTest {
     }
 
     @TestConfiguration(proxyBeanMethods = false)
-    static class CapturingMail {
+    public static class CapturingMail {
 
         @Bean
         @Primary
