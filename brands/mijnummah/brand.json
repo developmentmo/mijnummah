@@ -1,12 +1,12 @@
 {
   "$schema": "../brand.schema.json",
-  "slug": "noeroel-islam",
-  "name": "Noeroel Islam",
+  "slug": "mijnummah",
+  "name": "MijnUmmah",
   "android": {
-    "applicationId": "nl.mijnummah.noeroelislam"
+    "applicationId": "nl.mijnummah.app"
   },
   "ios": {
-    "bundleId": "nl.mijnummah.noeroelislam"
+    "bundleId": "nl.mijnummah.app"
   },
   "colors": {
     "primary": {

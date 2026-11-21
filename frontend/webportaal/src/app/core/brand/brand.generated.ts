@@ -1,7 +1,7 @@
-// GEGENEREERD BESTAND, NIET HANDMATIG AANPASSEN. Bron: brands/noeroel-islam/brand.json (node tools/brand/brand.mjs apply)
+// GEGENEREERD BESTAND, NIET HANDMATIG AANPASSEN. Bron: brands/mijnummah/brand.json (node tools/brand/brand.mjs apply)
 
-/** De moskee (of het platform) waarvoor dit portaal is gebouwd. Zie WHITE_LABEL.md. */
+/** Het merk van het platform. Zie design/README.md. */
 export const BRAND = {
-  slug: 'noeroel-islam',
-  name: 'Noeroel Islam',
+  slug: 'mijnummah',
+  name: 'MijnUmmah',
 } as const;

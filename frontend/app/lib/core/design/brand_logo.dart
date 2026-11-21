@@ -3,7 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import '../brand/brand.g.dart';
 
-/// Varianten van het logo van de moskee (uit `brands/<slug>/`, zie WHITE_LABEL.md). Zie BRAND_GUIDELINES.md voor gebruik.
+/// Varianten van het MijnUmmah-logo (uit `brands/mijnummah/`). Zie BRAND_GUIDELINES.md voor gebruik.
 enum BrandLogoVariant {
   /// Beeldmerk naast de woordmark; voor headers.
   horizontal('logo-horizontal'),

@@ -1,7 +1,5 @@
 import 'package:flutter/foundation.dart';
 
-import '../brand/brand.g.dart';
-
 /// Instellingen die per build worden meegegeven met `--dart-define`.
 ///
 /// ```bash
@@ -9,16 +7,20 @@ import '../brand/brand.g.dart';
 /// ```
 ///
 /// Zonder `API_BASE_URL` wijst de app naar de backend op de eigen computer (profiel `local`): vanuit de
-/// Android-emulator is dat `10.0.2.2`, vanuit de iOS-simulator en desktop `localhost` (zie [localApiBaseUrl]). De
-/// moskee is standaard die van het toegepaste merk ([Brand.slug]); `MOSQUE_SLUG` is alleen nodig om tijdelijk een
-/// andere moskee uit dezelfde backend te tonen.
+/// Android-emulator is dat `10.0.2.2`, vanuit de iOS-simulator en desktop `localhost` (zie [localApiBaseUrl]).
+///
+/// Overgang: de app toont nog één moskee (`MOSQUE_SLUG`, standaard [defaultMosqueSlug]). In fase D wordt zij de
+/// centrale app waarin gebruikers alle moskeeën ontdekken en volgen; dan verdwijnt deze instelling.
 class AppConfig {
   const AppConfig({required this.apiBaseUrl, required this.mosqueSlug});
 
   factory AppConfig.fromEnvironment() => AppConfig(
     apiBaseUrl: _apiBaseUrl.isNotEmpty ? _apiBaseUrl : localApiBaseUrl(defaultTargetPlatform),
-    mosqueSlug: const String.fromEnvironment('MOSQUE_SLUG', defaultValue: Brand.slug),
+    mosqueSlug: const String.fromEnvironment('MOSQUE_SLUG', defaultValue: defaultMosqueSlug),
   );
+
+  /// De pilotmoskee, alleen zolang de app nog één moskee toont (tot fase D).
+  static const defaultMosqueSlug = 'noeroel-islam';
 
   static const _apiBaseUrl = String.fromEnvironment('API_BASE_URL');
 

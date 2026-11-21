@@ -1,10 +1,9 @@
 #!/usr/bin/env node
-// Merken (moskee-apps) beheren. Zie WHITE_LABEL.md.
+// Het merk van het platform (MijnUmmah) toepassen en controleren. Er is één app voor alle moskeeën; een moskee
+// krijgt geen eigen merk of app, haar naam, logo en omslagfoto komen uit de backend (zie design/README.md).
 //
-//   node tools/brand/brand.mjs list                        alle merken
+//   node tools/brand/brand.mjs list                        de merken in brands/ (alleen mijnummah)
 //   node tools/brand/brand.mjs validate [slug...]          configuratie, beeldmerk en contrast controleren (standaard alle)
-//   node tools/brand/brand.mjs new <slug> --name="Naam" --primary=#123C32 --accent=#C6A45A
-//                                                          nieuw merk met afgeleide kleurschalen en een tijdelijk beeldmerk
 //   node tools/brand/brand.mjs apply [slug] [--skip-assets]
 //                                                          merk toepassen op app en portaal (tokens, namen, ID's, logo's, iconen)
 //   node tools/brand/brand.mjs check                       faalt als de repository niet het standaardmerk weergeeft (CI)
@@ -14,8 +13,7 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 
-import { scaleFrom } from './color.mjs';
-import { brandSlugs, brandsDir, crossBrandErrors, defaultBrandSlug, loadBrand, repoRoot } from './lib.mjs';
+import { brandSlugs, crossBrandErrors, defaultBrandSlug, loadBrand, repoRoot } from './lib.mjs';
 
 const HEADER = (slug) => `GEGENEREERD BESTAND, NIET HANDMATIG AANPASSEN. Bron: brands/${slug}/brand.json (node tools/brand/brand.mjs apply)`;
 
@@ -32,12 +30,12 @@ export function brandFiles(brand) {
     'frontend/app/lib/core/brand/brand.g.dart': `// ${HEADER(brand.slug)}
 // ignore_for_file: unnecessary_nullable_for_final_variable_declarations
 
-/// De moskee waarvoor deze app is gebouwd. Zie WHITE_LABEL.md.
+/// Het merk van de app (het platform, niet een moskee). Zie design/README.md.
 abstract final class Brand {
-  /// Slug van de moskee in de backend.
+  /// Map van het merk in brands/.
   static const slug = ${dartString(brand.slug)};
 
-  /// Naam van de moskee en de app.
+  /// Naam van de app.
   static const name = ${dartString(brand.name)};
 
   /// Privacyverklaring; zonder adres toont de app geen link.
@@ -56,7 +54,7 @@ BRAND_DISPLAY_NAME = ${brand.launcherName}
 `,
     'frontend/webportaal/src/app/core/brand/brand.generated.ts': `// ${HEADER(brand.slug)}
 
-/** De moskee (of het platform) waarvoor dit portaal is gebouwd. Zie WHITE_LABEL.md. */
+/** Het merk van het platform. Zie design/README.md. */
 export const BRAND = {
   slug: ${tsString(brand.slug)},
   name: ${tsString(brand.name)},
@@ -81,11 +79,6 @@ function fail(message) {
   process.exit(1);
 }
 
-function option(name) {
-  const flag = process.argv.find((a) => a.startsWith(`--${name}=`));
-  return flag ? flag.slice(name.length + 3) : undefined;
-}
-
 const positional = () => process.argv.slice(3).filter((a) => !a.startsWith('--'));
 
 // ---------- commando's ----------
@@ -108,47 +101,6 @@ function validate(slugs) {
   for (const error of cross) console.error(`Dubbel: ${error}`);
   if (!ok || cross.length) fail('Validatie mislukt.');
   console.log(`Geldig: ${slugs.join(', ')}`);
-}
-
-function create(slug) {
-  const name = option('name');
-  const primary = option('primary');
-  const accent = option('accent');
-  if (!slug || !name || !primary || !accent) {
-    fail('Gebruik: brand.mjs new <slug> --name="Naam" --primary=#RRGGBB --accent=#RRGGBB [--application-id=...] [--bundle-id=...]');
-  }
-  if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(slug)) fail(`Ongeldige slug "${slug}": kleine letters, cijfers en streepjes`);
-  for (const hex of [primary, accent]) if (!/^#[0-9A-Fa-f]{6}$/.test(hex)) fail(`Ongeldige kleur ${hex}, verwacht #RRGGBB`);
-  const dir = resolve(brandsDir, slug);
-  if (existsSync(dir)) fail(`brands/${slug} bestaat al`);
-
-  const primaryScale = scaleFrom(primary, 'primary');
-  const accentScale = scaleFrom(accent, 'accent');
-  const id = `nl.mijnummah.${slug.replace(/-/g, '')}`;
-  const brand = {
-    $schema: '../brand.schema.json',
-    slug,
-    name,
-    android: { applicationId: option('application-id') ?? id },
-    ios: { bundleId: option('bundle-id') ?? id },
-    colors: { primary: primaryScale.scale, accent: accentScale.scale },
-    logo: { mark: 'mark.svg' },
-  };
-  const p800 = brand.colors.primary['800'];
-  const a400 = brand.colors.accent['400'];
-  // Tijdelijk beeldmerk: een eenvoudige koepel met een punt. Vervang het door het echte beeldmerk van de moskee.
-  const mark = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" width="96" height="96">
-<!-- TIJDELIJK beeldmerk uit brand.mjs new. Vervang dit door het beeldmerk van de moskee (zie WHITE_LABEL.md). -->
-<path d="M18 80H78" fill="none" stroke="${p800}" stroke-width="7" stroke-linecap="round"/><path d="M24 80V58C24 43 35 31 48 31C61 31 72 43 72 58V80" fill="none" stroke="${p800}" stroke-width="7" stroke-linejoin="round"/><circle cx="48" cy="17" r="6" fill="${a400}"/>
-</svg>
-`;
-  mkdirSync(dir, { recursive: true });
-  writeFileSync(resolve(dir, 'brand.json'), JSON.stringify(brand, null, 2) + '\n');
-  writeFileSync(resolve(dir, 'mark.svg'), mark);
-  console.log(`Aangemaakt: brands/${slug}/brand.json en brands/${slug}/mark.svg`);
-  console.log(`  primary: ${primary} is tint ${primaryScale.seedShade}; accent: ${accent} is tint ${accentScale.seedShade}`);
-  validate([slug]);
-  console.log(`Volgende stappen (WHITE_LABEL.md): beeldmerk vervangen, links invullen, "node tools/brand/brand.mjs apply ${slug}".`);
 }
 
 function apply(slug, { skipAssets }) {
@@ -206,9 +158,6 @@ try {
     case 'validate':
       validate(positional().length ? positional() : brandSlugs());
       break;
-    case 'new':
-      create(positional()[0]);
-      break;
     case 'apply':
       apply(positional()[0] ?? defaultBrandSlug(), { skipAssets: process.argv.includes('--skip-assets') });
       break;
@@ -219,7 +168,7 @@ try {
       show(...positional());
       break;
     default:
-      fail(readFileSync(new URL(import.meta.url), 'utf8').split('\n').slice(1, 12).map((l) => l.replace(/^\/\/ ?/, '')).join('\n'));
+      fail(readFileSync(new URL(import.meta.url), 'utf8').split('\n').slice(1, 10).map((l) => l.replace(/^\/\/ ?/, '')).join('\n'));
   }
 } catch (e) {
   fail(e.message);
