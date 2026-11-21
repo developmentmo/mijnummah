@@ -1,12 +1,14 @@
-# Huisstijl Noeroel Islam
+# Huisstijl MijnUmmah
 
-Deze richtlijnen beschrijven de huisstijl van de Noeroel Islam-app en het beheerportaal. De merkkleuren, naam en het
-beeldmerk staan in [`brands/noeroel-islam/`](brands/noeroel-islam/brand.json); al het andere (typografie, maten,
-status- en neutrale kleuren) in [`design/tokens/tokens.json`](design/tokens/tokens.json). Pas waarden daar aan en
-draai `node tools/brand/brand.mjs apply`; nooit rechtstreeks in de app of het portaal. Andere moskeeën hebben een
-eigen merk met dezelfde regels voor gebruik en contrast, zie [WHITE_LABEL.md](WHITE_LABEL.md).
+Deze richtlijnen beschrijven de huisstijl van MijnUmmah: de app voor alle aangesloten moskeeën en het beheerportaal.
+De merkkleuren, naam en het beeldmerk staan in [`brands/mijnummah/`](brands/mijnummah/brand.json); al het andere
+(typografie, maten, status- en neutrale kleuren) in [`design/tokens/tokens.json`](design/tokens/tokens.json). Pas
+waarden daar aan en draai `node tools/brand/brand.mjs apply`; nooit rechtstreeks in de app of het portaal.
 
-**Merkbelofte:** een toegankelijke digitale verbinding tussen de moskee en de gemeenschap.
+Moskeeën hebben geen eigen app of eigen huisstijl van de app. Hun identiteit binnen MijnUmmah bestaat uit hun naam,
+logo en omslagfoto, die zij zelf in het portaal beheren (zie hoofdstuk 6).
+
+**Merkbelofte:** één app, alle moskeeën, één verbonden ummah.
 **Uitstraling:** modern, warm, betrouwbaar, spiritueel en toegankelijk. Rustig in plaats van druk: geen zware
 patronen, goud alleen als accent.
 
@@ -16,10 +18,10 @@ patronen, goud alleen als accent.
 
 ### Concept
 
-Het beeldmerk is een minimalistische **mihrab-boog** die onderaan open is, als een uitnodigende doorgang.
-In de boog staat een **vlam**: licht ("noer") en kennis. Een korte lijn onder de vlam verbindt de twee zijden
-van de boog en staat voor verbinding met de gemeenschap. De woordmark **Noeroel Islam** is gezet in Fraunces
-SemiBold en omgezet naar paden.
+Het beeldmerk is een **achtpuntige ster** uit twee vierkanten, een klassiek motief uit de islamitische geometrie,
+getekend als lijn zodat het rustig blijft. De twee vierkanten zijn in elkaar gevlochten: moskeeën die samen één
+geheel vormen. In het midden staat een **gouden punt**: het gedeelde middelpunt van de gemeenschap. De woordmark
+**MijnUmmah** is gezet in Fraunces SemiBold en omgezet naar paden.
 
 ### Varianten
 
@@ -39,11 +41,11 @@ Alle bestanden worden gegenereerd door `design/branding/build_branding.py`.
 
 ### Regels
 
-- **Vrije ruimte:** houd rondom het logo minimaal de breedte van de vlam vrij.
+- **Vrije ruimte:** houd rondom het logo minimaal de breedte van de gouden punt vrij.
 - **Minimale maat:** horizontaal logo minimaal 24 px hoog op schermen; compact beeldmerk minimaal 16 px.
   Onder 32 px het compacte beeldmerk gebruiken.
 - **Kleuren:** alleen de aangeleverde varianten. Op foto's de monochrome witte variant met voldoende contrast.
-- **Niet doen:** het logo uitrekken of draaien, de vlam een andere kleur geven, schaduwen of verlopen toevoegen,
+- **Niet doen:** het logo uitrekken of draaien, de gouden punt een andere kleur geven, schaduwen of verlopen toevoegen,
   de woordmark in een ander font zetten, het logo op een drukke achtergrond plaatsen of omkaderen.
 
 ---
@@ -57,7 +59,7 @@ Alle bestanden worden gegenereerd door `design/branding/build_branding.py`.
 | Donkergroen | `#123C32` | `palette.primary.800` | Primaire merkkleur, knoppen, koppen op licht |
 | Jadegroen | `#2F7965` | `palette.primary.500` | Secundaire acties, focus, accenten |
 | Warm ivoor | `#F7F3E9` | `palette.neutral.50` | Achtergrond van app en portaal |
-| Gedempt goud | `#C6A45A` | `palette.accent.400` | Accent: vlam, dunne lijnen, highlights op donkergroen |
+| Gedempt goud | `#C6A45A` | `palette.accent.400` | Accent: de punt in het beeldmerk, dunne lijnen, highlights op donkergroen |
 | Donkergrijs | `#242A27` | `palette.neutral.900` | Tekst |
 | Wit | `#FFFFFF` | `palette.neutral.0` | Kaarten en oppervlakken |
 
@@ -177,12 +179,20 @@ portaal op `/`.
 
 ## 6. Beeldtaal
 
-- Gebruik bij voorkeur eigen foto's van Noeroel Islam, met toestemming van de mensen die herkenbaar in beeld zijn.
+- Moskeeën gebruiken bij voorkeur eigen foto's, met toestemming van de mensen die herkenbaar in beeld zijn.
 - Warm, natuurlijk licht; rustige composities; geen zware filters.
-- Geen stockfoto's van personen die de indruk wekken dat zij bij Noeroel Islam betrokken zijn.
+- Geen stockfoto's van personen die de indruk wekken dat zij bij een moskee betrokken zijn.
 - Zolang er geen eigen beeld is: neutrale plaatshouders in de huisstijl (icoon op `primaryContainer`) met het label
   **Voorbeeldafbeelding**. Voorbeeldcontent is altijd als voorbeeld herkenbaar.
 - Respecteer auteurs- en portretrecht; leg bij lezingen en evenementen vast wie toestemming gaf voor publicatie.
+
+### Identiteit van een moskee
+
+- Elke moskee toont in de app haar eigen **logo** en **omslagfoto** (geüpload in het portaal, JPEG of PNG). Die
+  staan altijd binnen de MijnUmmah-schermen: kleuren, typografie en navigatie blijven die van MijnUmmah.
+- Logo: bij voorkeur vierkant en op een transparante of lichte achtergrond, minimaal 512 × 512 px.
+- Omslagfoto: liggend (ongeveer 3:1 of 16:9), minimaal 1600 px breed, zonder tekst erin; tekst komt uit de app.
+- Zonder logo toont de app een neutrale plaatshouder in de huisstijl, nooit het logo van een andere moskee.
 
 ---
 

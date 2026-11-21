@@ -1,4 +1,4 @@
-# Implementatieplan — Noeroel Islam (platform Mijn Ummah)
+# Implementatieplan — MijnUmmah (platform voor alle moskeeën)
 
 Dit document beschrijft alle fases, hun acceptatiecriteria, afhankelijkheden en de voortgang.
 Beslissingen en hun onderbouwing staan in [DECISIONS.md](DECISIONS.md).
@@ -20,6 +20,45 @@ uit het masterprompt (code, tests, build, regressies, documentatie, beperkingen,
 | 6 | Testen, privacy, beveiliging, productievoorbereiding | Voltooid en goedgekeurd (PR #9 gemerged); productieblokkades gedocumenteerd |
 | 7 | Voorbereiding white-label automatisering | Voltooid en goedgekeurd (PR #10 gemerged; CI groen, ook Android en iOS per merk) |
 | 8 | Latere uitbreidingen (niet implementeren) | Gedocumenteerd in EXTENSIONS.md; wacht op beoordeling |
+
+Sinds 21 november 2026 geldt een nieuwe masterprompt: één centrale MijnUmmah-app en een portaal voor superuser en
+moskeeën. Het herontwerp (plan in `herontwerp/plan.md` in de projectbestanden) loopt in fases A t/m F:
+
+| Fase | Onderwerp | Status |
+|---|---|---|
+| A | Fundament: Liquibase, één merk, moskeestatus, auditlog, afbeeldingsopslag | Geïmplementeerd; PR wacht op beoordeling |
+| B | Superuser-portaal | Nog niet begonnen |
+| C | Moskeebeheerportaal | Nog niet begonnen |
+| D | Centrale mobiele app | Nog niet begonnen |
+| E | Pilot Noeroel Islam als eerste tenant via het portaal | Nog niet begonnen |
+| F | Productie (alleen met expliciete toestemming) | Nog niet begonnen |
+
+## Fase A — Fundament omzetten
+
+**Opgeleverd**
+- Flyway vervangen door Liquibase; de 13 migraties ongewijzigd als formatted SQL-changesets (D-052).
+- White-label verwijderd: één merk `brands/mijnummah/` en één app `nl.mijnummah.app`; CI en Release-app zonder
+  matrix per merk (D-053).
+- Moskeestatus actief, inactief of geblokkeerd, alleen door de platformbeheerder te wijzigen (D-054); het portaal
+  toont en wijzigt de status.
+- Auditlog van alle beheeracties met `GET /api/v1/admin/audit-log` en een bewaartermijn van 730 dagen (D-055).
+- Afbeeldingen uploaden, controleren, verkleinen en zonder metadata opslaan op schijf; logo en omslagfoto per
+  moskee (D-056). Back-up neemt de afbeeldingen mee.
+
+**Afwijkingen van het plan**
+- Opslag op het bestandssysteem in plaats van MinIO/S3 (D-056): geen nieuwe dependency nodig voor één server.
+- `mosque_settings` is uitgesteld naar fase B, waar de eerste instellingen nodig zijn; zo komen er geen ongebruikte
+  velden in het schema.
+- Het auditoverzicht en de uploads in het portaal volgen in fase B; in fase A zijn alleen de API's er.
+- De app toont tot fase D nog één moskee, standaard de pilot (`MOSQUE_SLUG`).
+
+**Beperkingen**
+- Een lokale database met Flyway-historie moet opnieuw worden aangemaakt (`docker compose down -v`; dit wist de
+  lokale testgegevens).
+- Docker-images, Android- en iOS-builds zijn niet in deze omgeving gebouwd (geen internet in de build-container,
+  geen Android SDK, geen macOS); CI bouwt ze.
+
+---
 
 ---
 
@@ -573,7 +612,7 @@ stores), staat onder "Productieblokkades" in [DEPLOYMENT.md](DEPLOYMENT.md#produ
 **Afhankelijkheden:** stabiele pilot (fase 1 t/m 6).
 
 **Status:** Voltooid en goedgekeurd (PR #10 gemerged). Lokaal getest; de Android- en iOS-builds per merk zijn in CI
-geslaagd. Werkwijze en runbook: [WHITE_LABEL.md](WHITE_LABEL.md).
+geslaagd. Werkwijze en runbook: WHITE_LABEL.md (verwijderd in fase A, D-053).
 
 ### Aanpak
 

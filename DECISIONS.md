@@ -20,7 +20,7 @@ Belangrijke architectuur- en ontwerpbeslissingen. Status: **Voorgesteld** (wacht
   `developmentmo/repairtrack` (zelfde eigenaar) gebruikt een bewezen stack en structuur.
 - **Besluit:** Dezelfde keuzes als RepairTrack waar ze passen: Spring Boot 4 / Java 21 / Maven, modulaire
   monoliet met Spring Modulith, lagen `api` → `application` → `domain` + `infrastructure`, records als DTO's,
-  Flyway, PostgreSQL; Flutter met Riverpod, Dio en go_router.
+  Flyway (sinds fase A Liquibase, D-052), PostgreSQL; Flutter met Riverpod, Dio en go_router.
 - **Gevolg:** Herkenbaar voor de eigenaar, minder nieuwe keuzes. Geen microservices.
 
 ## D-003 — Monorepo met generieke platformnaam
@@ -118,7 +118,7 @@ Belangrijke architectuur- en ontwerpbeslissingen. Status: **Voorgesteld** (wacht
 
 ## D-013 — App-ID's en projectnamen
 
-- **Status:** Besloten (fase 1), definitief te bevestigen vóór de eerste store-release
+- **Status:** Vervangen door D-053 (fase A): één app `nl.mijnummah.app`
 - **Besluit:** Android `applicationId` en iOS bundle identifier `nl.mijnummah.noeroelislam`, weergavenaam
   "Noeroel Islam". De Dart-package heet generiek `mijnummah_app` (D-003). De Android-`namespace` blijft
   `nl.mijnummah.mijnummah_app`; die is intern en niet zichtbaar voor gebruikers.
@@ -456,7 +456,7 @@ Belangrijke architectuur- en ontwerpbeslissingen. Status: **Voorgesteld** (wacht
   healthcheck). `deploy/docker-compose.prod.yml` draait PostgreSQL, backend en portaal op één server achter een
   TLS-reverse proxy op de host; poorten alleen op 127.0.0.1. Back-ups met `pg_dump` (custom-formaat) en rotatie;
   herstel altijd eerst in een nieuwe database. Rollback via de vorige image-tag, of bij een nieuwe migratie via een
-  forward fix of herstel van de back-up (Flyway gaat alleen vooruit).
+  forward fix of herstel van de back-up (migraties gaan alleen vooruit).
 - **Waarom:** Voor één moskee is Kubernetes of een managed platform onnodig complex en duur. Docker Compose is bekend,
   herhaalbaar en verhuist later zonder wijzigingen in de images. Eén portaalimage voor elke omgeving omdat
   `config.json` bij het starten wordt gemaakt.
@@ -474,7 +474,7 @@ Belangrijke architectuur- en ontwerpbeslissingen. Status: **Voorgesteld** (wacht
 
 ## D-046 — Merkconfiguratie per moskee in `brands/<slug>/`
 
-- **Status:** Besloten (fase 7)
+- **Status:** Vervangen door D-053 (fase A): er is één merk, `brands/mijnummah/`
 - **Besluit:** Alles wat per moskee-app verschilt staat in `brands/<slug>/brand.json` (naam, ID's, kleurschalen,
   links, backendadres) plus het beeldmerk `mark.svg`. Een JSON Schema beschrijft het formaat; een eigen, kleine
   controle in `tools/brand/lib.mjs` past het toe (alleen de sleutelwoorden die het schema gebruikt; een onbekend
@@ -486,7 +486,7 @@ Belangrijke architectuur- en ontwerpbeslissingen. Status: **Voorgesteld** (wacht
 
 ## D-047 — Merk toepassen met codegeneratie in plaats van Flutter-flavors
 
-- **Status:** Besloten (fase 7)
+- **Status:** Vervangen door D-053 (fase A); de generator blijft voor het ene merk
 - **Besluit:** `node tools/brand/brand.mjs apply <slug>` schrijft de merkafhankelijke bestanden (Dart-constanten,
   `brand.properties` voor Gradle, `Brand.xcconfig` voor Xcode, tokens, logo's, iconen, portaalnaam). De repository
   bevat altijd het standaardmerk uit `brands/index.json`; CI controleert dat (`brand.mjs check`) en bouwt in een
@@ -511,7 +511,7 @@ Belangrijke architectuur- en ontwerpbeslissingen. Status: **Voorgesteld** (wacht
 
 ## D-049 — Eén Firebase-project; pushtokens per app
 
-- **Status:** Besloten (fase 7); herziet D-039 op het punt "eigen Firebase-project per app"
+- **Status:** Deels vervangen door D-053 (fase A): één Android- en één iOS-app; tokens blijven tot fase D per moskee aangemeld
 - **Besluit:** Het platform heeft één Firebase-project met per moskee een Android- en een iOS-app. De backend stuurt
   met één serviceaccount. Een pushtoken wordt aangemeld met de slug van de moskee van de app
   (`PUT /me/devices {token, platform, mosqueSlug}`) en bewaard met die moskee (`push_device.mosque_id`, V13). Een
@@ -523,7 +523,7 @@ Belangrijke architectuur- en ontwerpbeslissingen. Status: **Voorgesteld** (wacht
 
 ## D-050 — Eén backend en één portaal voor alle moskeeën
 
-- **Status:** Besloten (fase 7)
+- **Status:** Besloten (fase 7); geldt nog, de apps zijn sinds D-053 één app
 - **Besluit:** Alle apps praten met dezelfde backend; scheiding per moskee zit in de backend (D-006, D-017, getest in
   `TenantIsolationIT`). Het beheerportaal is één installatie; een platformbeheerder voegt er moskeeën toe (*Moskee
   toevoegen*, dezelfde slug als het merk). Contactgegevens, adres en beschrijving beheert de moskee in het portaal;
@@ -535,7 +535,7 @@ Belangrijke architectuur- en ontwerpbeslissingen. Status: **Voorgesteld** (wacht
 
 ## D-051 — Ondertekening buiten de repository; releases alleen handmatig
 
-- **Status:** Besloten (fase 7)
+- **Status:** Deels vervangen door D-053 (fase A): één Environment `productie`; releasecontrole in DEPLOYMENT.md
 - **Besluit:** Gradle tekent een release alleen met een sleutel uit omgevingsvariabelen. Sleutels en Firebase-
   waarden per app staan in een GitHub Environment met de naam van de slug. De workflow Release-app start alleen met
   de hand, bouwt en tekent, en levert een artifact; hij uploadt niet naar de stores. CI tekent met een wegwerpsleutel
@@ -544,3 +544,57 @@ Belangrijke architectuur- en ontwerpbeslissingen. Status: **Voorgesteld** (wacht
   Environment met verplichte goedkeuring houdt sleutels buiten pull requests van anderen.
 - **Gevolg:** iOS wordt ongetekend gebouwd tot er een Apple Developer-account is. Uploaden gebeurt met de hand na de
   releasecontrole in WHITE_LABEL.md.
+
+## D-052 — Liquibase in plaats van Flyway
+
+- **Status:** Besloten (fase A)
+- **Besluit:** De bestaande migraties zijn ongewijzigd overgezet naar Liquibase als formatted SQL
+  (`db/changelog/migrations/NNN_*.sql`, één changeset per bestand, geladen met `includeAll` in volgorde van naam).
+- **Waarom:** De nieuwe masterprompt schrijft Liquibase voor. Formatted SQL houdt de migraties leesbaar als gewone
+  SQL en vraagt geen XML of YAML per wijziging.
+- **Gevolg:** Een bestaande database met `flyway_schema_history` wordt niet automatisch overgenomen. Er is nog geen
+  productie; een lokale database maak je opnieuw aan (`docker compose down -v`, dat wist de lokale gegevens).
+
+## D-053 — Eén MijnUmmah-app; white-label verwijderd
+
+- **Status:** Besloten (fase A); vervangt D-013, D-046 en D-047, en deels D-049 en D-051
+- **Besluit:** Er is één app, MijnUmmah (`nl.mijnummah.app`), met één merk in `brands/mijnummah/`. Een moskee is
+  gegevens in de backend (naam, contact, logo, omslagfoto), geen eigen app-build. `WHITE_LABEL.md`, de
+  merken `noeroel-islam` en `voorbeeldmoskee` en de CI-matrix per merk zijn verwijderd.
+- **Waarom:** De masterprompt vraagt één centrale app waarin gebruikers moskeeën ontdekken en volgen. Een app per
+  moskee vraagt per moskee store-accounts, sleutels en releases.
+- **Gevolg:** Tot fase D toont de app nog één moskee, standaard de pilot (`MOSQUE_SLUG`, alleen een standaardwaarde
+  in `app_config.dart`, geen eigen code voor die moskee). De kleuren van de pilot zijn het MijnUmmah-palet geworden.
+
+## D-054 — Moskeestatus actief, inactief of geblokkeerd
+
+- **Status:** Besloten (fase A)
+- **Besluit:** `mosque.status` vervangt de vlag `active`. Inactief: verborgen in de app en de publieke API,
+  beheerders kunnen nog werken. Geblokkeerd: ook verborgen, en alleen de platformbeheerder kan nog bij het beheer.
+  Alleen de platformbeheerder wijzigt de status (`PATCH /admin/mosques/{id}/status`).
+- **Waarom:** De masterprompt vraagt dat de superuser een moskee kan blokkeren. Inactief (bijvoorbeeld nog in
+  opbouw) en geblokkeerd (misbruik, opzegging) zijn verschillende situaties.
+- **Gevolg:** Er wordt niets gewist bij een statuswijziging; terugzetten naar actief maakt alles weer zichtbaar.
+
+## D-055 — Auditlog via applicatie-events in dezelfde transactie
+
+- **Status:** Besloten (fase A)
+- **Besluit:** Elke beheeractie publiceert een `AuditEvent` (actor, moskee, actie, doeltype, doel-ID). De module
+  `audit` schrijft die in `audit_log` in dezelfde transactie als de actie. Een mislukte actie laat dus geen regel
+  achter. Lezen: ADMIN van een moskee voor die moskee, de platformbeheerder alles. Bewaartermijn 730 dagen.
+- **Waarom:** Zo hoeven modules de audit-module niet te kennen (geen cyclische afhankelijkheden in Spring Modulith),
+  en kan het log niet afwijken van wat echt is opgeslagen.
+- **Gevolg:** Het log bevat geen inhoud en geen e-mailadressen, alleen ID's. Wordt een account verwijderd, dan blijft
+  de regel zonder actor staan.
+
+## D-056 — Afbeeldingen op het bestandssysteem van de server
+
+- **Status:** Besloten (fase A); wijkt af van het plan (object storage)
+- **Besluit:** Geüploade afbeeldingen (JPEG of PNG, hooguit 10 MB) worden gecontroleerd, verkleind tot hooguit 2400
+  pixels en opnieuw gecodeerd (zonder metadata), en opgeslagen in `STORAGE_DIRECTORY` (in Docker een volume).
+  De tabel `image` legt per afbeelding de moskee vast; een moskee kan alleen haar eigen afbeeldingen koppelen.
+  Ophalen is publiek via een niet te raden UUID, met een cache van een jaar.
+- **Waarom:** Eén server voor de pilot (D-044): geen extra dienst of afhankelijkheid, en de map gaat mee in de
+  dagelijkse back-up. `ImageStorage` is een interface, zodat S3-compatibele opslag later een tweede implementatie is.
+- **Gevolg:** Bij meer dan één backend-instantie is gedeelde opslag nodig. Afbeeldingen zijn niet geheim; wie het
+  adres heeft kan ze zien.

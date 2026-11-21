@@ -1,16 +1,18 @@
-# Mijn Ummah
+# MijnUmmah
 
-Platform voor moskee-apps. De eerste pilot is de app van **Noeroel Islam**: een mobiele app (Flutter),
-een beheerportaal (Angular) en een gedeelde backend (Spring Boot, PostgreSQL). Elke moskee krijgt een eigen app uit
-dezelfde code: zie [WHITE_LABEL.md](WHITE_LABEL.md).
+Eén islamitisch communityplatform voor alle aangesloten moskeeën: **één mobiele app** (Flutter) waarin gebruikers
+moskeeën ontdekken, volgen en hun activiteiten, lezingen en nieuws zien, een **beheerportaal** (Angular) voor de
+platformbeheerder en voor elke moskee een eigen afgeschermde beheeromgeving, en een gedeelde backend (Spring Boot,
+PostgreSQL). Elke moskee is een tenant; een nieuwe moskee toevoegen is configuratie, geen nieuwe app. De eerste
+pilotmoskee is **Noeroel Islam**.
 
 | Map | Inhoud |
 |---|---|
 | [`backend/`](backend/README.md) | Spring Boot-API en PostgreSQL-migraties |
 | `frontend/app/` | Flutter-app |
 | `frontend/webportaal/` | Angular-beheerportaal |
-| [`brands/`](WHITE_LABEL.md) | Merk per moskee-app: naam, ID's, kleuren, beeldmerk |
-| [`tools/brand/`](WHITE_LABEL.md#commandos) | Merken controleren, aanmaken en toepassen |
+| `brands/mijnummah/` | Het merk van de app: naam, ID's, kleuren, beeldmerk ([huisstijl](BRAND_GUIDELINES.md)) |
+| `tools/brand/` | Het merk controleren en toepassen op app en portaal |
 | [`design/`](design/README.md) | Design tokens, fonts, logo's en iconen |
 | [`deploy/`](DEPLOYMENT.md) | Productie-compose, back-up en herstel |
 

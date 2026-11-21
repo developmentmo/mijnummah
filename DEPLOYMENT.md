@@ -47,7 +47,7 @@ De Flutter-app wordt niet op de server gezet; die gaat via de App Store en Googl
    ```sh
    IMAGE_TAG=$(git describe --tags --always) docker compose -f docker-compose.prod.yml up -d --build --wait
    ```
-   Flyway voert bij de eerste start alle migraties uit. Met `BOOTSTRAP_ADMIN_EMAIL` en `BOOTSTRAP_ADMIN_PASSWORD`
+   Liquibase voert bij de eerste start alle changesets uit. Met `BOOTSTRAP_ADMIN_EMAIL` en `BOOTSTRAP_ADMIN_PASSWORD`
    wordt de eerste platformbeheerder aangemaakt; haal het wachtwoord daarna uit `.env` en start opnieuw.
 6. Reverse proxy instellen met HTTPS. Voorbeeld met Caddy (`/etc/caddy/Caddyfile`):
    ```
@@ -94,6 +94,9 @@ weigert te starten als een verplichte waarde ontbreekt of als een ontwikkelinste
 
 **Back-up** (`deploy/backup.sh`): `pg_dump` in het custom-formaat naar `BACKUP_DIR` (standaard `deploy/backups`,
 rechten 700), controleert dat de dump leesbaar is, en verwijdert back-ups ouder dan `BACKUP_KEEP_DAYS` (standaard 30).
+Daarnaast schrijft het de geüploade afbeeldingen (volume `images`, in de container `/data/images`) als
+`mijnummah-<tijd>-images.tar.gz` met dezelfde bewaartermijn. Herstel van afbeeldingen: pak het archief uit in het
+volume, bijvoorbeeld `docker compose -f docker-compose.prod.yml exec -T backend tar -C /data -xzf - < <archief>`.
 
 ```cron
 15 2 * * *  cd /opt/mijnummah/deploy && ./backup.sh >> backups/backup.log 2>&1
@@ -113,7 +116,7 @@ live database. Het script weigert de live database en bestaande namen.
 **Overschakelen op een herstelde database** is een bewuste handmatige stap (gegevens na de back-up gaan verloren):
 
 1. `docker compose -f docker-compose.prod.yml stop backend`
-2. Controleer de herstelde database (aantallen, laatste migratie; het script toont `flyway_schema_history`).
+2. Controleer de herstelde database (aantallen, laatste migratie; het script toont `databasechangelog`).
 3. Wissel de namen in PostgreSQL:
    ```sh
    docker compose -f docker-compose.prod.yml exec postgres psql -U mijnummah -d postgres \
@@ -159,15 +162,47 @@ Een release is een git-tag op `main` nadat CI groen is (backend, portaal, app, d
    (bewaar de tag ook in `.env` als `IMAGE_TAG=v0.6.0`).
 5. Controleer health, log in op het portaal, open de app.
 
-Flyway voert nieuwe migraties uit bij het starten van de backend. Migraties zijn alleen vooruit en worden nooit
-achteraf gewijzigd.
+Liquibase voert nieuwe changesets uit bij het starten van de backend (`backend/src/main/resources/db/changelog/`).
+Changesets zijn alleen vooruit en worden nooit achteraf gewijzigd; Liquibase controleert dat met een checksum.
+
+## Release van de app
+
+Er is één app voor alle moskeeën: MijnUmmah, `nl.mijnummah.app` (D-053). De workflow
+[Release-app](.github/workflows/release-app.yml) start alleen met de hand (Actions > Release-app > Run workflow, met
+het platform). Hij draait de tests, bouwt met `API_BASE_URL` en de Firebase-instellingen uit de GitHub Environment
+`productie`, tekent (Android) en levert het bestand als artifact. **Hij uploadt niets naar Play Console of App Store
+Connect.** Stel bij de Environment "Required reviewers" in, dan start een release pas na goedkeuring.
+
+**Ondertekening.** Sleutels en certificaten staan nooit in de repository of in een commit, ook niet versleuteld.
+
+- Android: één uploadsleutel, gemaakt door wie de Play Console-account beheert:
+
+  ```bash
+  keytool -genkeypair -keystore mijnummah-upload.jks -alias upload -keyalg RSA -keysize 4096 -validity 9125
+  base64 -i mijnummah-upload.jks | pbcopy        # macOS; plak als secret ANDROID_KEYSTORE_BASE64
+  ```
+
+  Bewaar het `.jks`-bestand en de wachtwoorden in de wachtwoordkluis. Gebruik *Play App Signing*: Google bewaart dan
+  de echte app-sleutel en een verloren uploadsleutel is te vervangen. Gradle leest de sleutel alleen uit
+  `ANDROID_KEYSTORE_PATH`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS` en `ANDROID_KEY_PASSWORD`.
+- iOS: vraagt een Apple Developer-account met distributiecertificaat en provisioningprofiel. Dat account is er nog
+  niet; de workflow bouwt iOS daarom ongetekend.
+
+**Releasecontrole**, met de hand, vóór het uploaden:
+
+- [ ] Versienummer in `frontend/app/pubspec.yaml` verhoogd; het buildnummer is het runnummer van de workflow.
+- [ ] De build is getest op een echt toestel tegen de productie-API: inloggen, volgen, een pushmelding ontvangen.
+- [ ] Privacyverklaring staat online op de link uit het merk; storevermelding en screenshots kloppen.
+- [ ] Release-opmerkingen geschreven.
+
+Daarna uploadt iemand met rechten in de store-account het bestand (eerst naar een interne test- of TestFlight-groep).
 
 ## Rollback
 
 - **Zonder nieuwe migratie** in de release: zet `IMAGE_TAG` terug op de vorige tag en
   `docker compose -f docker-compose.prod.yml up -d --wait`. De vorige images staan nog lokaal; anders
   `git checkout <vorige tag>` en `--build`.
-- **Met een nieuwe migratie:** een oudere backend start niet op een nieuwer schema (Flyway valideert). Kies:
+- **Met een nieuwe migratie:** een oudere backend start niet op een nieuwer schema (Liquibase weigert onbekende changesets niet, maar de oude code past niet bij het nieuwe schema). Kies:
   1. bij voorkeur een **forward fix**: een nieuwe release die het probleem oplost, eventueel met een extra migratie;
   2. of **herstel van de back-up** van vóór de release (stappen hierboven) en daarna de vorige tag. Gegevens die na
      de back-up zijn ingevoerd gaan dan verloren.
@@ -190,11 +225,11 @@ Wat nog moet gebeuren voordat de pilot live kan. Status per punt in `IMPLEMENTAT
 
 1. Hosting kiezen (EU), server inrichten, domeinen en DNS.
 2. SMTP-dienst kiezen en instellen; herstel-e-mail end-to-end testen.
-3. Firebase-project van het platform aanmaken met per moskee een Android- en iOS-app (D-049), FCM-serviceaccount
-   op de server, pushmeldingen testen op echte Android- en iOS-toestellen.
-4. Apple Developer-account: capability Push Notifications, APNs-sleutel in Firebase, signing (zie WHITE_LABEL.md).
+3. Firebase-project van het platform aanmaken met één Android- en één iOS-app `nl.mijnummah.app` (D-053),
+   FCM-serviceaccount op de server, pushmeldingen testen op echte Android- en iOS-toestellen.
+4. Apple Developer-account: capability Push Notifications, APNs-sleutel in Firebase, signing (zie Release van de app).
 5. Google Play- en App Store-accounts, store-teksten, schermafbeeldingen en de privacyformulieren.
 6. Privacyverklaring op een vaste URL, verwerkersovereenkomsten, besluit over art. 9 AVG (zie `PRIVACY.md`).
 7. Externe back-upopslag en uptimebewaking inrichten; eerste hersteltest op de echte server.
-8. Release-builds van de app met de workflow Release-app: `backend.apiBaseUrl` in het merk, GitHub Environment met
-   sleutels en Firebase-instellingen per moskee (WHITE_LABEL.md).
+8. Release-builds van de app met de workflow Release-app: GitHub Environment `productie` met `API_BASE_URL`,
+   sleutels en Firebase-instellingen (zie Release van de app).

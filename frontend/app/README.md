@@ -1,7 +1,9 @@
 # Moskee-app (Flutter)
 
-Mobiele app voor Android en iOS, per moskee gebouwd met een eigen naam, ID's, kleuren en iconen (merk uit
-`brands/`, zie [WHITE_LABEL.md](../../WHITE_LABEL.md)); in de repository staat het merk van Noeroel Islam. Vijf tabbladen: Home, Agenda, Lezingen, Ontdekken en Profiel. De app praat met de
+De MijnUmmah-app voor Android en iOS: één app voor alle moskeeën (merk uit `brands/mijnummah/`, zie
+[BRAND_GUIDELINES.md](../../BRAND_GUIDELINES.md)). **Overgang:** tot fase D toont de app nog één moskee,
+standaard de pilotmoskee (`MOSQUE_SLUG`, zie hieronder); in fase D wordt zij de centrale app waarin gebruikers alle
+moskeeën ontdekken en volgen (IMPLEMENTATION_PLAN.md). Vijf tabbladen: Home, Agenda, Lezingen, Ontdekken en Profiel. De app praat met de
 backend in `backend/`; zonder verbinding toont hij de laatst opgehaalde publieke gegevens.
 
 ## Vereisten
@@ -24,7 +26,7 @@ backend draait: `curl localhost:8082/api/v1/public/mosques/noeroel-islam`.
 | Instelling | Standaard | |
 |---|---|---|
 | `API_BASE_URL` | Android-emulator `http://10.0.2.2:8082`, anders `http://localhost:8082` | Basis-URL van de backend, zonder `/api/v1` |
-| `MOSQUE_SLUG` | slug van het toegepaste merk | Alleen om tijdelijk een andere moskee te tonen; normaal pas je het merk toe |
+| `MOSQUE_SLUG` | `noeroel-islam` | Welke moskee de app toont; alleen tot fase D, daarna toont de app alle moskeeën |
 
 Http zonder TLS werkt alleen in Android-debugbuilds (`android/app/src/debug/AndroidManifest.xml`) en op iOS alleen
 naar het lokale netwerk. Productie gebruikt https.
@@ -35,9 +37,9 @@ herstelcode in het log van de backend; er wordt dan geen e-mail verstuurd.
 
 ## Pushmeldingen
 
-Pushmeldingen gaan via Firebase Cloud Messaging (op iOS via APNs). Het platform heeft één Firebase-project met per
-moskee een Android- en iOS-app (D-049); de instellingen staan niet in de repository maar worden per build meegegeven
-(voor releases door de workflow Release-app, zie WHITE_LABEL.md):
+Pushmeldingen gaan via Firebase Cloud Messaging (op iOS via APNs). Het platform heeft één Firebase-project met één
+Android- en één iOS-app (`nl.mijnummah.app`); de instellingen staan niet in de repository maar worden per build meegegeven
+(voor releases door de workflow Release-app, zie DEPLOYMENT.md):
 
 ```bash
 flutter build apk \
@@ -52,8 +54,8 @@ flutter build apk \
 | Instelling | Waar te vinden |
 |---|---|
 | `FIREBASE_PROJECT_ID`, `FIREBASE_MESSAGING_SENDER_ID` | Firebase-console > Projectinstellingen > Algemeen (projectnummer is de sender-ID) |
-| `FIREBASE_ANDROID_API_KEY`, `FIREBASE_ANDROID_APP_ID` | Dezelfde pagina, bij de Android-app met het `android.applicationId` van het merk |
-| `FIREBASE_IOS_API_KEY`, `FIREBASE_IOS_APP_ID` | Dezelfde pagina, bij de iOS-app met het `ios.bundleId` van het merk |
+| `FIREBASE_ANDROID_API_KEY`, `FIREBASE_ANDROID_APP_ID` | Dezelfde pagina, bij de Android-app `nl.mijnummah.app` |
+| `FIREBASE_IOS_API_KEY`, `FIREBASE_IOS_APP_ID` | Dezelfde pagina, bij de iOS-app `nl.mijnummah.app` |
 
 Zonder deze instellingen (en op het web) werkt de app gewoon, maar zijn pushmeldingen uit; bij de meldingsvoorkeuren
 staat dan dat pushmeldingen in deze versie niet zijn ingesteld. De backend heeft daarnaast `PUSH_PROVIDER=fcm` met een
@@ -75,14 +77,11 @@ flutter test
 flutter build apk --debug
 ```
 
-Een andere moskee-app bouwen: `node tools/brand/brand.mjs apply <slug>` in de root, daarna dezelfde commando's; zet
-het standaardmerk terug met `node tools/brand/brand.mjs apply` vóór het committen.
-
 ## Structuur
 
 | Pad | Inhoud |
 |---|---|
-| `lib/core/brand/brand.g.dart` | Slug, naam en privacylink van het merk (gegenereerd) |
+| `lib/core/brand/brand.g.dart` | Naam en privacylink van het MijnUmmah-merk (gegenereerd) |
 | `lib/core/api/` | API-client: foutcodes, `401` en verversen, offline-cache |
 | `lib/core/auth/` | Inloggen, registreren, wachtwoordherstel, account, tokens in de beveiligde opslag |
 | `lib/core/push/` | Pushmeldingen: Firebase-koppeling, aan- en afmelden van het toestel |
@@ -97,4 +96,4 @@ het standaardmerk terug met `node tools/brand/brand.mjs apply` vóór het commit
 Beslissingen staan in `DECISIONS.md` (D-022 t/m D-026, D-039, D-046 t/m D-051), voortgang en beperkingen in `IMPLEMENTATION_PLAN.md`.
 De designpreview uit fase 1 is in debug-builds bereikbaar via Profiel > Ontwikkeling.
 
-App-ID's: Android `nl.mijnummah.noeroelislam`, iOS `nl.mijnummah.noeroelislam`. Zie BRAND_GUIDELINES.md in de root.
+App-ID's: Android en iOS `nl.mijnummah.app` (uit `brands/mijnummah/brand.json`). Zie BRAND_GUIDELINES.md in de root.

@@ -27,11 +27,12 @@ een platformbeheerder aangemaakt; zelf registreren komt in fase 5.
 | Ingelogde gebruiker | Daarnaast content met zichtbaarheid `REGISTERED_USERS`, aanmelden voor activiteiten, moskeeën volgen |
 | `EDITOR` van moskee X | Activiteiten, media en aankondigingen van X beheren |
 | `ADMIN` van moskee X | Alles van EDITOR, plus gegevens van X wijzigen, aanmeldingen inzien, beheerders beheren |
-| `PLATFORM_ADMIN` | Alles, voor alle moskeeën; moskeeën en accounts aanmaken, moskeeën (de)activeren, accounts blokkeren |
+| `PLATFORM_ADMIN` | Alles, voor alle moskeeën; moskeeën en accounts aanmaken, status van moskeeën wijzigen, accounts blokkeren, het hele auditlog |
 
 Beheerendpoints hebben de vorm `/admin/mosques/{mosqueId}/...`. Bij elk verzoek controleert de server eerst of de
 gebruiker rechten heeft voor precies die moskee (`403 MOSQUE_ACCESS_DENIED` als dat niet zo is) en zoekt daarna
-het object op met de combinatie (id, moskee). Een ID van een andere moskee geeft daardoor `404`, ook voor een
+het object op met de combinatie (id, moskee). Een geblokkeerde moskee (`BLOCKED`) kan alleen een platformbeheerder
+nog beheren; haar eigen beheerders en redacteuren krijgen `403`. Een ID van een andere moskee geeft daardoor `404`, ook voor een
 platformbeheerder die via de verkeerde moskee-route werkt. De client bepaalt dus nooit zelf tot welke moskee iets
 hoort.
 
@@ -42,7 +43,7 @@ hoort.
 | Methode | Pad | |
 |---|---|---|
 | GET | `/public/mosques` | Actieve moskeeën |
-| GET | `/public/mosques/{slug}` | Profiel: naam, beschrijving, adres, contact, tijdzone |
+| GET | `/public/mosques/{slug}` | Profiel: naam, beschrijving, adres, contact, tijdzone, `logoUrl` en `coverUrl` (pad of `null`) |
 | GET | `/public/mosques/{slug}/events` | Agenda, oplopend. Filters: `category`, `from` (standaard nu: alleen wat nog niet voorbij is), `to`, `page`, `size` |
 | GET | `/public/mosques/{slug}/events/{id}` | Activiteit, met plaatsen vrij en (ingelogd) `registeredByMe` |
 | GET | `/public/mosques/{slug}/media` | Mediabibliotheek, nieuwste eerst. Filters: `q` (titel en spreker), `category` |
@@ -50,6 +51,7 @@ hoort.
 | GET | `/public/mosques/{slug}/media/{id}/related` | Maximaal 4 items met dezelfde categorie of spreker |
 | GET | `/public/mosques/{slug}/announcements` | Actuele aankondigingen; uitgelicht eerst, verlopen niet |
 | GET | `/public/mosques/{slug}/announcements/{id}` | Aankondiging |
+| GET | `/public/images/{id}` | Afbeelding (JPEG of PNG); verandert nooit, mag een jaar in de cache |
 
 Concepten zijn nooit publiek. Geannuleerde activiteiten blijven zichtbaar met `status: CANCELLED`.
 
@@ -79,6 +81,7 @@ Onder `/admin/mosques/{mosqueId}`:
 | Pad | Acties |
 |---|---|
 | (de moskee zelf) | GET (EDITOR), PUT gegevens (ADMIN) |
+| `/images` | POST multipart `file` (EDITOR): afbeelding uploaden, JPEG of PNG tot 10 MB, geeft `{id, path, width, height}`; PUT `{logoImageId, coverImageId}` (ADMIN): logo en omslagfoto instellen, `null` verwijdert |
 | `/administrators` | GET, POST `{email, role}`, PUT `/{id}` `{role}`, DELETE `/{id}` (ADMIN); de laatste ADMIN blijft altijd |
 | `/events` | GET (filters `status`, `from`), POST, GET/PUT/DELETE `/{id}`, POST `/{id}/publish`, `/unpublish`, `/cancel` |
 | `/events/{id}/registrations` | GET: wie zich heeft aangemeld (ADMIN; bevat persoonsgegevens) |
@@ -91,8 +94,8 @@ capaciteit kan niet onder het aantal aanmeldingen. Een aankondiging publiceren v
 Een video wordt opgegeven als YouTube-link of video-ID; de backend slaat alleen de verwijzing op.
 
 Een pushmelding (POST `/{events|media|announcements}/{id}/push`, ADMIN) gaat naar de actieve volgers van deze
-moskee met het onderwerp aan, en alleen naar hun toestellen in de app van deze moskee. Volgt iemand ook een andere
-moskee met diens eigen app, dan komt de melding daar niet (white-label, D-049).
+moskee met het onderwerp aan. (Tot fase D zijn toestellen nog aan de moskee van de app gekoppeld, V13; met één
+centrale app wordt dat de gebruiker.)
 
 ### Platform
 
@@ -100,7 +103,8 @@ moskee met diens eigen app, dan komt de melding daar niet (white-label, D-049).
 |---|---|---|
 | GET | `/admin/mosques` | De moskeeën die ik beheer (platformbeheerder: alle), met mijn rol |
 | POST | `/admin/mosques` | Moskee aanmaken `{slug, details}` (platformbeheerder) |
-| PUT | `/admin/mosques/{id}/active` | (De)activeren; inactief verbergt de moskee en al haar content publiek |
+| PATCH | `/admin/mosques/{id}/status` | `{status}`: `ACTIVE`, `INACTIVE` (verborgen, beheerders kunnen voorbereiden) of `BLOCKED` (verborgen en alleen de platformbeheerder beheert) |
+| GET | `/admin/audit-log` | Beheeracties, nieuwste eerst; zonder `mosqueId` alleen platformbeheerder, met `mosqueId` ook ADMIN van die moskee |
 | GET, POST | `/admin/users` | Accounts tonen en aanmaken (platformbeheerder) |
 | POST | `/admin/users/{id}/block`, `/unblock` | Blokkeren beëindigt alle sessies direct |
 
