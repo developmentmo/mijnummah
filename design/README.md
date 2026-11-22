@@ -10,8 +10,8 @@ Bron van de huisstijl. Uitleg over gebruik staat in [BRAND_GUIDELINES.md](../BRA
 
 Generatoren: `node tokens/build.mjs` (alleen Node), `python3 fonts/build_fonts.py` en
 `python3 branding/build_branding.py` (vereisen `pip install -r requirements.txt`). Normaal draai je ze via
-`node tools/brand/brand.mjs apply`, dat tokens, namen, ID's, logo's en iconen van het MijnUmmah-merk samen maakt.
+`node tools/brand/brand.mjs apply`, dat tokens, namen, ID's, logo's en iconen van het Mijn Ummah-merk samen maakt.
 CI controleert met `node tools/brand/brand.mjs check` dat alle gegenereerde bestanden actueel zijn.
 
-Er is één merk: MijnUmmah. Moskeeën hebben geen eigen app of eigen merk; hun naam, logo en omslagfoto komen uit de
+Er is één merk: Mijn Ummah. Moskeeën hebben geen eigen app of eigen merk; hun naam, logo en omslagfoto komen uit de
 backend en worden in het portaal beheerd (D-053).

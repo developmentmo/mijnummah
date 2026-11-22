@@ -42,7 +42,7 @@ class PushFlowIT extends AbstractIntegrationTest {
     @BeforeEach
     void setUp() {
         FCM.reset();
-        mosqueId = mosque("noeroel-islam");
+        mosqueId = mosque("mijn-ummah");
         otherMosqueId = mosque("andere-moskee");
         admin = mosqueAdmin(mosqueId, "beheer");
     }
@@ -65,7 +65,7 @@ class PushFlowIT extends AbstractIntegrationTest {
         assertThat(owners("gedeeld-toestel")).isEmpty();
 
         ApiResponse invalid = api.put("/api/v1/me/devices",
-                Map.of("token", "x", "platform", "WINDOWS", "mosqueSlug", "noeroel-islam"), first.token());
+                Map.of("token", "x", "platform", "WINDOWS", "mosqueSlug", "mijn-ummah"), first.token());
         assertThat(invalid.status()).isEqualTo(400);
         ApiResponse withoutApp = api.put("/api/v1/me/devices", Map.of("token", "x", "platform", "ANDROID"),
                 first.token());
@@ -81,7 +81,7 @@ class PushFlowIT extends AbstractIntegrationTest {
         // one person follows both mosques and has both apps installed
         Account member = follower("beide-apps", Map.of());
         api.put("/api/v1/me/follows/" + otherMosqueId, null, member.token());
-        registerDevice(member, "app-noeroel", "noeroel-islam");
+        registerDevice(member, "app-mijnummah", "mijn-ummah");
         registerDevice(member, "app-andere", "andere-moskee");
         Account otherAdmin = mosqueAdmin(otherMosqueId, "ander-beheer");
 
@@ -96,12 +96,12 @@ class PushFlowIT extends AbstractIntegrationTest {
         UUID announcementId = publishedAnnouncement("Alleen voor deze app", "Tekst");
         api.post(adminPath(mosqueId, "announcements/" + announcementId + "/push"), null, admin.token());
         awaitCompleted();
-        assertThat(FCM.messages).extracting(m -> m.path("token").asString()).containsExactly("app-noeroel");
+        assertThat(FCM.messages).extracting(m -> m.path("token").asString()).containsExactly("app-mijnummah");
 
         // the token moves with the app it was registered from: re-registering it for the other app moves it there
-        registerDevice(member, "app-noeroel", "andere-moskee");
+        registerDevice(member, "app-mijnummah", "andere-moskee");
         assertThat(jdbc.queryForObject("select mosque_id from push_device where token = ?", UUID.class,
-                "app-noeroel")).isEqualTo(otherMosqueId);
+                "app-mijnummah")).isEqualTo(otherMosqueId);
     }
 
     @Test
@@ -271,9 +271,9 @@ class PushFlowIT extends AbstractIntegrationTest {
         return account;
     }
 
-    /** Registers the token from the app of noeroel-islam. */
+    /** Registers the token from the app of mijn-ummah. */
     private ApiResponse registerDevice(Account account, String token) {
-        return registerDevice(account, token, "noeroel-islam");
+        return registerDevice(account, token, "mijn-ummah");
     }
 
     private ApiResponse registerDevice(Account account, String token, String appMosqueSlug) {

@@ -75,12 +75,15 @@ weigert te starten als een verplichte waarde ontbreekt of als een ontwikkelinste
 | `JWT_SECRET` | ja | Ondertekent toegangstokens, minimaal 32 bytes. Wijzigen logt iedereen uit na hoogstens 15 minuten |
 | `PORTAL_ORIGIN` | ja | Adres van het portaal (CORS), bijv. `https://beheer.example.nl` |
 | `API_BASE_URL` | ja | Adres van de backend voor het portaal, bijv. `https://api.example.nl` |
-| `MAIL_PROVIDER`, `MAIL_FROM`, `SPRING_MAIL_*` | voor wachtwoordherstel | `none` of `smtp`. Met `none` zegt de app eerlijk dat herstel niet beschikbaar is |
+| `MAIL_PROVIDER`, `MAIL_FROM`, `SPRING_MAIL_*` | voor wachtwoordherstel en uitnodigingen | `none` of `smtp`. Met `none` zegt de app eerlijk dat herstel niet beschikbaar is, en kan het portaal geen accounts met uitnodiging aanmaken (wel met een tijdelijk wachtwoord) |
 | `PUSH_PROVIDER`, `FCM_PROJECT_ID`, `FCM_CREDENTIALS_FILE` | voor pushmeldingen | `none` of `fcm` |
 | `BOOTSTRAP_*` | alleen eerste start | Eerste platformbeheerder en eerste moskee |
 | `IMAGE_TAG` | nee | Versie van de images; gebruikt bij rollback |
 | `LOG_FORMAT` | nee | `ecs` (standaard), `logstash` of `gelf` |
 | `RETENTION_*` | nee | Bewaartermijnen, zie `backend/.env.example` en `PRIVACY.md` |
+
+De link in uitnodigingen en herstel-e-mails wijst naar `PORTAL_ORIGIN` + `/wachtwoord-instellen` (in compose
+doorgegeven als `PORTAL_URL`).
 
 ## Geheimen
 
@@ -167,7 +170,7 @@ Changesets zijn alleen vooruit en worden nooit achteraf gewijzigd; Liquibase con
 
 ## Release van de app
 
-Er is één app voor alle moskeeën: MijnUmmah, `nl.mijnummah.app` (D-053). De workflow
+Er is één app voor alle moskeeën: Mijn Ummah, `nl.mijnummah.app` (D-053). De workflow
 [Release-app](.github/workflows/release-app.yml) start alleen met de hand (Actions > Release-app > Run workflow, met
 het platform). Hij draait de tests, bouwt met `API_BASE_URL` en de Firebase-instellingen uit de GitHub Environment
 `productie`, tekent (Android) en levert het bestand als artifact. **Hij uploadt niets naar Play Console of App Store

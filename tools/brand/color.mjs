@@ -47,7 +47,7 @@ export function oklchToHex(color) {
   );
 }
 
-// Lichtheid en relatieve verzadiging per tint, gemeten aan de schalen van Noeroel Islam (die het contrast halen).
+// Lichtheid en relatieve verzadiging per tint, gemeten aan de schalen van het eerste merk (die het contrast halen).
 const LADDER = {
   primary: {
     50: [0.964, 0.1], 100: [0.913, 0.26], 200: [0.826, 0.5], 300: [0.722, 0.75], 400: [0.609, 0.95], 500: [0.524, 1],

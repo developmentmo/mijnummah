@@ -14,8 +14,8 @@ class MosqueAdminIT extends AbstractIntegrationTest {
 
     @Test
     void platformAdminCreatesAMosqueThatIsPublicByItsSlug() {
-        UUID id = mosque("noeroel-islam");
-        ApiResponse profile = api.get("/api/v1/public/mosques/noeroel-islam");
+        UUID id = mosque("mijn-ummah");
+        ApiResponse profile = api.get("/api/v1/public/mosques/mijn-ummah");
         assertThat(profile.status()).isEqualTo(200);
         assertThat(profile.field("id")).isEqualTo(id.toString());
         assertThat(profile.body().get("address").get("city").asString()).isEqualTo("Utrecht");

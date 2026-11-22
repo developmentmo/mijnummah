@@ -555,16 +555,16 @@ Belangrijke architectuur- en ontwerpbeslissingen. Status: **Voorgesteld** (wacht
 - **Gevolg:** Een bestaande database met `flyway_schema_history` wordt niet automatisch overgenomen. Er is nog geen
   productie; een lokale database maak je opnieuw aan (`docker compose down -v`, dat wist de lokale gegevens).
 
-## D-053 — Eén MijnUmmah-app; white-label verwijderd
+## D-053 — Eén Mijn Ummah-app; white-label verwijderd
 
 - **Status:** Besloten (fase A); vervangt D-013, D-046 en D-047, en deels D-049 en D-051
-- **Besluit:** Er is één app, MijnUmmah (`nl.mijnummah.app`), met één merk in `brands/mijnummah/`. Een moskee is
+- **Besluit:** Er is één app, Mijn Ummah (`nl.mijnummah.app`), met één merk in `brands/mijnummah/`. Een moskee is
   gegevens in de backend (naam, contact, logo, omslagfoto), geen eigen app-build. `WHITE_LABEL.md`, de
   merken `noeroel-islam` en `voorbeeldmoskee` en de CI-matrix per merk zijn verwijderd.
 - **Waarom:** De masterprompt vraagt één centrale app waarin gebruikers moskeeën ontdekken en volgen. Een app per
   moskee vraagt per moskee store-accounts, sleutels en releases.
 - **Gevolg:** Tot fase D toont de app nog één moskee, standaard de pilot (`MOSQUE_SLUG`, alleen een standaardwaarde
-  in `app_config.dart`, geen eigen code voor die moskee). De kleuren van de pilot zijn het MijnUmmah-palet geworden.
+  in `app_config.dart`, geen eigen code voor die moskee). De kleuren van de pilot zijn het Mijn Ummah-palet geworden.
 
 ## D-054 — Moskeestatus actief, inactief of geblokkeerd
 
@@ -598,3 +598,31 @@ Belangrijke architectuur- en ontwerpbeslissingen. Status: **Voorgesteld** (wacht
   dagelijkse back-up. `ImageStorage` is een interface, zodat S3-compatibele opslag later een tweede implementatie is.
 - **Gevolg:** Bij meer dan één backend-instantie is gedeelde opslag nodig. Afbeeldingen zijn niet geheim; wie het
   adres heeft kan ze zien.
+
+## D-057 — Moskee registreren met eerste beheerder, uitnodiging per e-mail en `mosque_settings`
+
+- **Status:** Besloten (fase B)
+- **Besluit:** De platformbeheerder registreert een moskee in één stap: gegevens, een slug (leeg: de backend maakt
+  een unieke uit de naam), de configuratie en optioneel de eerste ADMIN. Bestaat het e-mailadres niet, dan krijgt de
+  persoon een account met een onbruikbaar wachtwoord en een uitnodiging per e-mail met een code (72 uur) om zelf een
+  wachtwoord te kiezen op `/wachtwoord-instellen` in het portaal. Dezelfde code kan de platformbeheerder later sturen
+  als iemand zijn wachtwoord kwijt is ("Code sturen"); het oude wachtwoord blijft dan werken tot de code is gebruikt.
+  De configuratie staat in een eigen tabel `mosque_settings` (aanmelden en push aan of uit), die alleen de
+  platformbeheerder wijzigt; de backend dwingt hem af.
+- **Waarom:** De platformbeheerder kent geen wachtwoorden en hoeft er geen door te geven. Een aparte tabel houdt
+  configuratie gescheiden van de publieke gegevens die de moskee zelf beheert, en is uit te breiden.
+- **Gevolg:** Uitnodigen werkt alleen met `MAIL_PROVIDER=smtp` (lokaal `log`); zonder e-mail kan een account alleen
+  met een tijdelijk wachtwoord. Staat aanmelden uit voor een moskee, dan tonen de publieke activiteiten dat nog niet
+  apart: de app krijgt bij aanmelden `422 REGISTRATIONS_DISABLED_FOR_MOSQUE` (op te lossen in fase D).
+
+## D-058 — Platformcijfers met alleen-lezen SQL in een eigen module
+
+- **Status:** Besloten (fase B)
+- **Besluit:** De module `dashboard` telt met `JdbcTemplate` rechtstreeks in de tabellen van andere modules
+  (moskeeën, accounts, volgers, content, pushmeldingen). Alleen `SELECT`, alleen voor de platformbeheerder.
+  De beheer-API's staan onder `/api/v1/admin/platform/*` en in het portaal onder `/platform/*`, niet onder
+  `/superadmin/*` uit de masterprompt, omdat de bestaande beheer-API al `/admin` gebruikt.
+- **Waarom:** Een publieke tel-interface in elke module voor één scherm zou veel code opleveren zonder winst; tellen
+  verandert niets, dus de modulegrenzen voor gedrag blijven intact.
+- **Gevolg:** Een hernoemde tabel of kolom breekt het dashboard; `PlatformAdminIT` vangt dat. Bij veel data kan dit
+  later een materialized view of cache worden.

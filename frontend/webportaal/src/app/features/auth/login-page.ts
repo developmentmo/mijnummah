@@ -3,7 +3,7 @@ import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angula
 import { MatButton } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 
 import { ApiError, describeError } from '../../core/api/api-error';
 import { AuthService } from '../../core/auth/auth.service';
@@ -22,6 +22,7 @@ import { ThemeToggle } from '../../shared/ui/theme-toggle';
     MatFormFieldModule,
     MatInput,
     ReactiveFormsModule,
+    RouterLink,
     StatusMessage,
     ThemeToggle,
   ],

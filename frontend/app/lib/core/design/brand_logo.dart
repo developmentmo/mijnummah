@@ -3,7 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import '../brand/brand.g.dart';
 
-/// Varianten van het MijnUmmah-logo (uit `brands/mijnummah/`). Zie BRAND_GUIDELINES.md voor gebruik.
+/// Varianten van het Mijn Ummah-logo (uit `brands/mijnummah/`). Zie BRAND_GUIDELINES.md voor gebruik.
 enum BrandLogoVariant {
   /// Beeldmerk naast de woordmark; voor headers.
   horizontal('logo-horizontal'),

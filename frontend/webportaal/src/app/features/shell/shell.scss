@@ -70,9 +70,28 @@ nav {
   background: var(--mu-color-surface);
   padding: var(--mu-space-4) var(--mu-space-3);
 
-  ul {
+  .inner {
     position: sticky;
     top: calc(var(--mu-space-16) + var(--mu-space-2));
+    display: grid;
+    gap: var(--mu-space-6);
+  }
+
+  .group {
+    display: grid;
+    gap: var(--mu-space-1);
+    min-width: 0;
+  }
+
+  .heading {
+    margin: 0;
+    padding: 0 var(--mu-space-4);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  ul {
     display: grid;
     gap: var(--mu-space-1);
     margin: 0;
@@ -133,10 +152,17 @@ main:focus {
     border-right: 0;
     border-bottom: 1px solid var(--mu-color-border);
     padding: var(--mu-space-2) var(--mu-space-4);
-    overflow-x: auto;
+
+    .inner {
+      position: static;
+      gap: var(--mu-space-2);
+    }
+
+    .group {
+      overflow-x: auto;
+    }
 
     ul {
-      position: static;
       display: flex;
       gap: var(--mu-space-1);
     }

@@ -1,11 +1,21 @@
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { MatButton } from '@angular/material/button';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInput } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
 import { AdminApi } from '../../core/api/admin-api';
 import { describeError } from '../../core/api/api-error';
-import { AdminMosque, MosqueStatus } from '../../core/api/models';
+import { MosqueCounts, MosqueStatus } from '../../core/api/models';
 import { MosqueContext } from '../../core/mosque/mosque-context';
 import { Confirm } from '../../shared/ui/confirm-dialog';
 import { Notifier } from '../../shared/ui/notifier';
@@ -40,20 +50,30 @@ const ACTIONS: Record<MosqueStatus, StatusAction[]> = {
 };
 
 /**
- * Platformbeheer: alle moskeeën op het platform, ook inactieve en geblokkeerde. Toevoegen, openen om te beheren, en
- * de status wijzigen. Inactief en geblokkeerd verbergen de moskee en al haar content in de app; geblokkeerd sluit
+ * Platformbeheer: alle moskeeën op het platform, ook inactieve en geblokkeerde, met hun beheerders, volgers en
+ * content. Zoeken en filteren, registreren, openen om te beheren, en de status wijzigen. Inactief en geblokkeerd verbergen de moskee en al haar content in de app; geblokkeerd sluit
  * ook haar eigen beheerders buiten. Er wordt niets gewist.
  */
 @Component({
   selector: 'mu-mosques-admin-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [MatButton, PageHeader, RouterLink, Skeleton, StatusBadge, StatusMessage],
+  imports: [
+    MatButton,
+    MatFormFieldModule,
+    MatInput,
+    MatSelectModule,
+    PageHeader,
+    RouterLink,
+    Skeleton,
+    StatusBadge,
+    StatusMessage,
+  ],
   template: `
     <mu-page-header
-      heading="Alle moskeeën"
-      subtitle="Platformbeheer: als platformbeheerder beheer je elke moskee met alle rechten van een beheerder."
+      heading="Moskeeën"
+      subtitle="Als platformbeheerder beheer je elke moskee met alle rechten van een beheerder."
     >
-      <a matButton="filled" routerLink="/moskeeen/nieuw">Moskee toevoegen</a>
+      <a matButton="filled" routerLink="/platform/moskeeen/nieuw">Moskee registreren</a>
     </mu-page-header>
 
     @if (rowError(); as message) {
@@ -66,7 +86,31 @@ const ACTIONS: Record<MosqueStatus, StatusAction[]> = {
         actionLabel="Opnieuw proberen"
         (action)="load()"
       />
-    } @else if (mosques(); as list) {
+    } @else if (visible(); as list) {
+      <div class="filters">
+        <mat-form-field appearance="outline">
+          <mat-label>Zoeken</mat-label>
+          <input
+            matInput
+            type="search"
+            [value]="query()"
+            (input)="query.set($any($event.target).value)"
+            placeholder="Naam, plaats of slug"
+          />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Status</mat-label>
+          <mat-select [value]="statusFilter()" (valueChange)="statusFilter.set($event)">
+            <mat-option [value]="null">Alle</mat-option>
+            <mat-option value="ACTIVE">Actief</mat-option>
+            <mat-option value="INACTIVE">Inactief</mat-option>
+            <mat-option value="BLOCKED">Geblokkeerd</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+      <p class="mu-body-small mu-muted" aria-live="polite">
+        {{ list.length }} van {{ mosques()?.length }} moskeeën
+      </p>
       <div class="mu-table-wrap">
         <table class="mu-table">
           <caption class="mu-visually-hidden">
@@ -75,23 +119,32 @@ const ACTIONS: Record<MosqueStatus, StatusAction[]> = {
           <thead>
             <tr>
               <th scope="col">Naam</th>
-              <th scope="col">Slug</th>
               <th scope="col">Plaats</th>
               <th scope="col">Status</th>
+              <th scope="col" class="num">Beheerders</th>
+              <th scope="col" class="num">Volgers</th>
+              <th scope="col" class="num">Evenementen</th>
+              <th scope="col" class="num">Video’s</th>
+              <th scope="col" class="num">Nieuws</th>
               <th scope="col"><span class="mu-visually-hidden">Acties</span></th>
             </tr>
           </thead>
           <tbody>
             @for (m of list; track m.id) {
               <tr>
-                <td>{{ m.name }}</td>
                 <td>
-                  <code>{{ m.slug }}</code>
+                  {{ m.name }}<br />
+                  <code class="mu-body-small">{{ m.slug }}</code>
                 </td>
-                <td>{{ m.address.city || '–' }}</td>
+                <td>{{ m.city || '–' }}</td>
                 <td>
                   <mu-status-badge [status]="m.status" [label]="statusLabels[m.status]" />
                 </td>
+                <td class="num">{{ m.administrators }}</td>
+                <td class="num">{{ m.followers }}</td>
+                <td class="num">{{ m.events }}</td>
+                <td class="num">{{ m.videos }}</td>
+                <td class="num">{{ m.announcements }}</td>
                 <td class="actions">
                   <a matButton [routerLink]="['/m', m.id]">Beheren</a>
                   @for (action of actions[m.status]; track action.to) {
@@ -106,6 +159,10 @@ const ACTIONS: Record<MosqueStatus, StatusAction[]> = {
                     </button>
                   }
                 </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="9" class="mu-muted">Geen moskeeën gevonden.</td>
               </tr>
             }
           </tbody>
@@ -127,6 +184,14 @@ const ACTIONS: Record<MosqueStatus, StatusAction[]> = {
       white-space: nowrap;
       text-align: end;
     }
+    .num {
+      text-align: end;
+    }
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--mu-space-3);
+    }
   `,
 })
 export class MosquesAdminPage implements OnInit {
@@ -135,7 +200,20 @@ export class MosquesAdminPage implements OnInit {
   private readonly confirm = inject(Confirm);
   private readonly notifier = inject(Notifier);
 
-  protected readonly mosques = signal<AdminMosque[] | null>(null);
+  protected readonly mosques = signal<MosqueCounts[] | null>(null);
+  protected readonly query = signal('');
+  protected readonly statusFilter = signal<MosqueStatus | null>(null);
+  protected readonly visible = computed(() => {
+    const all = this.mosques();
+    if (!all) return null;
+    const q = this.query().trim().toLowerCase();
+    const status = this.statusFilter();
+    return all.filter(
+      (m) =>
+        (!status || m.status === status) &&
+        (!q || [m.name, m.city ?? '', m.slug].some((value) => value.toLowerCase().includes(q))),
+    );
+  });
   protected readonly error = signal<string | null>(null);
   protected readonly rowError = signal<string | null>(null);
   protected readonly busy = signal(false);
@@ -149,13 +227,13 @@ export class MosquesAdminPage implements OnInit {
   protected async load(): Promise<void> {
     this.error.set(null);
     try {
-      this.mosques.set(await this.context.load(true));
+      this.mosques.set(await firstValueFrom(this.api.platformMosques()));
     } catch (error) {
       this.error.set(describeError(error));
     }
   }
 
-  protected async changeStatus(mosque: AdminMosque, to: MosqueStatus): Promise<void> {
+  protected async changeStatus(mosque: MosqueCounts, to: MosqueStatus): Promise<void> {
     if (this.busy()) return;
     const ok = await this.confirm.ask(this.question(mosque, to));
     if (!ok) return;
@@ -163,7 +241,12 @@ export class MosquesAdminPage implements OnInit {
     this.rowError.set(null);
     try {
       const updated = await firstValueFrom(this.api.setMosqueStatus(mosque.id, to));
-      this.mosques.set(await this.context.load(true));
+      this.mosques.update(
+        (list) =>
+          list?.map((m) => (m.id === updated.id ? { ...m, status: updated.status } : m)) ?? null,
+      );
+      // De kopbalk en de moskeekeuze tonen de status ook.
+      void this.context.load(true).catch(() => undefined);
       this.notifier.success(`${updated.name} is ${DONE[updated.status]}.`);
     } catch (error) {
       this.rowError.set(describeError(error));
@@ -172,7 +255,7 @@ export class MosquesAdminPage implements OnInit {
     }
   }
 
-  private question(mosque: AdminMosque, to: MosqueStatus) {
+  private question(mosque: MosqueCounts, to: MosqueStatus) {
     switch (to) {
       case 'INACTIVE':
         return {

@@ -80,12 +80,16 @@ export function spyOnRouter() {
 
 export const MOSQUE: AdminMosque = {
   id: 'm-1',
-  slug: 'noeroel-islam',
-  name: 'Noeroel Islam',
+  slug: 'mijn-ummah',
+  name: 'Mijn Ummah',
   description: 'Testmoskee',
   address: { street: 'Straat 1', postalCode: '1234 AB', city: 'Voorbeeldstad', countryCode: 'NL' },
   contact: { email: 'info@example.org', phone: null, websiteUrl: null },
   timeZone: 'Europe/Amsterdam',
+  logoUrl: null,
+  coverUrl: null,
+  logoImageId: null,
+  coverImageId: null,
   status: 'ACTIVE',
   myRole: 'ADMIN',
   createdAt: '2026-01-01T00:00:00Z',
@@ -99,6 +103,15 @@ export const USER: CurrentUser = {
   platformRole: 'USER',
   status: 'ACTIVE',
   createdAt: '2026-01-01T00:00:00Z',
+  lastLoginAt: '2026-01-02T00:00:00Z',
+};
+
+export const PLATFORM_ADMIN: CurrentUser = {
+  ...USER,
+  id: 'u-0',
+  email: 'platform@example.org',
+  displayName: 'Platform',
+  platformRole: 'PLATFORM_ADMIN',
 };
 
 /** Kiest een moskee in de context, zoals de mosqueGuard dat doet. */
@@ -111,6 +124,7 @@ export async function selectMosque(mosque: AdminMosque = MOSQUE): Promise<void> 
 export const AUDIENCE: PushAudience = {
   configured: true,
   simulated: false,
+  enabledForMosque: true,
   followers: 12,
   devices: 15,
 };

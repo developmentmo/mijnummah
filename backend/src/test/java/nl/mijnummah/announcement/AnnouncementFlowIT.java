@@ -15,14 +15,14 @@ import nl.mijnummah.ApiTestClient.ApiResponse;
 
 class AnnouncementFlowIT extends AbstractIntegrationTest {
 
-    private static final String PUBLIC = "/api/v1/public/mosques/noeroel-islam/announcements";
+    private static final String PUBLIC = "/api/v1/public/mosques/mijn-ummah/announcements";
 
     private UUID mosqueId;
     private Account editor;
 
     @BeforeEach
     void mosqueWithEditor() {
-        mosqueId = mosque("noeroel-islam");
+        mosqueId = mosque("mijn-ummah");
         mosqueAdmin(mosqueId, "admin");
         editor = user("editor");
         grant(mosqueId, editor, "EDITOR");

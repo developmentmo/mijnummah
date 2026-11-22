@@ -13,9 +13,10 @@ benoemde constraints (`pk_`, `fk_`, `uk_`, `ix_`, `ck_`), statuswaarden als teks
 
 | Tabel | Inhoud | Belangrijkste constraints |
 |---|---|---|
-| `app_user` | Accounts, platformrol (`PLATFORM_ADMIN`, `USER`), status | E-mail uniek en verplicht in kleine letters; wachtwoord alleen als adaptieve hash |
+| `app_user` | Accounts, platformrol (`PLATFORM_ADMIN`, `USER`), status, laatste login met wachtwoord (`last_login_at`, 018) | E-mail uniek en verplicht in kleine letters; wachtwoord alleen als adaptieve hash |
 | `refresh_token` | Refresh tokens als SHA-256-hash, per loginfamilie | Hash uniek; vervaldatum na aanmaak |
 | `mosque` | De tenant: slug, naam, adres, contact, tijdzone, status (`ACTIVE`, `INACTIVE`, `BLOCKED`), logo en omslagfoto | Slug uniek en `^[a-z0-9]+(-[a-z0-9]+)*$`; logo en omslag verwijzen naar `image` (`ON DELETE SET NULL`) |
+| `mosque_settings` | Configuratie per moskee (017): aanmelden en push aan of uit | PK en FK op `mosque` (`ON DELETE CASCADE`); bestaande moskeeën kregen een rij met alles aan |
 | `mosque_administrator` | Rol per gebruiker per moskee (`ADMIN`, `EDITOR`) | Uniek per (moskee, gebruiker) |
 | `event` | Activiteiten | `ends_at > starts_at`; capaciteit > 0 en alleen met aanmelding; gepubliceerd heeft `published_at` |
 | `event_registration` | Aanmeldingen (`CONFIRMED`, `CANCELLED`) | Uniek per (activiteit, gebruiker); FK op (event_id, mosque_id) |

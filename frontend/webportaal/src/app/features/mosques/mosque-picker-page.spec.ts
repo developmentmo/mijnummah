@@ -31,7 +31,7 @@ describe('MosquePickerPage', () => {
     await respond(`${V1}/admin/mosques`, [MOSQUE]);
     await fixture.whenStable();
     expect(router.navigate).not.toHaveBeenCalled();
-    expect(text(fixture.nativeElement)).toContain('Noeroel Islam');
+    expect(text(fixture.nativeElement)).toContain('Mijn Ummah');
     expect(text(fixture.nativeElement)).toContain('Beheerder');
   });
 

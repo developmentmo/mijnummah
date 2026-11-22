@@ -90,7 +90,9 @@ public class AuthService {
             throw new AccountBlockedException();
         }
         loginThrottle.reset(normalizedEmail);
-        return issueTokens(user.getId(), UUID.randomUUID(), Instant.now(clock));
+        Instant now = Instant.now(clock);
+        user.recordLogin(now);
+        return issueTokens(user.getId(), UUID.randomUUID(), now);
     }
 
     /**

@@ -7,7 +7,7 @@ abstract final class Brand {
   static const slug = 'mijnummah';
 
   /// Naam van de app.
-  static const name = 'MijnUmmah';
+  static const name = 'Mijn Ummah';
 
   /// Privacyverklaring; zonder adres toont de app geen link.
   static const String? privacyPolicyUrl = null;

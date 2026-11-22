@@ -28,6 +28,7 @@ import nl.mijnummah.common.web.PageResponse;
 import nl.mijnummah.identity.AuthenticatedUser;
 import nl.mijnummah.identity.PlatformRole;
 import nl.mijnummah.identity.application.UserAdminService;
+import nl.mijnummah.identity.domain.UserStatus;
 
 /** Platform administrators only (checked in {@link UserAdminService}). */
 @RestController
@@ -43,19 +44,29 @@ class AdminUserController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    @Operation(summary = "Account aanmaken (bijv. voor een moskeebeheerder)")
+    @Operation(summary = "Account aanmaken (bijv. voor een moskeebeheerder); zonder wachtwoord krijgt het account een "
+            + "uitnodiging per e-mail om zelf een wachtwoord te kiezen")
     UserResponse create(@AuthenticationPrincipal AuthenticatedUser actor, @Valid @RequestBody CreateUserRequest request) {
         return UserResponse.from(userAdminService.create(actor, request.email(), request.displayName(),
                 request.password(), request.platformRole()));
     }
 
     @GetMapping
-    @Operation(summary = "Alle accounts")
+    @Operation(summary = "Accounts, te zoeken op e-mailadres of naam en te filteren op status")
     PageResponse<UserResponse> list(@AuthenticationPrincipal AuthenticatedUser actor,
+                                    @RequestParam(required = false) @Size(max = 100) String q,
+                                    @RequestParam(required = false) UserStatus status,
                                     @RequestParam(required = false) Integer page,
                                     @RequestParam(required = false) Integer size) {
         var pageable = PageRequests.of(page, size, Sort.by("email"));
-        return PageResponse.of(userAdminService.list(actor, pageable), UserResponse::from);
+        return PageResponse.of(userAdminService.list(actor, q, status, pageable), UserResponse::from);
+    }
+
+    @PostMapping("/{userId}/password-code")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Operation(summary = "Code per e-mail sturen om een nieuw wachtwoord in te stellen (72 uur geldig)")
+    void sendPasswordCode(@AuthenticationPrincipal AuthenticatedUser actor, @PathVariable UUID userId) {
+        userAdminService.sendPasswordCode(actor, userId);
     }
 
     @PostMapping("/{userId}/block")
@@ -73,7 +84,8 @@ class AdminUserController {
     record CreateUserRequest(
             @NotBlank @Email @Size(max = 254) String email,
             @NotBlank @Size(max = 100) String displayName,
-            @NotBlank @Size(max = 200) String password,
+            /** Null: an invitation email lets the user choose a password. */
+            @Size(min = 1, max = 200) String password,
             @NotNull PlatformRole platformRole) {
 
         @Override

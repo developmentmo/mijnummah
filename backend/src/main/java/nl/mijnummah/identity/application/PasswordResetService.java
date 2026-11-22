@@ -7,13 +7,11 @@ import java.time.Instant;
 import java.util.Locale;
 import java.util.UUID;
 
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import nl.mijnummah.common.crypto.OpaqueTokens;
-import nl.mijnummah.common.mail.Mailer;
 import nl.mijnummah.identity.domain.PasswordPolicy;
 import nl.mijnummah.identity.domain.PasswordResetCode;
 import nl.mijnummah.identity.domain.User;
@@ -31,6 +29,8 @@ import nl.mijnummah.identity.infrastructure.UserRepository;
 public class PasswordResetService {
 
     static final Duration CODE_TTL = Duration.ofMinutes(30);
+    /** Codes sent by a platform administrator: the user may read the email later than a code they asked for. */
+    static final Duration ADMINISTRATOR_CODE_TTL = Duration.ofHours(72);
     static final int MAX_ATTEMPTS = 5;
     static final int CODE_LENGTH = 8;
 
@@ -42,26 +42,24 @@ public class PasswordResetService {
     private final PasswordResetCodeRepository codes;
     private final RefreshTokenRepository refreshTokens;
     private final PasswordEncoder passwordEncoder;
-    private final Mailer mailer;
+    private final ResetCodeIssuer issuer;
     private final PasswordResetThrottle throttle;
     private final LoginThrottle loginThrottle;
     private final AuthService authService;
-    private final ApplicationEventPublisher events;
     private final Clock clock;
 
     public PasswordResetService(UserRepository users, PasswordResetCodeRepository codes,
-                                RefreshTokenRepository refreshTokens, PasswordEncoder passwordEncoder, Mailer mailer,
+                                RefreshTokenRepository refreshTokens, PasswordEncoder passwordEncoder, ResetCodeIssuer issuer,
                                 PasswordResetThrottle throttle, LoginThrottle loginThrottle, AuthService authService,
-                                ApplicationEventPublisher events, Clock clock) {
+                                Clock clock) {
         this.users = users;
         this.codes = codes;
         this.refreshTokens = refreshTokens;
         this.passwordEncoder = passwordEncoder;
-        this.mailer = mailer;
+        this.issuer = issuer;
         this.throttle = throttle;
         this.loginThrottle = loginThrottle;
         this.authService = authService;
-        this.events = events;
         this.clock = clock;
     }
 
@@ -73,19 +71,14 @@ public class PasswordResetService {
      */
     @Transactional
     public void request(String email) {
-        if (!mailer.available()) {
-            throw new PasswordResetUnavailableException();
-        }
+        issuer.requireMail();
         String normalizedEmail = User.normalizeEmail(email);
         if (!throttle.tryAcquire(normalizedEmail)) {
             return;
         }
         users.findByEmail(normalizedEmail).filter(User::isActive).ifPresent(user -> {
             Instant now = Instant.now(clock);
-            codes.invalidateOpenCodes(user.getId(), now);
-            String code = generate();
-            codes.save(PasswordResetCode.issue(user.getId(), hash(user.getId(), code), now, CODE_TTL));
-            events.publishEvent(new PasswordResetCodeIssued(user.getEmail(), user.getDisplayName(), code));
+            issuer.issue(user, PasswordResetCodeIssued.Kind.SELF_SERVICE, CODE_TTL, now);
         });
     }
 
@@ -138,7 +131,7 @@ public class PasswordResetService {
     }
 
     /** Bound to the user, so equal codes of different users have different hashes. */
-    private static String hash(UUID userId, String code) {
+    static String hash(UUID userId, String code) {
         return OpaqueTokens.sha256Hex(userId + ":" + code);
     }
 }

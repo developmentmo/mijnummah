@@ -2,7 +2,7 @@
 
 Beheeromgeving voor bestuurders en contentbeheerders: activiteiten, aanmeldingen, lezingen en video's,
 aankondigingen, moskeegegevens, beheerders en (voor platformbeheerders) alle moskeeën: toevoegen, beheren, (de)activeren en blokkeren, en accounts. Eén portaal
-voor alle moskeeën; naam en kleuren komen van het MijnUmmah-merk in `brands/mijnummah/` ([BRAND_GUIDELINES.md](../../BRAND_GUIDELINES.md)). De designpreview uit fase 1 staat
+voor alle moskeeën; naam en kleuren komen van het Mijn Ummah-merk in `brands/mijnummah/` ([BRAND_GUIDELINES.md](../../BRAND_GUIDELINES.md)). De designpreview uit fase 1 staat
 in ontwikkelmodus op `/design`.
 
 ## Vereisten
@@ -50,6 +50,15 @@ docker run -e API_BASE_URL=https://api.example.nl -p 8081:8080 mijnummah-webport
 nginx levert `config.json` uit `API_BASE_URL`, zet beveiligingsheaders en een Content-Security-Policy met een nonce
 per verzoek (de placeholder `CSP_NONCE_PLACEHOLDER` in `src/index.html`), en stuurt onbekende paden naar de app.
 Configuratie in `docker/`; de volledige productieopzet staat in [DEPLOYMENT.md](../../DEPLOYMENT.md).
+
+## Schermen
+
+| Route | Voor wie |
+|---|---|
+| `/inloggen`, `/wachtwoord-instellen` | Iedereen; de tweede met een code uit een uitnodiging of herstel-e-mail |
+| `/platform` | Platformbeheerder: dashboard; daaronder `moskeeen`, `moskeeen/nieuw`, `accounts`, `auditlog` |
+| `/moskeeen` | Moskee kiezen (beheerders van meer dan één moskee) |
+| `/m/:mosqueId/…` | Beheer van één moskee: gegevens (met logo, omslagfoto en configuratie), agenda, media, aankondigingen, beheerders |
 
 ## Structuur
 

@@ -120,7 +120,7 @@ class TenantIsolationIT extends AbstractIntegrationTest {
         ApiResponse created = api.post("/api/v1/admin/mosques", Map.of("slug", "moskee-c",
                 "details", Map.of("name", "Moskee C")), platformAdmin.token());
         assertThat(created.status()).isEqualTo(201);
-        String mosqueC = created.field("id");
+        String mosqueC = created.body().get("mosque").get("id").asString();
 
         for (Account admin : List.of(adminA, adminB)) {
             assertThat(api.get("/api/v1/admin/mosques", admin.token()).body().findValuesAsString("slug"))

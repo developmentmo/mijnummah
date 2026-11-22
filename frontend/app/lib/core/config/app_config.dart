@@ -20,7 +20,7 @@ class AppConfig {
   );
 
   /// De pilotmoskee, alleen zolang de app nog één moskee toont (tot fase D).
-  static const defaultMosqueSlug = 'noeroel-islam';
+  static const defaultMosqueSlug = 'mijn-ummah';
 
   static const _apiBaseUrl = String.fromEnvironment('API_BASE_URL');
 

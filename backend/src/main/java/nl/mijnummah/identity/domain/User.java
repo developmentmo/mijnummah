@@ -40,6 +40,9 @@ public class User {
     @Column(name = "status", nullable = false, length = 20)
     private UserStatus status;
 
+    @Column(name = "last_login_at")
+    private Instant lastLoginAt;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -78,6 +81,11 @@ public class User {
     public void changePassword(String passwordHash, Instant now) {
         this.passwordHash = Objects.requireNonNull(passwordHash, "passwordHash");
         updatedAt = now;
+    }
+
+    /** A successful sign-in with the password. Does not change {@code updatedAt}: the account itself is unchanged. */
+    public void recordLogin(Instant now) {
+        lastLoginAt = now;
     }
 
     public void block(Instant now) {
@@ -119,6 +127,11 @@ public class User {
 
     public PlatformRole getPlatformRole() {
         return platformRole;
+    }
+
+    /** Null when the account never signed in with a password. */
+    public Instant getLastLoginAt() {
+        return lastLoginAt;
     }
 
     public UserStatus getStatus() {

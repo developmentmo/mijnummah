@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Het merk van het platform (MijnUmmah) toepassen en controleren. Er is één app voor alle moskeeën; een moskee
+// Het merk van het platform (Mijn Ummah) toepassen en controleren. Er is één app voor alle moskeeën; een moskee
 // krijgt geen eigen merk of app, haar naam, logo en omslagfoto komen uit de backend (zie design/README.md).
 //
 //   node tools/brand/brand.mjs list                        de merken in brands/ (alleen mijnummah)

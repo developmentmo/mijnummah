@@ -19,6 +19,8 @@ export interface CurrentUser {
   platformRole: PlatformRole;
   status: UserStatus;
   createdAt: string;
+  /** Laatste keer ingelogd met het wachtwoord; null als dat nog nooit is gebeurd (bijv. uitgenodigd). */
+  lastLoginAt: string | null;
 }
 
 export interface TokenResponse {
@@ -54,6 +56,11 @@ export interface AdminMosque {
   address: Address;
   contact: Contact;
   timeZone: string;
+  /** Pad van het logo en de omslagfoto (vanaf de API-basis), of null. */
+  logoUrl: string | null;
+  coverUrl: string | null;
+  logoImageId: string | null;
+  coverImageId: string | null;
   status: MosqueStatus;
   /** Eigen rol; null voor een platformbeheerder zonder eigen rol (die mag alles). */
   myRole: MosqueRole | null;
@@ -206,8 +213,80 @@ export interface Administrator {
 export interface CreateUserRequest {
   email: string;
   displayName: string;
-  password: string;
+  /** Null: het account krijgt een uitnodiging per e-mail om zelf een wachtwoord te kiezen. */
+  password: string | null;
   platformRole: PlatformRole;
+}
+
+/** Configuratie van een moskee; alleen de platformbeheerder wijzigt die. */
+export interface MosqueSettings {
+  registrationsEnabled: boolean;
+  pushEnabled: boolean;
+}
+
+export interface CreateMosqueRequest {
+  /** Null: de backend maakt een unieke slug uit de naam. */
+  slug: string | null;
+  details: MosqueDetailsRequest;
+  firstAdministrator: { email: string; displayName: string } | null;
+  settings: MosqueSettings;
+}
+
+export interface CreatedMosque {
+  mosque: AdminMosque;
+  settings: MosqueSettings;
+  /** Null als er geen eerste beheerder is opgegeven. invited: er is een nieuw account met uitnodiging. */
+  firstAdministrator: { userId: string; invited: boolean } | null;
+}
+
+export interface PlatformTotals {
+  mosques: { total: number; active: number; inactive: number; blocked: number };
+  users: number;
+  /** Nieuwe accounts in de laatste 30 dagen. */
+  newUsers: number;
+  /** Mensen die minstens één moskee volgen. */
+  followers: number;
+  follows: number;
+  events: number;
+  upcomingEvents: number;
+  publishedVideos: number;
+  publishedAnnouncements: number;
+  /** Pushmeldingen in de laatste 30 dagen. */
+  recentPushNotifications: number;
+}
+
+/** Een moskee met haar aantallen, voor het platformoverzicht. */
+export interface MosqueCounts {
+  id: string;
+  slug: string;
+  name: string;
+  city: string | null;
+  status: MosqueStatus;
+  createdAt: string;
+  administrators: number;
+  followers: number;
+  events: number;
+  videos: number;
+  announcements: number;
+}
+
+export interface AuditEntry {
+  id: string;
+  occurredAt: string;
+  /** Null als het account inmiddels is verwijderd. */
+  actor: { id: string; displayName: string } | null;
+  mosqueId: string | null;
+  mosqueName: string | null;
+  action: string;
+  targetType: string;
+  targetId: string;
+}
+
+export interface StoredImage {
+  id: string;
+  path: string;
+  width: number;
+  height: number;
 }
 
 export type PushContentType = 'ANNOUNCEMENT' | 'EVENT' | 'MEDIA';
@@ -231,6 +310,8 @@ export interface PushNotification {
 export interface PushAudience {
   configured: boolean;
   simulated: boolean;
+  /** False als de platformbeheerder push voor deze moskee heeft uitgezet. */
+  enabledForMosque: boolean;
   followers: number;
   devices: number;
 }

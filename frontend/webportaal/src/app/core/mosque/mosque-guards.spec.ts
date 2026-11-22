@@ -26,7 +26,7 @@ describe('moskee-guards', () => {
     const result = TestBed.runInInjectionContext(() => mosqueGuard(routeFor(MOSQUE.id), state));
     await respond(`${V1}/admin/mosques`, [MOSQUE]);
     expect(await result).toBe(true);
-    expect(TestBed.inject(MosqueContext).current()?.name).toBe('Noeroel Islam');
+    expect(TestBed.inject(MosqueContext).current()?.name).toBe('Mijn Ummah');
   });
 
   it('stuurt terug naar het moskeeoverzicht bij een moskee zonder toegang', async () => {

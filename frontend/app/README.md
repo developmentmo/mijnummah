@@ -1,6 +1,6 @@
 # Moskee-app (Flutter)
 
-De MijnUmmah-app voor Android en iOS: één app voor alle moskeeën (merk uit `brands/mijnummah/`, zie
+De Mijn Ummah-app voor Android en iOS: één app voor alle moskeeën (merk uit `brands/mijnummah/`, zie
 [BRAND_GUIDELINES.md](../../BRAND_GUIDELINES.md)). **Overgang:** tot fase D toont de app nog één moskee,
 standaard de pilotmoskee (`MOSQUE_SLUG`, zie hieronder); in fase D wordt zij de centrale app waarin gebruikers alle
 moskeeën ontdekken en volgen (IMPLEMENTATION_PLAN.md). Vijf tabbladen: Home, Agenda, Lezingen, Ontdekken en Profiel. De app praat met de
@@ -21,12 +21,12 @@ flutter run        # Android-emulator, iOS-simulator of desktop: de app vindt de
 
 Zonder `API_BASE_URL` gebruikt de Android-emulator `http://10.0.2.2:8082` (zo heet de computer vanuit de emulator)
 en de iOS-simulator en desktop `http://localhost:8082`. Controleer bij geen verbinding eerst op de Mac dat de
-backend draait: `curl localhost:8082/api/v1/public/mosques/noeroel-islam`.
+backend draait: `curl localhost:8082/api/v1/public/mosques/mijn-ummah`.
 
 | Instelling | Standaard | |
 |---|---|---|
 | `API_BASE_URL` | Android-emulator `http://10.0.2.2:8082`, anders `http://localhost:8082` | Basis-URL van de backend, zonder `/api/v1` |
-| `MOSQUE_SLUG` | `noeroel-islam` | Welke moskee de app toont; alleen tot fase D, daarna toont de app alle moskeeën |
+| `MOSQUE_SLUG` | `mijn-ummah` | Welke moskee de app toont; alleen tot fase D, daarna toont de app alle moskeeën |
 
 Http zonder TLS werkt alleen in Android-debugbuilds (`android/app/src/debug/AndroidManifest.xml`) en op iOS alleen
 naar het lokale netwerk. Productie gebruikt https.
@@ -81,7 +81,7 @@ flutter build apk --debug
 
 | Pad | Inhoud |
 |---|---|
-| `lib/core/brand/brand.g.dart` | Naam en privacylink van het MijnUmmah-merk (gegenereerd) |
+| `lib/core/brand/brand.g.dart` | Naam en privacylink van het Mijn Ummah-merk (gegenereerd) |
 | `lib/core/api/` | API-client: foutcodes, `401` en verversen, offline-cache |
 | `lib/core/auth/` | Inloggen, registreren, wachtwoordherstel, account, tokens in de beveiligde opslag |
 | `lib/core/push/` | Pushmeldingen: Firebase-koppeling, aan- en afmelden van het toestel |

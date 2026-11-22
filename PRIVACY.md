@@ -36,7 +36,7 @@ bijgewerkt.
 
 | Gegeven | Waar | Doel | Grondslag (voorstel) | Wie kan erbij | Bewaartermijn | Verwijderen |
 |---|---|---|---|---|---|---|
-| E-mailadres, naam, wachtwoordhash (BCrypt), rol, status | `app_user` | Inloggen, account beheren, herstel-e-mail | Overeenkomst (art. 6 lid 1b) | De gebruiker zelf; platformbeheerder (accountbeheer); moskeebeheerder ziet naam en e-mail alleen bij beheerders en bij aanmeldingen voor eigen activiteiten | Zolang het account bestaat | Gebruiker verwijdert zelf in de app (`POST /me/deletion`); of platformbeheerder |
+| E-mailadres, naam, wachtwoordhash (BCrypt), rol, status, tijdstip van de laatste login | `app_user` | Inloggen, account beheren, herstel-e-mail | Overeenkomst (art. 6 lid 1b) | De gebruiker zelf; platformbeheerder (accountbeheer); moskeebeheerder ziet naam en e-mail alleen bij beheerders en bij aanmeldingen voor eigen activiteiten | Zolang het account bestaat | Gebruiker verwijdert zelf in de app (`POST /me/deletion`); of platformbeheerder |
 | Sessies (hash van refresh token) | `refresh_token` | Ingelogd blijven, uitloggen op alle toestellen | Overeenkomst | Niemand leest ze; alleen de backend vergelijkt hashes | Geldig 30 dagen; verlopen sessies worden 7 dagen daarna automatisch verwijderd | Uitloggen, wachtwoord wijzigen, account verwijderen, nachtelijke opschoning |
 | Herstelcodes (hash) | `password_reset_code` | Wachtwoord vergeten | Overeenkomst | Niemand leest ze | Geldig 30 minuten; 1 dag na verlopen automatisch verwijderd | Nachtelijke opschoning; met het account |
 | Volgen en meldingsvoorkeuren | `mosque_follow`, `notification_preference` | Bepalen wie welke melding krijgt | Toestemming (art. 6 lid 1a), zie "Open punten" over art. 9 | De gebruiker; moskeebeheerder ziet alleen aantallen | Tot ontvolgen of account verwijderen | Ontvolgen in de app; met het account |
@@ -75,6 +75,8 @@ is een voorstel; de moskee kan ze aanpassen zonder codewijziging.
 - De backend logt geen e-mailadressen, wachtwoorden, tokens, herstelcodes of inhoud van verzoeken. Fouten bij het
   versturen van e-mail loggen alleen het soort fout. Startmeldingen noemen de instelling
   (`BOOTSTRAP_ADMIN_EMAIL`), niet het adres.
+- Uitnodigingen en codes die een platformbeheerder laat sturen gaan alleen naar het e-mailadres van het account; het
+  auditlog legt vast dat het gebeurde (`ACCOUNT_INVITED`, `ACCOUNT_PASSWORD_CODE_SENT`), zonder adres of code.
 - Wat wel gelogd wordt: start en stop, migraties, aantallen (bijvoorbeeld "3 verlopen sessies verwijderd",
   "notificatie X: 12 afgeleverd"), en technische UUID's van content.
 - De providers `log` voor e-mail en push schrijven herstelcodes en meldingen wel naar het log. Ze zijn bedoeld voor

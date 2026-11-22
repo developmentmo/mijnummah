@@ -52,7 +52,7 @@ jobs:
       - name: SVG's en app-iconen
         run: python3 design/branding/check_assets.py
 
-  # De MijnUmmah-app (één app voor alle moskeeën): testen en een release-build. De release wordt getekend met een
+  # De Mijn Ummah-app (één app voor alle moskeeën): testen en een release-build. De release wordt getekend met een
   # wegwerpsleutel die alleen in deze job bestaat; echte sleutels staan nooit in CI (zie DEPLOYMENT.md).
   app:
     name: Flutter-app

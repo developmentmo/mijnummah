@@ -22,13 +22,13 @@ SPRING_PROFILES_ACTIVE=local ./mvnw spring-boot:run  # API op http://localhost:8
 ```
 
 Het profiel `local` maakt bij de eerste start een platformbeheerder (`admin@mijnummah.local`, wachtwoord
-`lokaal-wachtwoord-123`) en de moskee **Noeroel Islam** (slug `noeroel-islam`) aan, met die beheerder als ADMIN.
+`lokaal-wachtwoord-123`) en de moskee **Mijn Ummah** (slug `mijn-ummah`) aan, met die beheerder als ADMIN.
 Dit zijn wegwerpgegevens voor een ontwikkelmachine; buiten `local` bestaan ze niet. In `local` staan e-mail en push op
 `log`: herstelcodes en pushmeldingen komen in het log en worden **niet** verstuurd (het portaal toont dan
 "Testomgeving").
 
 ```bash
-curl -s localhost:8082/api/v1/public/mosques/noeroel-islam
+curl -s localhost:8082/api/v1/public/mosques/mijn-ummah
 curl -s -X POST localhost:8082/api/v1/auth/login -H 'Content-Type: application/json' \
   -d '{"email":"admin@mijnummah.local","password":"lokaal-wachtwoord-123"}'
 ```
@@ -65,7 +65,8 @@ Alles via omgevingsvariabelen; er staan geen geheimen in de repository. Zie [.en
 | `API_DOCS_ENABLED` | nee | OpenAPI en Swagger UI; standaard uit buiten `local` |
 | `FORWARD_HEADERS_STRATEGY` | nee | `framework` achter een vertrouwde reverse proxy |
 | `MAIL_PROVIDER` | nee | `none` (standaard: wachtwoordherstel geeft `503`), `smtp`, of `log` (alleen lokaal: e-mail naar het log) |
-| `MAIL_FROM` | bij `smtp` | Afzender van de herstel-e-mail, bijvoorbeeld `MijnUmmah <noreply@example.org>` |
+| `PORTAL_URL` | nee | Adres van het portaal, voor de link in uitnodigingen en herstel-e-mails (bijv. `https://beheer.example.nl`); leeg: geen link, alleen de code |
+| `MAIL_FROM` | bij `smtp` | Afzender van de herstel-e-mail, bijvoorbeeld `Mijn Ummah <noreply@example.org>` |
 | `SPRING_MAIL_HOST`, `SPRING_MAIL_PORT`, `SPRING_MAIL_USERNAME`, `SPRING_MAIL_PASSWORD` | bij `smtp` | SMTP-server; voor STARTTLS ook `SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE=true` |
 | `PUSH_PROVIDER` | nee | `none` (standaard: verzenden geeft `503`), `fcm`, of `log` (alleen lokaal: meldingen naar het log) |
 | `FCM_PROJECT_ID` | bij `fcm` | Project-ID van het Firebase-project |
@@ -97,7 +98,8 @@ response-records), `application` (use cases, transacties, autorisatie), `domain`
 | `announcement` | Aankondigingen |
 | `follow` | Moskeeën volgen en meldingsvoorkeuren; `FollowerDirectory` voor de pushdoelgroep |
 | `notification` | Pushtoestellen, pushmeldingen per content, FCM HTTP v1 (D-032 t/m D-034, D-038) |
+| `dashboard` | Platformcijfers voor de platformbeheerder: alleen-lezen SQL over de tabellen van andere modules (D-058) |
 
-Afhankelijkheden: `mosque → identity, storage`; `audit → mosque, identity`; `event`, `announcement`, `follow → mosque, identity`; `media → event, mosque,
+Afhankelijkheden: `mosque → identity, storage` (een eerste beheerder via `AccountProvisioning`); `dashboard → identity, mosque`; `audit → mosque, identity`; `event`, `announcement`, `follow → mosque, identity`; `media → event, mosque,
 identity`; `notification → follow, mosque, identity`; `announcement`, `event` en `media` gebruiken
-`notification` voor de pushknop.
+`notification` voor de pushknop; `event` en `notification` lezen de moskee-instellingen via `MosqueDirectory.settings`.
