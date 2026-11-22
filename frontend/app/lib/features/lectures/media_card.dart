@@ -4,21 +4,27 @@ import '../../core/design/design.dart';
 import '../../core/format/dates.dart';
 import '../../core/widgets/network_image_box.dart';
 import '../../data/models.dart';
+import '../mosques/mosque_widgets.dart';
 
-/// Lezing of video in een lijst: thumbnail, titel, spreker en datum.
+/// Lezing of video in een lijst: thumbnail, titel, moskee, spreker en datum.
 class MediaCard extends StatelessWidget {
-  const MediaCard({super.key, required this.item, required this.onTap});
+  const MediaCard({super.key, required this.item, required this.onTap, this.showMosque = true});
 
   final MediaItem item;
   final VoidCallback onTap;
+
+  /// Uit op het profiel van de moskee zelf.
+  final bool showMosque;
 
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
     final text = Theme.of(context).textTheme;
     final subtitle = [if (item.speaker != null) item.speaker!, Dates.date(item.publishedAt)].join(' · ');
+    final mosque = showMosque ? item.mosque : null;
     final label = [
       item.title,
+      if (mosque != null) mosque.name,
       if (item.speaker != null) 'door ${item.speaker}',
       item.category.label,
       if (item.duration != null) Dates.duration(item.duration!),
@@ -75,6 +81,7 @@ class MediaCard extends StatelessWidget {
                     const SizedBox(height: TokSpace.s1),
                     Text(item.title, style: text.titleSmall, maxLines: 3, overflow: TextOverflow.ellipsis),
                     const SizedBox(height: TokSpace.s1),
+                    if (mosque != null) ...[MosqueLabel(mosque: mosque), const SizedBox(height: TokSpace.s1)],
                     Text(subtitle, style: text.bodySmall),
                   ],
                 ),

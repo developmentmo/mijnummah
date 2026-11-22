@@ -2,6 +2,7 @@ package nl.mijnummah.mosque.application;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -12,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import nl.mijnummah.mosque.MosqueDirectory;
 import nl.mijnummah.mosque.MosqueRef;
 import nl.mijnummah.mosque.MosqueSettingsView;
+import nl.mijnummah.mosque.MosqueStatus;
 import nl.mijnummah.mosque.domain.Mosque;
 import nl.mijnummah.mosque.infrastructure.MosqueRepository;
 import nl.mijnummah.mosque.infrastructure.MosqueSettingsRepository;
@@ -52,6 +54,21 @@ class MosqueDirectoryService implements MosqueDirectory {
 
     @Override
     @Transactional(readOnly = true)
+    public Map<UUID, MosqueRef> findActiveBySlugs(Collection<String> slugs) {
+        return slugs.isEmpty() ? Map.of() : mosques.findBySlugIn(slugs).stream()
+                .filter(Mosque::isActive)
+                .map(MosqueDirectoryService::ref)
+                .collect(Collectors.toUnmodifiableMap(MosqueRef::id, Function.identity()));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Set<UUID> activeIds() {
+        return Set.copyOf(mosques.findIdsByStatus(MosqueStatus.ACTIVE));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public Map<UUID, String> namesByIds(Collection<UUID> mosqueIds) {
         return mosqueIds.isEmpty() ? Map.of() : mosques.findAllById(mosqueIds).stream()
                 .collect(Collectors.toUnmodifiableMap(Mosque::getId, Mosque::getName));
@@ -64,6 +81,7 @@ class MosqueDirectoryService implements MosqueDirectory {
     }
 
     static MosqueRef ref(Mosque mosque) {
-        return new MosqueRef(mosque.getId(), mosque.getSlug(), mosque.getName(), mosque.getTimeZone());
+        return new MosqueRef(mosque.getId(), mosque.getSlug(), mosque.getName(), mosque.getTimeZone(),
+                mosque.getLogoImageId());
     }
 }

@@ -151,6 +151,10 @@ public class PushNotification {
         return contentId;
     }
 
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
     public String getTitle() {
         return title;
     }

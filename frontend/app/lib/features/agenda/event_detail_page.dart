@@ -11,6 +11,7 @@ import '../../core/widgets/network_image_box.dart';
 import '../../core/widgets/offline_banner.dart';
 import '../../core/widgets/tag.dart';
 import '../../data/models.dart';
+import '../mosques/mosque_widgets.dart';
 import 'agenda_providers.dart';
 import 'registration_panel.dart';
 
@@ -85,6 +86,10 @@ class _EventDetail extends StatelessWidget {
                     ),
                     const SizedBox(height: TokSpace.s3),
                     Semantics(header: true, child: Text(event.title, style: text.headlineMedium)),
+                    if (event.mosque case final mosque?) ...[
+                      const SizedBox(height: TokSpace.s3),
+                      MosqueLinkTile(mosque: mosque),
+                    ],
                     const SizedBox(height: TokSpace.s4),
                     InfoRow(
                       icon: Icons.calendar_today_outlined,

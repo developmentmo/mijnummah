@@ -12,6 +12,10 @@ import '../../core/widgets/offline_banner.dart';
 import '../../core/widgets/section_header.dart';
 import '../../core/widgets/tag.dart';
 import '../../data/models.dart';
+import '../../core/api/api_exception.dart';
+import '../../core/providers.dart';
+import '../mosques/mosque_widgets.dart';
+import '../profile/follow_providers.dart';
 import 'lectures_providers.dart';
 import 'media_card.dart';
 import 'video_player.dart';
@@ -82,12 +86,19 @@ class _MediaDetail extends StatelessWidget {
                       OfflineBanner(savedAt: cachedAt!, onRetry: onRetry),
                       const SizedBox(height: TokSpace.s4),
                     ],
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: Tag(label: item.category.label, tone: TagTone.primary),
+                    Row(
+                      children: [
+                        Tag(label: item.category.label, tone: TagTone.primary),
+                        const Spacer(),
+                        _FavoriteMediaButton(mediaId: item.id),
+                      ],
                     ),
                     const SizedBox(height: TokSpace.s3),
                     Semantics(header: true, child: Text(item.title, style: text.headlineMedium)),
+                    if (item.mosque case final mosque?) ...[
+                      const SizedBox(height: TokSpace.s3),
+                      MosqueLinkTile(mosque: mosque),
+                    ],
                     const SizedBox(height: TokSpace.s3),
                     if (item.speaker != null)
                       InfoRow(icon: Icons.person_outline, label: 'Spreker', value: item.speaker!),
@@ -128,6 +139,38 @@ class _MediaDetail extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Hartje om de video te bewaren bij Favorieten. Een bezoeker zonder account gaat naar inloggen.
+class _FavoriteMediaButton extends ConsumerWidget {
+  const _FavoriteMediaButton({required this.mediaId});
+
+  final String mediaId;
+
+  Future<void> _toggle(BuildContext context, WidgetRef ref, bool favorite) async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await ref.read(favoriteMediaIdsProvider.notifier).set(mediaId, favorite);
+      messenger.showSnackBar(
+        SnackBar(content: Text(favorite ? 'Bewaard bij je favorieten.' : 'Verwijderd uit je favorieten.')),
+      );
+    } on AppFailure {
+      messenger.showSnackBar(const SnackBar(content: Text('Opslaan is niet gelukt. Probeer het opnieuw.')));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final signedIn = ref.watch(currentUserIdProvider) != null;
+    final favorite = ref.watch(favoriteMediaIdsProvider).value?.contains(mediaId) ?? false;
+    return IconButton(
+      tooltip: favorite ? 'Verwijderen uit favorieten' : 'Bewaren bij favorieten',
+      isSelected: favorite,
+      icon: const Icon(Icons.favorite_outline),
+      selectedIcon: const Icon(Icons.favorite),
+      onPressed: signedIn ? () => _toggle(context, ref, !favorite) : () => context.push('/inloggen'),
     );
   }
 }

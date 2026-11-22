@@ -62,27 +62,28 @@ void main() {
     late final FakeBackend backend;
     backend = pushBackend()
       ..onRequest('PUT', '/me/follows/$mosqueId', (_) async {
-        backend.on('GET', '/me/follows/$mosqueId', followJson());
+        backend.on('GET', '/me/follows', [followJson()]);
         return FakeBackendJson.of(followJson());
       });
     final push = FakePushMessaging();
-    await pumpApp(tester, backend: backend, tokenStore: signedInStore(backend), push: push, location: '/profiel');
+    await pumpApp(tester, backend: backend, tokenStore: signedInStore(backend), push: push, location: '/moskee/$slug');
     expect(push.permissionRequests, 0, reason: 'niet vragen bij het openen van de app');
 
     await tapVisible(tester, find.widgetWithText(FilledButton, 'Volgen'));
     expect(push.permissionRequests, 1);
     expect(registered(backend), [
-      {'token': 'fcm-token-1', 'platform': 'ANDROID', 'mosqueSlug': slug},
+      {'token': 'fcm-token-1', 'platform': 'ANDROID'},
     ]);
   });
 
   testWidgets('een voorkeur aanzetten vraagt toestemming als die nog niet is gegeven', (tester) async {
     final backend = pushBackend()
-      ..on('GET', '/me/follows/$mosqueId', followJson(media: false))
+      ..on('GET', '/me/follows', [followJson(media: false)])
       ..on('PUT', '/me/follows/$mosqueId/notifications', followJson(media: true));
     final push = FakePushMessaging();
     await pumpApp(tester, backend: backend, tokenStore: signedInStore(backend), push: push, location: '/profiel');
     expect(find.widgetWithText(TextButton, 'Meldingen toestaan'), findsOneWidget);
+    await tapVisible(tester, find.text('Mijn Ummah'));
 
     await tapVisible(tester, find.widgetWithText(SwitchListTile, 'Nieuwe lezingen'));
     expect(push.permissionRequests, 1);
@@ -91,7 +92,7 @@ void main() {
   });
 
   testWidgets('zegt hoe meldingen weer aan kunnen als de gebruiker ze heeft geweigerd', (tester) async {
-    final backend = pushBackend()..on('GET', '/me/follows/$mosqueId', followJson());
+    final backend = pushBackend()..on('GET', '/me/follows', [followJson()]);
     final push = FakePushMessaging(current: PushPermission.denied);
     await pumpApp(tester, backend: backend, tokenStore: signedInStore(backend), push: push, location: '/profiel');
     expect(find.textContaining('Zet ze aan in de instellingen van je toestel'), findsOneWidget);
@@ -99,7 +100,7 @@ void main() {
   });
 
   testWidgets('meldt het toestel aan bij het starten en af bij uitloggen', (tester) async {
-    final backend = pushBackend()..on('GET', '/me/follows/$mosqueId', followJson());
+    final backend = pushBackend()..on('GET', '/me/follows', [followJson()]);
     final push = FakePushMessaging(current: PushPermission.granted);
     await pumpApp(tester, backend: backend, tokenStore: signedInStore(backend), push: push, location: '/profiel');
     expect(registered(backend), hasLength(1));

@@ -2,6 +2,7 @@ package nl.mijnummah.media.application;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -56,6 +57,50 @@ public class PublicMediaService {
         return new PageImpl<>(views.of(page.getContent()), page.getPageable(), page.getTotalElements());
     }
 
+    /**
+     * The library across mosques for the central app: all active mosques, or only those among {@code mosqueSlugs}
+     * when given (unknown and inactive slugs are ignored).
+     */
+    @Transactional(readOnly = true)
+    public Page<MediaView> listAcross(Collection<String> mosqueSlugs, AuthenticatedUser viewer, String query,
+                                      MediaCategory category, Pageable pageable) {
+        Set<UUID> mosqueIds = mosqueSlugs == null || mosqueSlugs.isEmpty()
+                ? mosques.activeIds()
+                : mosques.findActiveBySlugs(mosqueSlugs).keySet();
+        if (mosqueIds.isEmpty()) {
+            return Page.empty(pageable);
+        }
+        Specification<MediaItem> spec = Specification.allOf(
+                MediaSpecifications.ofMosques(mosqueIds),
+                MediaSpecifications.liveAt(Instant.now(clock)),
+                MediaSpecifications.visibilityIn(visibleTo(viewer)),
+                MediaSpecifications.category(category),
+                MediaSpecifications.matches(query));
+        Page<MediaItem> page = items.findAll(spec, PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(),
+                NEWEST_FIRST));
+        return new PageImpl<>(views.of(page.getContent()), page.getPageable(), page.getTotalElements());
+    }
+
+    /** One public item of any active mosque, e.g. opened from a push notification or the favourites. */
+    @Transactional(readOnly = true)
+    public MediaView get(UUID mediaId, AuthenticatedUser viewer) {
+        return views.of(loadAny(mediaId, viewer));
+    }
+
+    @Transactional(readOnly = true)
+    public List<MediaView> related(UUID mediaId, AuthenticatedUser viewer) {
+        return related(loadAny(mediaId, viewer), viewer);
+    }
+
+    /** The item when it is live, visible to the viewer and its mosque is active. */
+    MediaItem loadAny(UUID mediaId, AuthenticatedUser viewer) {
+        return items.findById(mediaId)
+                .filter(item -> item.isLive(Instant.now(clock)))
+                .filter(item -> visibleTo(viewer).contains(item.getVisibility()))
+                .filter(item -> !mosques.findActiveByIds(List.of(item.getMosqueId())).isEmpty())
+                .orElseThrow(MediaNotFound::exception);
+    }
+
     @Transactional(readOnly = true)
     public MediaView get(String mosqueSlug, UUID mediaId, AuthenticatedUser viewer) {
         return views.of(load(mosqueSlug, mediaId, viewer));
@@ -64,7 +109,10 @@ public class PublicMediaService {
     /** Up to {@value #RELATED_LIMIT} other items with the same category or speaker, newest first. */
     @Transactional(readOnly = true)
     public List<MediaView> related(String mosqueSlug, UUID mediaId, AuthenticatedUser viewer) {
-        MediaItem item = load(mosqueSlug, mediaId, viewer);
+        return related(load(mosqueSlug, mediaId, viewer), viewer);
+    }
+
+    private List<MediaView> related(MediaItem item, AuthenticatedUser viewer) {
         Specification<MediaItem> spec = Specification.allOf(
                 visibleIn(item.getMosqueId(), viewer),
                 MediaSpecifications.notId(item.getId()),
@@ -87,7 +135,7 @@ public class PublicMediaService {
                 MediaSpecifications.visibilityIn(visibleTo(viewer)));
     }
 
-    private static Set<Visibility> visibleTo(AuthenticatedUser viewer) {
+    static Set<Visibility> visibleTo(AuthenticatedUser viewer) {
         return viewer == null ? Set.of(Visibility.PUBLIC) : Set.of(Visibility.PUBLIC, Visibility.REGISTERED_USERS);
     }
 }

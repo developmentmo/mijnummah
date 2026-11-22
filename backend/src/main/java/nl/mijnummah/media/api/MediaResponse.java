@@ -10,18 +10,19 @@ import nl.mijnummah.media.domain.MediaCategory;
 import nl.mijnummah.media.domain.MediaStatus;
 import nl.mijnummah.media.domain.VideoProviderType;
 import nl.mijnummah.media.domain.Visibility;
+import nl.mijnummah.mosque.MosqueCard;
 
-/** A media item. The video is played from the provider ({@code video.embedUrl} or {@code video.watchUrl}). */
-record MediaResponse(UUID id, String title, String description, String speaker, MediaCategory category, Video video,
-                     String thumbnailUrl, Integer durationSeconds, LocalDate recordedOn, EventSummary relatedEvent,
-                     Visibility visibility, Instant publishedAt) {
+/** A media item of {@code mosque}. The video is played from the provider ({@code video.embedUrl} or {@code video.watchUrl}). */
+record MediaResponse(UUID id, MosqueCard mosque, String title, String description, String speaker,
+                     MediaCategory category, Video video, String thumbnailUrl, Integer durationSeconds,
+                     LocalDate recordedOn, EventSummary relatedEvent, Visibility visibility, Instant publishedAt) {
 
     record Video(VideoProviderType provider, String videoId, String watchUrl, String embedUrl) {
     }
 
-    static MediaResponse from(MediaView view) {
+    static MediaResponse from(MediaView view, MosqueCard mosque) {
         var d = view.details();
-        return new MediaResponse(view.id(), d.title(), d.description(), d.speaker(), d.category(), videoOf(view),
+        return new MediaResponse(view.id(), mosque, d.title(), d.description(), d.speaker(), d.category(), videoOf(view),
                 view.thumbnailUrl(), d.durationSeconds(), d.recordedOn(), view.relatedEvent(), d.visibility(),
                 view.publishedAt());
     }

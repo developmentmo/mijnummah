@@ -120,7 +120,7 @@ public class PushNotificationService implements PushNotifications {
 
     private List<String> tokens(UUID mosqueId, Set<NotificationTopic> topics) {
         Set<UUID> recipients = recipients(mosqueId, topics);
-        return recipients.isEmpty() ? List.of() : devices.findByMosqueIdAndUserIdIn(mosqueId, recipients).stream()
+        return recipients.isEmpty() ? List.of() : devices.findByUserIdIn(recipients).stream()
                 .map(PushDevice::getToken)
                 .toList();
     }
@@ -165,7 +165,7 @@ public class PushNotificationService implements PushNotifications {
     private PushAudience audience(AuthenticatedUser actor, UUID mosqueId, Set<NotificationTopic> topics) {
         access.require(actor, mosqueId, MosquePermission.MANAGE_CONTENT);
         Set<UUID> recipients = recipients(mosqueId, topics);
-        long deviceCount = recipients.isEmpty() ? 0 : devices.countByMosqueIdAndUserIdIn(mosqueId, recipients);
+        long deviceCount = recipients.isEmpty() ? 0 : devices.countByUserIdIn(recipients);
         return new PushAudience(gateway.configured(), gateway.simulated(),
                 mosques.settings(mosqueId).pushEnabled(), recipients.size(),
                 Math.toIntExact(deviceCount));

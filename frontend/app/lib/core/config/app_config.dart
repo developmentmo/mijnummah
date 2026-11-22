@@ -8,19 +8,12 @@ import 'package:flutter/foundation.dart';
 ///
 /// Zonder `API_BASE_URL` wijst de app naar de backend op de eigen computer (profiel `local`): vanuit de
 /// Android-emulator is dat `10.0.2.2`, vanuit de iOS-simulator en desktop `localhost` (zie [localApiBaseUrl]).
-///
-/// Overgang: de app toont nog één moskee (`MOSQUE_SLUG`, standaard [defaultMosqueSlug]). In fase D wordt zij de
-/// centrale app waarin gebruikers alle moskeeën ontdekken en volgen; dan verdwijnt deze instelling.
+/// Er is één app voor alle moskeeën; welke moskeeën iemand volgt, kiest die in de app zelf (D-060).
 class AppConfig {
-  const AppConfig({required this.apiBaseUrl, required this.mosqueSlug});
+  const AppConfig({required this.apiBaseUrl});
 
-  factory AppConfig.fromEnvironment() => AppConfig(
-    apiBaseUrl: _apiBaseUrl.isNotEmpty ? _apiBaseUrl : localApiBaseUrl(defaultTargetPlatform),
-    mosqueSlug: const String.fromEnvironment('MOSQUE_SLUG', defaultValue: defaultMosqueSlug),
-  );
-
-  /// De pilotmoskee, alleen zolang de app nog één moskee toont (tot fase D).
-  static const defaultMosqueSlug = 'mijn-ummah';
+  factory AppConfig.fromEnvironment() =>
+      AppConfig(apiBaseUrl: _apiBaseUrl.isNotEmpty ? _apiBaseUrl : localApiBaseUrl(defaultTargetPlatform));
 
   static const _apiBaseUrl = String.fromEnvironment('API_BASE_URL');
 
@@ -31,9 +24,6 @@ class AppConfig {
 
   /// Basis-URL van de backend, zonder `/api/v1`.
   final String apiBaseUrl;
-
-  /// De moskee waarvoor deze app is gebouwd.
-  final String mosqueSlug;
 
   /// De tijdzone waarin alle tijden worden getoond.
   static const timeZone = 'Europe/Amsterdam';

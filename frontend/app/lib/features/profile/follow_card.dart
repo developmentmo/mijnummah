@@ -3,34 +3,48 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/api/api_exception.dart';
-import '../../core/design/design.dart';
 import '../../core/providers.dart';
 import '../../data/models.dart';
 import 'follow_providers.dart';
 import 'push_permission_notice.dart';
 
-/// Uitnodiging om de moskee te volgen. Verdwijnt zodra de gebruiker volgt; de voorkeuren staan bij Profiel.
-class FollowInvitation extends ConsumerStatefulWidget {
-  const FollowInvitation({super.key});
+/// Knop om een moskee te volgen of te ontvolgen. Een bezoeker zonder account gaat naar inloggen. Volgen is geen
+/// lidmaatschap; de meldingsvoorkeuren staan bij Profiel.
+class FollowButton extends ConsumerStatefulWidget {
+  const FollowButton({super.key, required this.mosque, this.compact = false});
+
+  final MosqueSummary mosque;
+
+  /// Kleine knop, voor in een lijst.
+  final bool compact;
 
   @override
-  ConsumerState<FollowInvitation> createState() => _FollowInvitationState();
+  ConsumerState<FollowButton> createState() => _FollowButtonState();
 }
 
-class _FollowInvitationState extends ConsumerState<FollowInvitation> {
+class _FollowButtonState extends ConsumerState<FollowButton> {
   bool _busy = false;
 
-  Future<void> _follow(Mosque mosque) async {
+  Future<void> _toggle(bool following) async {
     setState(() => _busy = true);
     final messenger = ScaffoldMessenger.of(context);
     final container = ProviderScope.containerOf(context, listen: false);
+    final name = widget.mosque.name;
     try {
-      await ref.read(meRepositoryProvider).follow(mosque.id);
-      ref.invalidate(followStatusProvider);
-      messenger.showSnackBar(SnackBar(content: Text('Je volgt nu ${mosque.name}.')));
-      await enablePush(container);
+      if (following) {
+        await ref.unfollow(widget.mosque.id);
+        messenger.showSnackBar(SnackBar(content: Text('Je volgt $name niet meer.')));
+      } else {
+        await ref.follow(widget.mosque.id);
+        messenger.showSnackBar(SnackBar(content: Text('Je volgt nu $name.')));
+        await enablePush(container);
+      }
     } on AppFailure {
-      messenger.showSnackBar(const SnackBar(content: Text('Volgen is niet gelukt. Probeer het later opnieuw.')));
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(following ? 'Ontvolgen is niet gelukt.' : 'Volgen is niet gelukt. Probeer het later opnieuw.'),
+        ),
+      );
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -38,46 +52,23 @@ class _FollowInvitationState extends ConsumerState<FollowInvitation> {
 
   @override
   Widget build(BuildContext context) {
-    final mosque = ref.watch(mosqueProvider).value?.data;
     final signedIn = ref.watch(currentUserIdProvider) != null;
-    final status = ref.watch(followStatusProvider);
-    if (mosque == null || status.isLoading || status.hasError || status.value != null) return const SizedBox.shrink();
-
-    final c = context.colors;
-    final text = Theme.of(context).textTheme;
-    return Card(
-      color: c.primaryContainer,
-      child: Padding(
-        padding: const EdgeInsets.all(TokComponent.cardPadding),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.favorite_outline, color: c.onPrimaryContainer),
-                const SizedBox(width: TokSpace.s2),
-                Expanded(
-                  child: Text('Volg ${mosque.name}', style: text.titleMedium?.copyWith(color: c.onPrimaryContainer)),
-                ),
-              ],
-            ),
-            const SizedBox(height: TokSpace.s2),
-            Text(
-              'Blijf op de hoogte van activiteiten, lezingen en nieuws. Volgen is gratis en is geen lidmaatschap '
-              'van de moskee.',
-              style: text.bodyMedium?.copyWith(color: c.onPrimaryContainer),
-            ),
-            const SizedBox(height: TokSpace.s3),
-            signedIn
-                ? FilledButton.icon(
-                    onPressed: _busy ? null : () => _follow(mosque),
-                    icon: const Icon(Icons.add),
-                    label: const Text('Volgen'),
-                  )
-                : FilledButton(onPressed: () => context.push('/inloggen'), child: const Text('Inloggen om te volgen')),
-          ],
-        ),
-      ),
-    );
+    final status = ref.watch(followOfProvider(widget.mosque.id));
+    final following = status.value != null;
+    final busy = _busy || (signedIn && status.isLoading && !status.hasValue);
+    final onPressed = !signedIn
+        ? () => context.push('/inloggen')
+        : busy
+        ? null
+        : () => _toggle(following);
+    final label = Text(following ? 'Volgend' : 'Volgen');
+    if (following) {
+      return widget.compact
+          ? OutlinedButton(onPressed: onPressed, child: label)
+          : OutlinedButton.icon(onPressed: onPressed, icon: const Icon(Icons.check), label: label);
+    }
+    return widget.compact
+        ? FilledButton.tonal(onPressed: onPressed, child: label)
+        : FilledButton.icon(onPressed: onPressed, icon: const Icon(Icons.add), label: label);
   }
 }

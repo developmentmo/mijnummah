@@ -2,7 +2,28 @@ import 'json.dart';
 
 export 'json.dart' show PageResult;
 
-/// Publiek profiel van de moskee.
+/// De moskee waar een activiteit, video of aankondiging bij hoort: genoeg om haar te herkennen en te openen.
+class MosqueSummary {
+  const MosqueSummary({required this.id, required this.slug, required this.name, this.logoUrl});
+
+  factory MosqueSummary.fromJson(Json json) => MosqueSummary(
+    id: json.str('id'),
+    slug: json.str('slug'),
+    name: json.str('name'),
+    logoUrl: json.strOrNull('logoUrl'),
+  );
+
+  static MosqueSummary? fromJsonOrNull(Json? json) => json == null ? null : MosqueSummary.fromJson(json);
+
+  final String id;
+  final String slug;
+  final String name;
+
+  /// Pad vanaf de API of volledige link; null zonder logo.
+  final String? logoUrl;
+}
+
+/// Publiek profiel van een moskee. Logo en omslagfoto geven elke moskee haar eigen gezicht in de app.
 class Mosque {
   const Mosque({
     required this.id,
@@ -15,6 +36,9 @@ class Mosque {
     this.email,
     this.phone,
     this.websiteUrl,
+    this.prayerTimesUrl,
+    this.logoUrl,
+    this.coverUrl,
   });
 
   factory Mosque.fromJson(Json json) {
@@ -31,6 +55,9 @@ class Mosque {
       email: contact.strOrNull('email'),
       phone: contact.strOrNull('phone'),
       websiteUrl: contact.strOrNull('websiteUrl'),
+      prayerTimesUrl: json.strOrNull('prayerTimesUrl'),
+      logoUrl: json.strOrNull('logoUrl'),
+      coverUrl: json.strOrNull('coverUrl'),
     );
   }
 
@@ -44,6 +71,13 @@ class Mosque {
   final String? email;
   final String? phone;
   final String? websiteUrl;
+
+  /// Link naar de gebedstijden van de moskee (bijvoorbeeld een pdf of webpagina).
+  final String? prayerTimesUrl;
+  final String? logoUrl;
+  final String? coverUrl;
+
+  MosqueSummary get summary => MosqueSummary(id: id, slug: slug, name: name, logoUrl: logoUrl);
 
   /// Het adres op één regel, of null als het onbekend is.
   String? get addressLine {
@@ -90,6 +124,7 @@ class Event {
     required this.visibility,
     required this.cancelled,
     required this.registration,
+    this.mosque,
     this.description,
     this.location,
     this.imageUrl,
@@ -97,6 +132,7 @@ class Event {
 
   factory Event.fromJson(Json json) => Event(
     id: json.str('id'),
+    mosque: MosqueSummary.fromJsonOrNull(json.objOrNull('mosque')),
     title: json.str('title'),
     description: json.strOrNull('description'),
     category: EventCategory.parse(json['category'] as String?),
@@ -110,6 +146,9 @@ class Event {
   );
 
   final String id;
+
+  /// Waar de activiteit is; null alleen bij oudere gegevens uit de cache.
+  final MosqueSummary? mosque;
   final String title;
   final String? description;
   final EventCategory category;
@@ -125,6 +164,7 @@ class Event {
 
   Event copyWith({EventRegistration? registration}) => Event(
     id: id,
+    mosque: mosque,
     title: title,
     description: description,
     category: category,
@@ -199,6 +239,7 @@ class MediaItem {
     required this.title,
     required this.category,
     required this.publishedAt,
+    this.mosque,
     this.description,
     this.speaker,
     this.videoId,
@@ -216,6 +257,7 @@ class MediaItem {
     final recorded = json.strOrNull('recordedOn');
     return MediaItem(
       id: json.str('id'),
+      mosque: MosqueSummary.fromJsonOrNull(json.objOrNull('mosque')),
       title: json.str('title'),
       description: json.strOrNull('description'),
       speaker: json.strOrNull('speaker'),
@@ -231,6 +273,7 @@ class MediaItem {
   }
 
   final String id;
+  final MosqueSummary? mosque;
   final String title;
   final String? description;
   final String? speaker;
@@ -257,11 +300,15 @@ class Announcement {
     required this.body,
     required this.featured,
     required this.publishedAt,
+    this.mosque,
+    this.imageUrl,
     this.expiresAt,
   });
 
   factory Announcement.fromJson(Json json) => Announcement(
     id: json.str('id'),
+    mosque: MosqueSummary.fromJsonOrNull(json.objOrNull('mosque')),
+    imageUrl: json.strOrNull('imageUrl'),
     title: json.str('title'),
     body: json.str('body'),
     featured: json.boolOr('featured', false),
@@ -270,6 +317,8 @@ class Announcement {
   );
 
   final String id;
+  final MosqueSummary? mosque;
+  final String? imageUrl;
   final String title;
   final String body;
   final bool featured;
@@ -331,18 +380,88 @@ enum NotificationTopic {
 
 /// Dat de gebruiker de moskee volgt, met de meldingsvoorkeuren. Volgen is geen lidmaatschap.
 class FollowStatus {
-  const FollowStatus({required this.mosqueId, required this.followedSince, required this.notifications});
+  const FollowStatus({
+    required this.mosqueId,
+    required this.mosqueSlug,
+    required this.mosqueName,
+    required this.followedSince,
+    required this.notifications,
+    this.mosqueLogoUrl,
+    this.favorite = false,
+  });
 
   factory FollowStatus.fromJson(Json json) {
     final raw = json.objOrNull('notifications') ?? const {};
     return FollowStatus(
       mosqueId: json.str('mosqueId'),
+      mosqueSlug: json.str('mosqueSlug'),
+      mosqueName: json.str('mosqueName'),
+      mosqueLogoUrl: json.strOrNull('mosqueLogoUrl'),
       followedSince: json.time('followedSince'),
+      favorite: json.boolOr('favorite', false),
       notifications: {for (final topic in NotificationTopic.values) topic: raw[topic.apiValue] as bool? ?? false},
     );
   }
 
   final String mosqueId;
+  final String mosqueSlug;
+  final String mosqueName;
+  final String? mosqueLogoUrl;
   final DateTime followedSince;
+
+  /// Een favoriete moskee staat bovenaan.
+  final bool favorite;
   final Map<NotificationTopic, bool> notifications;
+
+  MosqueSummary get mosque => MosqueSummary(id: mosqueId, slug: mosqueSlug, name: mosqueName, logoUrl: mosqueLogoUrl);
+}
+
+/// Een melding van een gevolgde moskee (scherm Meldingen), ook als de pushmelding dit toestel niet bereikte.
+class InboxItem {
+  const InboxItem({
+    required this.id,
+    required this.type,
+    required this.title,
+    required this.body,
+    required this.sentAt,
+    this.mosque,
+    this.contentId,
+  });
+
+  factory InboxItem.fromJson(Json json) => InboxItem(
+    id: json.str('id'),
+    mosque: MosqueSummary.fromJsonOrNull(json.objOrNull('mosque')),
+    type: json.str('type'),
+    contentId: json.strOrNull('contentId'),
+    title: json.str('title'),
+    body: json.str('body'),
+    sentAt: json.time('sentAt'),
+  );
+
+  final String id;
+  final MosqueSummary? mosque;
+
+  /// `announcement`, `event`, `media` of `message` (een eigen bericht van de moskee).
+  final String type;
+  final String? contentId;
+  final String title;
+  final String body;
+  final DateTime sentAt;
+
+  /// Het scherm dat bij deze melding hoort; een eigen bericht opent de moskee.
+  String? get location {
+    final id = contentId;
+    if (id != null) {
+      final encoded = Uri.encodeComponent(id);
+      switch (type) {
+        case 'announcement':
+          return '/aankondiging/$encoded';
+        case 'event':
+          return '/activiteit/$encoded';
+        case 'media':
+          return '/lezing/$encoded';
+      }
+    }
+    return mosque == null ? null : '/moskee/${Uri.encodeComponent(mosque!.slug)}';
+  }
 }

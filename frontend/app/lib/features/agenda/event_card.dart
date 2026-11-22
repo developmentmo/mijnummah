@@ -4,13 +4,17 @@ import '../../core/design/design.dart';
 import '../../core/format/dates.dart';
 import '../../core/widgets/tag.dart';
 import '../../data/models.dart';
+import '../mosques/mosque_widgets.dart';
 
-/// Activiteit in een lijst: datumblok, titel, tijd en locatie.
+/// Activiteit in een lijst: datumblok, moskee, titel, tijd en locatie.
 class EventCard extends StatelessWidget {
-  const EventCard({super.key, required this.event, required this.onTap});
+  const EventCard({super.key, required this.event, required this.onTap, this.showMosque = true});
 
   final Event event;
   final VoidCallback onTap;
+
+  /// Uit op het profiel van de moskee zelf.
+  final bool showMosque;
 
   @override
   Widget build(BuildContext context) {
@@ -18,8 +22,10 @@ class EventCard extends StatelessWidget {
     final text = Theme.of(context).textTheme;
     final (day, month) = Dates.dayAndMonth(event.startsAt);
     final when = '${Dates.shortDate(event.startsAt)} · ${Dates.timeRange(event.startsAt, event.endsAt)}';
+    final mosque = showMosque ? event.mosque : null;
     final label = [
       event.title,
+      if (mosque != null) mosque.name,
       if (event.cancelled) 'geannuleerd',
       Dates.weekdayDate(event.startsAt),
       Dates.timeRange(event.startsAt, event.endsAt),
@@ -70,6 +76,7 @@ class EventCard extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: TokSpace.s2),
+                      if (mosque != null) ...[MosqueLabel(mosque: mosque), const SizedBox(height: TokSpace.s1)],
                       Text(
                         event.title,
                         style: text.titleMedium?.copyWith(

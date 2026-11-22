@@ -42,7 +42,8 @@ hoort.
 
 | Methode | Pad | |
 |---|---|---|
-| GET | `/public/mosques` | Actieve moskeeën |
+| GET | `/public/mosques` | Actieve moskeeën, alfabetisch, gepagineerd. Filters: `q` (naam), `city` (plaats, hoofdletterongevoelig), `page`, `size` |
+| GET | `/public/mosques/cities` | Plaatsen met een actieve moskee, alfabetisch |
 | GET | `/public/mosques/{slug}` | Profiel: naam, beschrijving, adres, contact, tijdzone, `logoUrl` en `coverUrl` (pad of `null`) |
 | GET | `/public/mosques/{slug}/events` | Agenda, oplopend. Filters: `category`, `from` (standaard nu: alleen wat nog niet voorbij is), `to`, `page`, `size` |
 | GET | `/public/mosques/{slug}/events/{id}` | Activiteit, met plaatsen vrij en (ingelogd) `registeredByMe` |
@@ -51,6 +52,12 @@ hoort.
 | GET | `/public/mosques/{slug}/media/{id}/related` | Maximaal 4 items met dezelfde categorie of spreker |
 | GET | `/public/mosques/{slug}/announcements` | Actuele aankondigingen; uitgelicht eerst, verlopen niet |
 | GET | `/public/mosques/{slug}/announcements/{id}` | Aankondiging |
+| GET | `/public/events` | Agenda van alle actieve moskeeën. Filters als bij één moskee, plus `mosque` (slug, herhaalbaar, maximaal 100; onbekende of inactieve slugs vallen weg) |
+| GET | `/public/events/{id}` | Activiteit op id, met `mosque {id, slug, name, logoUrl}`; `404` als de moskee inactief is of de activiteit niet zichtbaar |
+| GET | `/public/media` | Videobibliotheek van alle actieve moskeeën. Filters: `mosque` (herhaalbaar), `q`, `category` |
+| GET | `/public/media/{id}`, `/public/media/{id}/related` | Media-item op id, gerelateerde items van dezelfde moskee |
+| GET | `/public/announcements` | Nieuws van alle actieve moskeeën, nieuwste eerst. Filter: `mosque` (herhaalbaar) |
+| GET | `/public/announcements/{id}` | Aankondiging op id |
 | GET | `/public/images/{id}` | Afbeelding (JPEG of PNG); verandert nooit, mag een jaar in de cache |
 
 Concepten zijn nooit publiek. Geannuleerde activiteiten blijven zichtbaar met `status: CANCELLED`.
@@ -63,11 +70,16 @@ Concepten zijn nooit publiek. Geannuleerde activiteiten blijven zichtbaar met `s
 | POST | `/events/{eventId}/registrations` | Aanmelden (`201`) |
 | DELETE | `/events/{eventId}/registrations/me` | Eigen aanmelding annuleren (`204`) |
 | GET | `/me/event-registrations` | Eigen aanmeldingen |
-| GET | `/me/follows` | Gevolgde moskeeën met meldingsvoorkeuren |
+| GET | `/me/follows` | Gevolgde moskeeën (slug, naam, logo, `favorite`) met meldingsvoorkeuren; favorieten eerst |
 | PUT / DELETE | `/me/follows/{mosqueId}` | Volgen / ontvolgen (beide idempotent) |
 | GET | `/me/follows/{mosqueId}` | Eén gevolgde moskee |
+| PUT / DELETE | `/me/follows/{mosqueId}/favorite` | Favoriete moskee aan (volgt zo nodig) / uit (blijft gevolgd); geeft de volgstatus |
 | PUT | `/me/follows/{mosqueId}/notifications` | `{announcements?, events?, media?}`; weggelaten onderwerpen blijven gelijk |
-| PUT | `/me/devices` | Pushtoken van dit toestel `{token, platform, mosqueSlug}` (`204`, idempotent); `mosqueSlug` is de moskee van de app |
+| PUT | `/me/devices` | Pushtoken van dit toestel `{token, platform}` (`204`, idempotent). Het toestel krijgt de meldingen van alle moskeeën die de gebruiker volgt; een `mosqueSlug` van een oudere app wordt genegeerd |
+| GET | `/me/notifications` | Meldingen van gevolgde, actieve moskeeën van de laatste 30 dagen, nieuwste eerst: `{id, mosque, type, contentId, title, body, sentAt}` |
+| GET | `/me/favorite-media` | Favoriete video's die nu zichtbaar zijn, laatst bewaard eerst (gepagineerd) |
+| GET | `/me/favorite-media/ids` | IDs van alle favoriete video's |
+| PUT / DELETE | `/me/favorite-media/{mediaId}` | Video bewaren (alleen een zichtbare video, anders `404`) / verwijderen; `204`, idempotent |
 | POST | `/me/devices/remove` | Pushtoken afmelden `{token}` (`204`, idempotent; body in plaats van URL zodat tokens niet in logs komen) |
 
 Aanmelden kan alleen voor een gepubliceerde, zichtbare activiteit met aanmelding aan, die nog niet begonnen is en

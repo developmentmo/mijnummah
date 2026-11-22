@@ -12,7 +12,7 @@ void main() {
     for (final (label, title) in [
       ('Agenda', 'Agenda'),
       ('Lezingen', 'Lezingen'),
-      ('Ontdekken', 'Ontdekken'),
+      ('Ontdekken', 'Moskeeën ontdekken'),
       ('Profiel', 'Profiel'),
     ]) {
       await tester.tap(find.descendant(of: bar, matching: find.text(label)));
@@ -46,7 +46,8 @@ void main() {
       ..on('GET', '$base/events/e1', eventJson(registrationEnabled: true, availablePlaces: 3))
       ..on('GET', '$base/media/m1', mediaJson())
       ..on('GET', '$base/media/m1/related', [mediaJson(id: 'm2')])
-      ..on('GET', '$base/announcements/a1', announcementJson());
+      ..on('GET', '$base/announcements/a1', announcementJson())
+      ..on('GET', '$base/mosques', page([mosqueJson(), mosqueJson()]));
 
     for (final location in [
       '/',
@@ -57,6 +58,11 @@ void main() {
       '/activiteit/e1',
       '/lezing/m1',
       '/aankondiging/a1',
+      '/moskee/$slug',
+      '/nieuws',
+      '/meldingen',
+      '/favorieten',
+      '/welkom',
       '/inloggen',
       '/account-aanmaken',
       '/wachtwoord-vergeten',

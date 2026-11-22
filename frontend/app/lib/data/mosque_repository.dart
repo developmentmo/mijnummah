@@ -3,59 +3,93 @@ import '../core/api/api_exception.dart';
 import 'json.dart';
 import 'models.dart';
 
-/// Publieke content van de moskee waarvoor deze app is gebouwd. Alle methoden vallen zonder verbinding terug
-/// op de laatst opgehaalde gegevens ([Fetched.cachedAt]).
-class MosqueRepository {
-  MosqueRepository(this._api, this.slug);
+/// Publieke content van alle aangesloten moskeeën. Lijsten nemen optioneel [mosques] (slugs): alleen die moskeeën,
+/// bijvoorbeeld de gevolgde. Alle methoden vallen zonder verbinding terug op de laatst opgehaalde gegevens
+/// ([Fetched.cachedAt]).
+class ContentRepository {
+  ContentRepository(this._api);
 
   final ApiClient _api;
-  final String slug;
 
-  String get _base => '/public/mosques/${Uri.encodeComponent(slug)}';
+  static const _public = '/public';
 
-  Future<Fetched<Mosque>> mosque() async => (await _api.getCached(_base)).map((json) => Mosque.fromJson(json as Json));
-
-  /// Aankomende activiteiten, oplopend op begintijd.
-  Future<Fetched<PageResult<Event>>> events({EventCategory? category, int page = 0, int size = 20}) async {
+  /// Actieve moskeeën, alfabetisch. [query] zoekt in de naam, [city] is de plaats.
+  Future<Fetched<PageResult<Mosque>>> mosques({String? query, String? city, int page = 0, int size = 20}) async {
     final result = await _api.getCached(
-      '$_base/events',
-      query: {'category': category?.apiValue, 'page': page, 'size': size},
+      '$_public/mosques',
+      query: {'q': query?.trim(), 'city': city, 'page': page, 'size': size},
+    );
+    return result.map((json) => PageResult.fromJson(json as Json, Mosque.fromJson));
+  }
+
+  /// Plaatsen met een aangesloten moskee, voor het filter op plaats.
+  Future<Fetched<List<String>>> cities() async =>
+      (await _api.getCached('$_public/mosques/cities')).map((json) => [for (final c in json as List<dynamic>) '$c']);
+
+  Future<Fetched<Mosque>> mosque(String slug) async =>
+      (await _api.getCached('$_public/mosques/${Uri.encodeComponent(slug)}'))
+          .map((json) => Mosque.fromJson(json as Json));
+
+  /// Aankomende activiteiten, oplopend op begintijd. [from] en [to] beperken de periode.
+  Future<Fetched<PageResult<Event>>> events({
+    List<String>? mosques,
+    EventCategory? category,
+    DateTime? from,
+    DateTime? to,
+    int page = 0,
+    int size = 20,
+  }) async {
+    final result = await _api.getCached(
+      '$_public/events',
+      query: {
+        'mosque': mosques,
+        'category': category?.apiValue,
+        'from': from?.toUtc().toIso8601String(),
+        'to': to?.toUtc().toIso8601String(),
+        'page': page,
+        'size': size,
+      },
     );
     return result.map((json) => PageResult.fromJson(json as Json, Event.fromJson));
   }
 
   Future<Fetched<Event>> event(String id) async =>
-      (await _api.getCached('$_base/events/${Uri.encodeComponent(id)}')).map((json) => Event.fromJson(json as Json));
+      (await _api.getCached('$_public/events/${Uri.encodeComponent(id)}')).map((json) => Event.fromJson(json as Json));
 
-  /// De mediabibliotheek, nieuwste eerst. [query] zoekt in titel en spreker.
+  /// Lezingen en video's, nieuwste eerst. [query] zoekt in titel en spreker.
   Future<Fetched<PageResult<MediaItem>>> media({
+    List<String>? mosques,
     String? query,
     MediaCategory? category,
     int page = 0,
     int size = 20,
   }) async {
     final result = await _api.getCached(
-      '$_base/media',
-      query: {'q': query?.trim(), 'category': category?.apiValue, 'page': page, 'size': size},
+      '$_public/media',
+      query: {'mosque': mosques, 'q': query?.trim(), 'category': category?.apiValue, 'page': page, 'size': size},
     );
     return result.map((json) => PageResult.fromJson(json as Json, MediaItem.fromJson));
   }
 
   Future<Fetched<MediaItem>> mediaItem(String id) async =>
-      (await _api.getCached('$_base/media/${Uri.encodeComponent(id)}')).map((json) => MediaItem.fromJson(json as Json));
+      (await _api.getCached('$_public/media/${Uri.encodeComponent(id)}'))
+          .map((json) => MediaItem.fromJson(json as Json));
 
   Future<Fetched<List<MediaItem>>> relatedMedia(String id) async =>
-      (await _api.getCached('$_base/media/${Uri.encodeComponent(id)}/related'))
+      (await _api.getCached('$_public/media/${Uri.encodeComponent(id)}/related'))
           .map((json) => [for (final item in json as List<dynamic>) MediaItem.fromJson(item as Json)]);
 
-  /// Actuele aankondigingen; uitgelicht eerst.
-  Future<Fetched<PageResult<Announcement>>> announcements({int page = 0, int size = 20}) async {
-    final result = await _api.getCached('$_base/announcements', query: {'page': page, 'size': size});
+  /// Actuele aankondigingen, nieuwste eerst.
+  Future<Fetched<PageResult<Announcement>>> announcements({List<String>? mosques, int page = 0, int size = 20}) async {
+    final result = await _api.getCached(
+      '$_public/announcements',
+      query: {'mosque': mosques, 'page': page, 'size': size},
+    );
     return result.map((json) => PageResult.fromJson(json as Json, Announcement.fromJson));
   }
 
   Future<Fetched<Announcement>> announcement(String id) async =>
-      (await _api.getCached('$_base/announcements/${Uri.encodeComponent(id)}'))
+      (await _api.getCached('$_public/announcements/${Uri.encodeComponent(id)}'))
           .map((json) => Announcement.fromJson(json as Json));
 }
 
@@ -75,6 +109,39 @@ class MeRepository {
     final json = await _api.get('/me/event-registrations', query: {'size': 100}) as Json;
     return PageResult.fromJson(json, MyRegistration.fromJson).items;
   }
+
+  /// Gevolgde moskeeën met meldingsvoorkeuren; favorieten eerst.
+  Future<List<FollowStatus>> follows() async => [
+    for (final item in await _api.get('/me/follows') as List<dynamic>) FollowStatus.fromJson(item as Json),
+  ];
+
+  /// Markeert een moskee als favoriet (volgt haar zo nodig) of haalt de markering weg (blijft gevolgd).
+  Future<FollowStatus> setFavorite(String mosqueId, bool favorite) async {
+    final path = '/me/follows/${Uri.encodeComponent(mosqueId)}/favorite';
+    return FollowStatus.fromJson(await (favorite ? _api.put(path) : _api.delete(path)) as Json);
+  }
+
+  /// IDs van de favoriete video's.
+  Future<Set<String>> favoriteMediaIds() async => {
+    for (final id in await _api.get('/me/favorite-media/ids') as List<dynamic>) '$id',
+  };
+
+  /// Favoriete video's die nu te bekijken zijn, laatst opgeslagen eerst.
+  Future<PageResult<MediaItem>> favoriteMedia({int page = 0, int size = 20}) async => PageResult.fromJson(
+    await _api.get('/me/favorite-media', query: {'page': page, 'size': size}) as Json,
+    MediaItem.fromJson,
+  );
+
+  Future<void> setFavoriteMedia(String mediaId, bool favorite) {
+    final path = '/me/favorite-media/${Uri.encodeComponent(mediaId)}';
+    return favorite ? _api.put(path) : _api.delete(path);
+  }
+
+  /// Meldingen van gevolgde moskeeën van de laatste 30 dagen, nieuwste eerst.
+  Future<PageResult<InboxItem>> notifications({int page = 0, int size = 20}) async => PageResult.fromJson(
+    await _api.get('/me/notifications', query: {'page': page, 'size': size}) as Json,
+    InboxItem.fromJson,
+  );
 
   /// De volgstatus voor een moskee, of null als de gebruiker haar niet volgt.
   Future<FollowStatus?> followStatus(String mosqueId) async {

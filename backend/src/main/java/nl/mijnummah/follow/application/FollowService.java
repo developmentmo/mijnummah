@@ -3,6 +3,7 @@ package nl.mijnummah.follow.application;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
@@ -20,6 +21,7 @@ import nl.mijnummah.follow.NotificationTopic;
 import nl.mijnummah.follow.infrastructure.MosqueFollowRepository;
 import nl.mijnummah.follow.infrastructure.NotificationPreferenceRepository;
 import nl.mijnummah.identity.AuthenticatedUser;
+import nl.mijnummah.mosque.MosqueCard;
 import nl.mijnummah.mosque.MosqueDirectory;
 import nl.mijnummah.mosque.MosqueRef;
 
@@ -43,7 +45,7 @@ public class FollowService implements FollowerDirectory {
         this.clock = clock;
     }
 
-    /** Followed mosques that are active, oldest follow first. */
+    /** Followed mosques that are active: favourites first, then oldest follow first. */
     @Transactional(readOnly = true)
     public List<FollowView> mine(AuthenticatedUser actor) {
         List<MosqueFollow> rows = follows.findByUserIdOrderByCreatedAt(actor.id());
@@ -51,6 +53,7 @@ public class FollowService implements FollowerDirectory {
         Map<UUID, Map<NotificationTopic, Boolean>> prefs = preferencesOf(actor.id(), active.keySet().stream().toList());
         return rows.stream()
                 .filter(row -> active.containsKey(row.getMosqueId()))
+                .sorted(Comparator.comparing(MosqueFollow::isFavorite).reversed())
                 .map(row -> view(row, active.get(row.getMosqueId()), prefs.get(row.getMosqueId())))
                 .toList();
     }
@@ -68,6 +71,21 @@ public class FollowService implements FollowerDirectory {
     @Transactional
     public void unfollow(AuthenticatedUser actor, UUID mosqueId) {
         follows.findById(new MosqueFollow.Key(actor.id(), mosqueId)).ifPresent(follows::delete);
+    }
+
+    /**
+     * Marks the mosque as a favourite, or not. Making a mosque a favourite follows it first when needed; removing
+     * the mark keeps the follow.
+     */
+    @Transactional
+    public FollowView setFavorite(AuthenticatedUser actor, UUID mosqueId, boolean favorite) {
+        MosqueRef mosque = mosques.requireActive(mosqueId);
+        MosqueFollow follow = favorite
+                ? follows.findById(new MosqueFollow.Key(actor.id(), mosqueId))
+                        .orElseGet(() -> follows.save(MosqueFollow.start(actor.id(), mosqueId, Instant.now(clock))))
+                : requireFollow(actor, mosqueId);
+        follow.markFavorite(favorite);
+        return view(follow, mosque, preferencesOf(actor.id(), List.of(mosqueId)).get(mosqueId));
     }
 
     @Transactional(readOnly = true)
@@ -100,6 +118,12 @@ public class FollowService implements FollowerDirectory {
         return follows.findUserIdsToNotify(mosqueId, topic);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<UUID> followedMosqueIds(UUID userId) {
+        return follows.findMosqueIdsByUserId(userId);
+    }
+
     private MosqueFollow requireFollow(AuthenticatedUser actor, UUID mosqueId) {
         return follows.findById(new MosqueFollow.Key(actor.id(), mosqueId))
                 .orElseThrow(() -> new NotFoundException("NOT_FOLLOWING", "You do not follow this mosque."));
@@ -124,7 +148,7 @@ public class FollowService implements FollowerDirectory {
     }
 
     private static FollowView view(MosqueFollow follow, MosqueRef mosque, Map<NotificationTopic, Boolean> prefs) {
-        return new FollowView(mosque.id(), mosque.slug(), mosque.name(), follow.getCreatedAt(),
-                Collections.unmodifiableMap(new EnumMap<>(prefs)));
+        return new FollowView(mosque.id(), mosque.slug(), mosque.name(), MosqueCard.of(mosque).logoUrl(),
+                follow.getCreatedAt(), follow.isFavorite(), Collections.unmodifiableMap(new EnumMap<>(prefs)));
     }
 }

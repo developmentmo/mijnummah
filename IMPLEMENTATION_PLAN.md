@@ -28,8 +28,8 @@ moskeeën. Het herontwerp (plan in `herontwerp/plan.md` in de projectbestanden) 
 |---|---|---|
 | A | Fundament: Liquibase, één merk, moskeestatus, auditlog, afbeeldingsopslag | Voltooid (PR #15 gemerged) |
 | B | Superuser-portaal | Voltooid (PR #16 gemerged) |
-| C | Moskeebeheerportaal | Geïmplementeerd; PR wacht op beoordeling |
-| D | Centrale mobiele app | Nog niet begonnen |
+| C | Moskeebeheerportaal | Voltooid (PR #17 gemerged) |
+| D | Centrale mobiele app | Geïmplementeerd; PR wacht op beoordeling |
 | E | Pilot Noeroel Islam als eerste tenant via het portaal | Nog niet begonnen |
 | F | Productie (alleen met expliciete toestemming) | Nog niet begonnen |
 
@@ -105,6 +105,35 @@ Niet gedaan of afwijkend:
 - Gebedstijden zijn een link, geen rooster (D-059). De app toont de link nog niet (fase D).
 - Een pushmelding bij publiceren blijft een aparte, bewuste stap naast publiceren.
 - Geen browser-end-to-end-tests; wel unit- en integratietests.
+
+## Fase D — Centrale mobiele app
+
+Gebouwd (D-060):
+
+- Backend: moskeeën zoeken op naam en filteren op plaats (gepagineerd), lijst van plaatsen; agenda, videobibliotheek
+  en nieuws over alle actieve moskeeën heen met een filter op moskee (`mosque`, herhaalbaar) en detail op id; elk
+  item noemt zijn moskee (id, slug, naam, logo). Aanmelden staat uit in het antwoord als de moskee aanmelden heeft
+  uitgezet.
+- Favoriete moskeeën (op de volgrelatie) en bewaarde video's; meldingen van gevolgde moskeeën van de laatste 30
+  dagen (`GET /me/notifications`).
+- Pushtokens horen bij de gebruiker, niet meer bij één moskee: één toestel krijgt de meldingen van alle gevolgde
+  moskeeën.
+- App: introductie bij de eerste start (overslaan kan); Home met welkom, je eigen moskeeën (favorieten eerst) of een
+  greep uit alle moskeeën, en de activiteiten, video's en het nieuws van de gevolgde moskeeën (of van alle, als je
+  niets volgt); Ontdekken met zoeken, filter op plaats en volgen; moskeeprofiel met omslag, logo, beschrijving,
+  gebedstijden, adres en contact, en haar activiteiten, video's en nieuws; Agenda met filters op moskee, periode
+  (vandaag, deze week, deze maand) en categorie; Lezingen met filter op moskee; Nieuws; Meldingen; Favorieten;
+  Profiel met alle gevolgde moskeeën, favoriet, voorkeuren en ontvolgen. Kaarten en detailpagina's noemen de moskee.
+- Database: `020_central_app` (alleen toevoegingen: `mosque_follow.favorite`, `media_favorite`, index op plaats).
+
+Niet gedaan of afwijkend:
+
+- Er is geen vlag "uitgelicht" voor moskeeën; Home toont je gevolgde moskeeën of een greep uit de lijst.
+- Geen eigen accentkleur per moskee; logo en omslagfoto geven elke moskee haar gezicht. De splash is het bestaande
+  opstartscherm van het besturingssysteem.
+- Filteren op regio is filteren op plaats; er is geen regio-indeling.
+- De periodefilters rekenen in de tijdzone van het toestel.
+- Geen browser- of toestel-end-to-end-tests; wel widgettests (app) en integratietests (backend).
 
 ---
 

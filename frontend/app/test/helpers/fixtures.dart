@@ -3,7 +3,12 @@ library;
 
 const mosqueId = '11111111-1111-1111-1111-111111111111';
 const slug = 'mijn-ummah';
-const base = '/public/mosques/$slug';
+
+/// Publieke content van alle moskeeën.
+const base = '/public';
+const mosqueBase = '/public/mosques/$slug';
+
+Map<String, Object?> mosqueRef() => {'id': mosqueId, 'slug': slug, 'name': 'Mijn Ummah', 'logoUrl': null};
 
 Map<String, Object?> mosqueJson({String? description = 'Een moskee midden in de wijk.'}) => {
   'id': mosqueId,
@@ -13,6 +18,9 @@ Map<String, Object?> mosqueJson({String? description = 'Een moskee midden in de 
   'address': {'street': 'Voorbeeldstraat 1', 'postalCode': '1234 AB', 'city': 'Voorbeeldstad', 'countryCode': 'NL'},
   'contact': {'email': 'info@example.org', 'phone': '010 123 4567', 'websiteUrl': 'https://example.org'},
   'timeZone': 'Europe/Amsterdam',
+  'prayerTimesUrl': null,
+  'logoUrl': null,
+  'coverUrl': null,
 };
 
 Map<String, Object?> eventJson({
@@ -30,6 +38,7 @@ Map<String, Object?> eventJson({
   String? location = 'Grote zaal',
 }) => {
   'id': id,
+  'mosque': mosqueRef(),
   'title': title,
   'description': 'Een avond over geduld in het dagelijks leven.',
   'category': category,
@@ -56,6 +65,7 @@ Map<String, Object?> mediaJson({
   Map<String, Object?>? relatedEvent,
 }) => {
   'id': id,
+  'mosque': mosqueRef(),
   'title': title,
   'description': 'Uitleg van een korte soera.',
   'speaker': speaker,
@@ -78,6 +88,7 @@ Map<String, Object?> mediaJson({
 
 Map<String, Object?> announcementJson({String id = 'a1', String title = 'Nieuwe lestijden', bool featured = false}) => {
   'id': id,
+  'mosque': mosqueRef(),
   'title': title,
   'body': 'Vanaf volgende week beginnen de lessen een half uur later.',
   'featured': featured,
@@ -110,10 +121,17 @@ Map<String, Object?> tokensJson({String access = 'access-1', String refresh = 'r
   'refreshTokenExpiresAt': '2099-02-01T00:00:00Z',
 };
 
-Map<String, Object?> followJson({bool announcements = true, bool events = true, bool media = false}) => {
+Map<String, Object?> followJson({
+  bool announcements = true,
+  bool events = true,
+  bool media = false,
+  bool favorite = false,
+}) => {
   'mosqueId': mosqueId,
   'mosqueSlug': slug,
   'mosqueName': 'Mijn Ummah',
+  'mosqueLogoUrl': null,
   'followedSince': '2026-09-01T10:00:00Z',
+  'favorite': favorite,
   'notifications': {'ANNOUNCEMENTS': announcements, 'EVENTS': events, 'MEDIA': media},
 };

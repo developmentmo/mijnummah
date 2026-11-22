@@ -22,7 +22,12 @@ class MosqueApp extends ConsumerStatefulWidget {
 }
 
 class _MosqueAppState extends ConsumerState<MosqueApp> {
-  late final GoRouter _router = buildRouter(initialLocation: widget.initialLocation);
+  /// Bij de eerste start opent de introductie (`/welkom`) in plaats van Home.
+  late final GoRouter _router = buildRouter(
+    initialLocation: widget.initialLocation == '/' && !ref.read(onboardingProvider)
+        ? '/welkom'
+        : widget.initialLocation,
+  );
   final _messenger = GlobalKey<ScaffoldMessengerState>();
   final _subscriptions = <StreamSubscription<PushNotice>>[];
 

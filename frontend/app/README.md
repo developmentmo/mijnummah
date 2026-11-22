@@ -1,9 +1,10 @@
 # Moskee-app (Flutter)
 
 De Mijn Ummah-app voor Android en iOS: één app voor alle moskeeën (merk uit `brands/mijnummah/`, zie
-[BRAND_GUIDELINES.md](../../BRAND_GUIDELINES.md)). **Overgang:** tot fase D toont de app nog één moskee,
-standaard de pilotmoskee (`MOSQUE_SLUG`, zie hieronder); in fase D wordt zij de centrale app waarin gebruikers alle
-moskeeën ontdekken en volgen (IMPLEMENTATION_PLAN.md). Vijf tabbladen: Home, Agenda, Lezingen, Ontdekken en Profiel. De app praat met de
+[BRAND_GUIDELINES.md](../../BRAND_GUIDELINES.md)). Gebruikers ontdekken moskeeën (zoeken op naam, filteren op plaats), volgen
+ze en maken ze favoriet; Home, Agenda, Lezingen en Nieuws tonen de content van alle moskeeën of van de gevolgde. Vijf
+tabbladen: Home, Agenda, Lezingen, Ontdekken en Profiel; daarnaast moskeeprofielen (`/moskee/:slug`), Nieuws,
+Meldingen, Favorieten en een introductie bij de eerste start. De app praat met de
 backend in `backend/`; zonder verbinding toont hij de laatst opgehaalde publieke gegevens.
 
 ## Vereisten
@@ -21,12 +22,11 @@ flutter run        # Android-emulator, iOS-simulator of desktop: de app vindt de
 
 Zonder `API_BASE_URL` gebruikt de Android-emulator `http://10.0.2.2:8082` (zo heet de computer vanuit de emulator)
 en de iOS-simulator en desktop `http://localhost:8082`. Controleer bij geen verbinding eerst op de Mac dat de
-backend draait: `curl localhost:8082/api/v1/public/mosques/mijn-ummah`.
+backend draait: `curl localhost:8082/api/v1/public/mosques`.
 
 | Instelling | Standaard | |
 |---|---|---|
 | `API_BASE_URL` | Android-emulator `http://10.0.2.2:8082`, anders `http://localhost:8082` | Basis-URL van de backend, zonder `/api/v1` |
-| `MOSQUE_SLUG` | `mijn-ummah` | Welke moskee de app toont; alleen tot fase D, daarna toont de app alle moskeeën |
 
 Http zonder TLS werkt alleen in Android-debugbuilds (`android/app/src/debug/AndroidManifest.xml`) en op iOS alleen
 naar het lokale netwerk. Productie gebruikt https.

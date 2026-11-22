@@ -4,17 +4,24 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../data/models.dart';
+import '../../features/agenda/agenda_providers.dart';
 import '../../features/agenda/agenda_page.dart';
 import '../../features/agenda/event_detail_page.dart';
 import '../../features/announcements/announcement_detail_page.dart';
+import '../../features/announcements/news_page.dart';
 import '../../features/auth/forgot_password_page.dart';
 import '../../features/auth/login_page.dart';
 import '../../features/auth/register_page.dart';
 import '../../features/design_preview/design_preview_page.dart';
 import '../../features/discover/discover_page.dart';
+import '../../features/favorites/favorites_page.dart';
 import '../../features/home/home_page.dart';
 import '../../features/lectures/lectures_page.dart';
 import '../../features/lectures/media_detail_page.dart';
+import '../../features/mosques/mosque_filter.dart';
+import '../../features/mosques/mosque_profile_page.dart';
+import '../../features/notifications/notifications_page.dart';
+import '../../features/onboarding/onboarding_page.dart';
 import '../../features/profile/account_page.dart';
 import '../../features/profile/profile_page.dart';
 import '../providers.dart';
@@ -24,8 +31,12 @@ import 'app_shell.dart';
 ///
 /// | Pad | Scherm |
 /// |---|---|
-/// | `/`, `/agenda`, `/lezingen`, `/ontdekken`, `/profiel` | De vijf tabbladen; `/agenda?categorie=YOUTH` filtert |
+/// | `/`, `/agenda`, `/lezingen`, `/ontdekken`, `/profiel` | De vijf tabbladen |
+/// | `/agenda?moskee=…&periode=…&categorie=…`, `/lezingen?moskee=…` | Gefilterd; `moskee` is een slug of `gevolgd` |
+/// | `/moskee/:slug` | Profiel van een moskee |
+/// | `/nieuws?moskee=…`, `/meldingen`, `/favorieten` | Nieuws, meldingen van gevolgde moskeeën, favorieten |
 /// | `/activiteit/:id`, `/lezing/:id`, `/aankondiging/:id` | Details |
+/// | `/welkom` | Introductie bij de eerste start |
 /// | `/inloggen`, `/account-aanmaken`, `/wachtwoord-vergeten` | Inloggen, registreren, wachtwoord herstellen |
 /// | `/account` | Wachtwoord wijzigen en account verwijderen |
 /// | `/design` | Designpreview (alleen debug) |
@@ -46,18 +57,27 @@ GoRouter buildRouter({String initialLocation = '/'}) {
               GoRoute(
                 path: '/agenda',
                 builder: (context, state) {
-                  final category = state.uri.queryParameters['categorie'];
+                  final params = state.uri.queryParameters;
+                  final category = params['categorie'];
                   return AgendaPage(
                     initialCategory: category == null
                         ? null
                         : EventCategory.values.where((c) => c.apiValue == category).firstOrNull,
+                    initialMosque: MosqueFilter.parse(params['moskee']),
+                    initialPeriod: AgendaPeriod.parse(params['periode']),
                   );
                 },
               ),
             ],
           ),
           StatefulShellBranch(
-            routes: [GoRoute(path: '/lezingen', builder: (context, state) => const LecturesPage())],
+            routes: [
+              GoRoute(
+                path: '/lezingen',
+                builder: (context, state) =>
+                    LecturesPage(initialMosque: MosqueFilter.parse(state.uri.queryParameters['moskee'])),
+              ),
+            ],
           ),
           StatefulShellBranch(
             routes: [GoRoute(path: '/ontdekken', builder: (context, state) => const DiscoverPage())],
@@ -67,6 +87,19 @@ GoRouter buildRouter({String initialLocation = '/'}) {
           ),
         ],
       ),
+      GoRoute(
+        path: '/moskee/:slug',
+        parentNavigatorKey: rootKey,
+        builder: (context, state) => MosqueProfilePage(slug: state.pathParameters['slug']!),
+      ),
+      GoRoute(
+        path: '/nieuws',
+        parentNavigatorKey: rootKey,
+        builder: (context, state) => NewsPage(initialMosque: MosqueFilter.parse(state.uri.queryParameters['moskee'])),
+      ),
+      GoRoute(path: '/meldingen', parentNavigatorKey: rootKey, builder: (context, state) => const NotificationsPage()),
+      GoRoute(path: '/favorieten', parentNavigatorKey: rootKey, builder: (context, state) => const FavoritesPage()),
+      GoRoute(path: '/welkom', parentNavigatorKey: rootKey, builder: (context, state) => const OnboardingPage()),
       GoRoute(
         path: '/activiteit/:id',
         parentNavigatorKey: rootKey,

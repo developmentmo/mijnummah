@@ -11,12 +11,16 @@ import '../../core/widgets/content_width.dart';
 import '../../core/widgets/offline_banner.dart';
 import '../../data/models.dart';
 import '../../data/paged.dart';
+import '../mosques/mosque_filter.dart';
+import '../mosques/mosque_widgets.dart';
 import 'lectures_providers.dart';
 import 'media_card.dart';
 
-/// De bibliotheek met opgenomen lezingen en activiteiten: zoeken en filteren op categorie.
+/// De videobibliotheek van alle moskeeën: zoeken en filteren op categorie en moskee.
 class LecturesPage extends ConsumerStatefulWidget {
-  const LecturesPage({super.key});
+  const LecturesPage({super.key, this.initialMosque = MosqueFilter.all});
+
+  final MosqueFilter initialMosque;
 
   @override
   ConsumerState<LecturesPage> createState() => _LecturesPageState();
@@ -25,7 +29,23 @@ class LecturesPage extends ConsumerStatefulWidget {
 class _LecturesPageState extends ConsumerState<LecturesPage> {
   final _search = TextEditingController();
   Timer? _debounce;
-  LibraryQuery _query = (text: '', category: null);
+  late LibraryQuery _query = (text: '', category: null, mosque: widget.initialMosque);
+
+  @override
+  void didUpdateWidget(LecturesPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initialMosque != oldWidget.initialMosque) {
+      _query = (text: _query.text, category: _query.category, mosque: widget.initialMosque);
+    }
+  }
+
+  void _setText(String text) => setState(() => _query = (text: text, category: _query.category, mosque: _query.mosque));
+
+  void _selectMosque(MosqueFilter mosque) {
+    setState(() => _query = (text: _query.text, category: _query.category, mosque: mosque));
+    final value = mosque.queryValue;
+    context.go(value == null ? '/lezingen' : '/lezingen?moskee=${Uri.encodeQueryComponent(value)}');
+  }
 
   @override
   void dispose() {
@@ -37,7 +57,7 @@ class _LecturesPageState extends ConsumerState<LecturesPage> {
   void _onSearchChanged(String value) {
     _debounce?.cancel();
     _debounce = Timer(const Duration(milliseconds: 400), () {
-      if (mounted) setState(() => _query = (text: value.trim(), category: _query.category));
+      if (mounted) _setText(value.trim());
     });
     setState(() {}); // toont of verbergt de wisknop
   }
@@ -45,10 +65,11 @@ class _LecturesPageState extends ConsumerState<LecturesPage> {
   void _clearSearch() {
     _debounce?.cancel();
     _search.clear();
-    setState(() => _query = (text: '', category: _query.category));
+    _setText('');
   }
 
-  void _selectCategory(MediaCategory? category) => setState(() => _query = (text: _query.text, category: category));
+  void _selectCategory(MediaCategory? category) =>
+      setState(() => _query = (text: _query.text, category: category, mosque: _query.mosque));
 
   @override
   Widget build(BuildContext context) {
@@ -65,7 +86,7 @@ class _LecturesPageState extends ConsumerState<LecturesPage> {
                 onChanged: _onSearchChanged,
                 onSubmitted: (value) {
                   _debounce?.cancel();
-                  setState(() => _query = (text: value.trim(), category: _query.category));
+                  _setText(value.trim());
                 },
                 textInputAction: TextInputAction.search,
                 decoration: InputDecoration(
@@ -82,6 +103,7 @@ class _LecturesPageState extends ConsumerState<LecturesPage> {
               ),
             ),
           ),
+          MosqueFilterRow(selected: _query.mosque, onSelected: _selectMosque),
           _CategoryFilter(selected: _query.category, onSelected: _selectCategory),
           Expanded(
             child: RefreshIndicator(
@@ -101,6 +123,7 @@ class _LecturesPageState extends ConsumerState<LecturesPage> {
                   onClear: () {
                     _clearSearch();
                     _selectCategory(null);
+                    if (!_query.mosque.isAll) _selectMosque(MosqueFilter.all);
                   },
                   onLoadMore: () => ref.read(provider.notifier).loadMore(),
                   onRetry: () => ref.invalidate(provider),
@@ -148,7 +171,7 @@ class _Results extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final filtered = query.text.isNotEmpty || query.category != null;
+    final filtered = query.text.isNotEmpty || query.category != null || !query.mosque.isAll;
     return ListView(
       padding: const EdgeInsets.fromLTRB(TokSpace.s4, TokSpace.s2, TokSpace.s4, TokSpace.s8),
       children: [
@@ -163,7 +186,7 @@ class _Results extends StatelessWidget {
                   icon: Icons.search_off,
                   title: 'Niets gevonden',
                   message: query.text.isEmpty
-                      ? 'Er zijn nog geen video\'s in deze categorie.'
+                      ? 'Er zijn nog geen video\'s die bij je filters passen.'
                       : 'Er zijn geen video\'s die passen bij "${query.text}".',
                   actionLabel: 'Alles tonen',
                   onAction: onClear,
@@ -171,7 +194,7 @@ class _Results extends StatelessWidget {
               : const StatePlaceholder(
                   icon: Icons.video_library_outlined,
                   title: 'Nog geen lezingen',
-                  message: 'Opgenomen lezingen en activiteiten verschijnen hier zodra de moskee ze heeft toegevoegd.',
+                  message: 'Opgenomen lezingen en activiteiten verschijnen hier zodra moskeeën ze hebben toegevoegd.',
                 )
         else ...[
           if (filtered)

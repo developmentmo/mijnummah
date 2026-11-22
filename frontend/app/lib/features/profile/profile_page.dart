@@ -13,11 +13,11 @@ import '../../core/widgets/external_links.dart';
 import '../../core/widgets/section_header.dart';
 import '../../data/models.dart';
 import '../agenda/agenda_providers.dart';
-import 'follow_card.dart';
+import '../mosques/mosque_widgets.dart';
 import 'follow_providers.dart';
 import 'push_permission_notice.dart';
 
-/// Profiel: account, volgen met meldingsvoorkeuren, eigen aanmeldingen en de weergave-instelling.
+/// Profiel: account, meldingen en favorieten, gevolgde moskeeën met meldingsvoorkeuren, eigen aanmeldingen en de weergave-instelling.
 class ProfilePage extends ConsumerWidget {
   const ProfilePage({super.key});
 
@@ -40,7 +40,27 @@ class ProfilePage extends ConsumerWidget {
                   const _Visitor()
                 else ...[
                   _Account(user: user),
-                  const SectionHeader(title: 'Volgen'),
+                  const SizedBox(height: TokSpace.s3),
+                  Card(
+                    child: Column(
+                      children: [
+                        ListTile(
+                          leading: const Icon(Icons.notifications_outlined),
+                          title: const Text('Meldingen'),
+                          trailing: const Icon(Icons.chevron_right),
+                          onTap: () => context.push('/meldingen'),
+                        ),
+                        const Divider(height: 1),
+                        ListTile(
+                          leading: const Icon(Icons.favorite_outline),
+                          title: const Text('Favorieten'),
+                          trailing: const Icon(Icons.chevron_right),
+                          onTap: () => context.push('/favorieten'),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SectionHeader(title: 'Moskeeën die je volgt'),
                   const _FollowSection(),
                   const SectionHeader(title: 'Mijn aanmeldingen'),
                   const _MyRegistrations(),
@@ -72,7 +92,7 @@ class ProfilePage extends ConsumerWidget {
   }
 }
 
-/// Link naar de privacyverklaring van de moskee (uit de merkconfiguratie, `links.privacyPolicyUrl`).
+/// Link naar de privacyverklaring van het platform (uit de merkconfiguratie, `links.privacyPolicyUrl`).
 class PrivacyPolicyTile extends StatelessWidget {
   const PrivacyPolicyTile({super.key, required this.url});
 
@@ -104,7 +124,7 @@ class _Visitor extends StatelessWidget {
             const SizedBox(height: TokSpace.s2),
             Text(
               'Openbare activiteiten, lezingen en aankondigingen kun je zonder account bekijken. Met een account kun '
-              'je je aanmelden voor activiteiten en de moskee volgen.',
+              'je je aanmelden voor activiteiten, moskeeën volgen en video\'s bewaren.',
               style: text.bodyMedium,
             ),
             const SizedBox(height: TokSpace.s4),
@@ -186,41 +206,98 @@ class _Account extends ConsumerWidget {
   }
 }
 
-class _FollowSection extends ConsumerStatefulWidget {
+/// De gevolgde moskeeën, elk met favoriet, meldingsvoorkeuren en ontvolgen.
+class _FollowSection extends ConsumerWidget {
   const _FollowSection();
 
   @override
-  ConsumerState<_FollowSection> createState() => _FollowSectionState();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final follows = ref.watch(myFollowsProvider);
+    if (follows.hasError && !follows.isLoading) {
+      return StatusMessage(
+        kind: StatusKind.error,
+        message: 'De moskeeën die je volgt konden niet worden geladen.',
+        actionLabel: 'Opnieuw proberen',
+        onAction: () => ref.invalidate(myFollowsProvider),
+      );
+    }
+    if (!follows.hasValue) return const Skeleton(height: 96);
+    final list = follows.requireValue;
+    if (list.isEmpty) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            'Je volgt nog geen moskeeën. Volg een moskee om haar activiteiten en nieuws op Home te zien en meldingen '
+            'te krijgen.',
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+          const SizedBox(height: TokSpace.s3),
+          FilledButton.icon(
+            onPressed: () => context.go('/ontdekken'),
+            icon: const Icon(Icons.explore_outlined),
+            label: const Text('Moskeeën ontdekken'),
+          ),
+        ],
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Card(
+          child: Column(
+            children: [
+              for (final (index, follow) in list.indexed) ...[
+                if (index > 0) const Divider(height: 1),
+                _FollowTile(follow: follow),
+              ],
+            ],
+          ),
+        ),
+        const SizedBox(height: TokSpace.s2),
+        const PushPermissionNotice(),
+      ],
+    );
+  }
 }
 
-class _FollowSectionState extends ConsumerState<_FollowSection> {
-  NotificationTopic? _saving;
-  bool _unfollowing = false;
+class _FollowTile extends ConsumerStatefulWidget {
+  const _FollowTile({required this.follow});
 
-  Future<void> _toggle(FollowStatus status, NotificationTopic topic, bool enabled) async {
-    setState(() => _saving = topic);
-    final container = ProviderScope.containerOf(context, listen: false);
+  final FollowStatus follow;
+
+  @override
+  ConsumerState<_FollowTile> createState() => _FollowTileState();
+}
+
+class _FollowTileState extends ConsumerState<_FollowTile> {
+  bool _busy = false;
+
+  Future<void> _run(Future<void> Function() action, String failure) async {
+    setState(() => _busy = true);
     try {
-      await ref.read(meRepositoryProvider).updateNotification(status.mosqueId, topic, enabled);
-      ref.invalidate(followStatusProvider);
-      await ref.read(followStatusProvider.future);
-      if (enabled) await enablePush(container);
+      await action();
     } on AppFailure {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Je voorkeur kon niet worden opgeslagen. Probeer het opnieuw.')));
-      }
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(failure)));
     } finally {
-      if (mounted) setState(() => _saving = null);
+      if (mounted) setState(() => _busy = false);
     }
   }
 
-  Future<void> _unfollow(FollowStatus status, String mosqueName) async {
+  Future<void> _toggle(NotificationTopic topic, bool enabled) {
+    final container = ProviderScope.containerOf(context, listen: false);
+    return _run(() async {
+      await ref.updateNotification(widget.follow.mosqueId, topic, enabled);
+      if (enabled) await enablePush(container);
+    }, 'Je voorkeur kon niet worden opgeslagen. Probeer het opnieuw.');
+  }
+
+  Future<void> _unfollow() async {
+    final name = widget.follow.mosqueName;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('$mosqueName ontvolgen?'),
+        title: Text('$name ontvolgen?'),
         content: const Text('Je meldingsvoorkeuren worden dan ook verwijderd. Je kunt later altijd opnieuw volgen.'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Annuleren')),
@@ -229,65 +306,57 @@ class _FollowSectionState extends ConsumerState<_FollowSection> {
       ),
     );
     if (confirmed != true || !mounted) return;
-    setState(() => _unfollowing = true);
-    try {
-      await ref.read(meRepositoryProvider).unfollow(status.mosqueId);
-      ref.invalidate(followStatusProvider);
-    } on AppFailure {
-      if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('Ontvolgen is niet gelukt. Probeer het opnieuw.')));
-      }
-    } finally {
-      if (mounted) setState(() => _unfollowing = false);
-    }
+    await _run(() => ref.unfollow(widget.follow.mosqueId), 'Ontvolgen is niet gelukt. Probeer het opnieuw.');
   }
 
   @override
   Widget build(BuildContext context) {
+    final follow = widget.follow;
     final text = Theme.of(context).textTheme;
-    final status = ref.watch(followStatusProvider);
-    final mosqueName = ref.watch(mosqueProvider).value?.data.name ?? 'de moskee';
-    if (status.hasError && !status.isLoading) {
-      return StatusMessage(
-        kind: StatusKind.error,
-        message: 'Je volgstatus kon niet worden geladen.',
-        actionLabel: 'Opnieuw proberen',
-        onAction: () => ref.invalidate(followStatusProvider),
-      );
-    }
-    if (!status.hasValue) return const Skeleton(height: 96);
-    final follow = status.value;
-    if (follow == null) return const FollowInvitation();
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(TokComponent.cardPadding),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+    return ExpansionTile(
+      leading: MosqueAvatar(name: follow.mosqueName, logoUrl: follow.mosqueLogoUrl),
+      title: Text(follow.mosqueName),
+      subtitle: Text(
+        follow.favorite
+            ? 'Favoriet · volgt sinds ${Dates.date(follow.followedSince)}'
+            : 'Volgt sinds ${Dates.date(follow.followedSince)}',
+      ),
+      shape: const Border(),
+      childrenPadding: const EdgeInsets.fromLTRB(TokSpace.s4, 0, TokSpace.s4, TokSpace.s3),
+      expandedCrossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          secondary: Icon(follow.favorite ? Icons.star : Icons.star_outline),
+          title: const Text('Favoriet'),
+          subtitle: const Text('Bovenaan op Home en bij Favorieten'),
+          value: follow.favorite,
+          onChanged: _busy
+              ? null
+              : (favorite) => _run(
+                  () => ref.setFavoriteMosque(follow.mosqueId, favorite),
+                  'Opslaan als favoriet is niet gelukt.',
+                ),
+        ),
+        Text('Waarover wil je meldingen ontvangen?', style: text.titleSmall),
+        for (final topic in NotificationTopic.values)
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: Text(topic.label),
+            value: follow.notifications[topic] ?? false,
+            onChanged: _busy ? null : (enabled) => _toggle(topic, enabled),
+          ),
+        Wrap(
+          spacing: TokSpace.s2,
           children: [
-            Text('Je volgt $mosqueName sinds ${Dates.date(follow.followedSince)}.', style: text.bodyMedium),
-            const SizedBox(height: TokSpace.s3),
-            Text('Waarover wil je meldingen ontvangen?', style: text.titleSmall),
-            for (final topic in NotificationTopic.values)
-              SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                title: Text(topic.label),
-                value: follow.notifications[topic] ?? false,
-                onChanged: _saving != null ? null : (enabled) => _toggle(follow, topic, enabled),
-              ),
-            const PushPermissionNotice(),
-            const SizedBox(height: TokSpace.s3),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: TextButton(
-                onPressed: _unfollowing ? null : () => _unfollow(follow, mosqueName),
-                child: const Text('Ontvolgen'),
-              ),
+            TextButton(
+              onPressed: () => context.push('/moskee/${Uri.encodeComponent(follow.mosqueSlug)}'),
+              child: const Text('Bekijk de moskee'),
             ),
+            TextButton(onPressed: _busy ? null : _unfollow, child: const Text('Ontvolgen')),
           ],
         ),
-      ),
+      ],
     );
   }
 }
@@ -298,7 +367,6 @@ class _MyRegistrations extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final value = ref.watch(myRegistrationsProvider);
-    final slug = ref.watch(appConfigProvider).mosqueSlug;
     if (value.hasError && !value.isLoading) {
       return StatusMessage(
         kind: StatusKind.error,
@@ -309,7 +377,7 @@ class _MyRegistrations extends ConsumerWidget {
     }
     if (!value.hasValue) return const Skeleton(height: 72);
     final now = DateTime.now();
-    final upcoming = value.requireValue.where((r) => r.mosqueSlug == slug && r.eventStartsAt.isAfter(now)).toList()
+    final upcoming = value.requireValue.where((r) => r.eventStartsAt.isAfter(now)).toList()
       ..sort((a, b) => a.eventStartsAt.compareTo(b.eventStartsAt));
     if (upcoming.isEmpty) {
       return Text(
@@ -345,16 +413,16 @@ class _Statuses extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final following = ref.watch(followStatusProvider).value != null;
+    final following = ref.watch(myFollowsProvider).value?.isNotEmpty ?? false;
     final current = !signedIn ? 0 : (following ? 2 : 1);
     const items = [
       (Icons.visibility_outlined, 'Bezoeker', 'Bekijkt openbare content, zonder account.'),
-      (Icons.person_outline, 'Account', 'Kan zich aanmelden voor activiteiten en de moskee volgen.'),
+      (Icons.person_outline, 'Account', 'Kan zich aanmelden voor activiteiten en moskeeën volgen.'),
       (Icons.favorite_outline, 'Volger', 'Blijft op de hoogte van nieuws en activiteiten. Volgen is gratis.'),
       (
         Icons.card_membership_outlined,
         'Lid',
-        'Officieel lid van de moskee. Lidmaatschap regel je rechtstreeks bij de moskee, niet via de app.',
+        'Officieel lid van een moskee. Lidmaatschap regel je rechtstreeks bij de moskee, niet via de app.',
       ),
     ];
     return Card(

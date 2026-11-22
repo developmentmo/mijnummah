@@ -1,6 +1,7 @@
 package nl.mijnummah.notification.infrastructure;
 
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -21,6 +22,10 @@ public interface PushNotificationRepository extends JpaRepository<PushNotificati
                                                                         UUID contentId);
 
     boolean existsByContentTypeAndContentId(PushContentType contentType, UUID contentId);
+
+    /** For the inbox in the app: notifications of these mosques since a moment, in a status other than this one. */
+    Page<PushNotification> findByMosqueIdInAndStatusNotAndCreatedAtAfter(Collection<UUID> mosqueIds, PushStatus status,
+                                                                          Instant since, Pageable pageable);
 
     List<PushNotification> findByStatusAndCreatedAtBefore(PushStatus status, Instant cutoff);
 }

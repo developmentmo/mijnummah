@@ -29,10 +29,37 @@ void main() {
 
     await tapVisible(tester, find.widgetWithText(ChoiceChip, 'Jongeren'));
     expect(backend.requestsTo('GET', '$base/events').last.url.queryParameters['category'], 'YOUTH');
-    expect(find.text('Geen activiteiten in deze categorie'), findsOneWidget);
+    expect(find.text('Geen activiteiten gevonden'), findsOneWidget);
 
     await tapVisible(tester, find.text('Alle activiteiten tonen'));
     expect(find.text('Lezing over geduld'), findsOneWidget);
+  });
+
+  testWidgets('filtert op periode met een einddatum', (tester) async {
+    final backend = standardBackend();
+    await pumpApp(tester, backend: backend, location: '/agenda');
+    expect(backend.requestsTo('GET', '$base/events').last.url.queryParameters['to'], isNull);
+
+    await tapVisible(tester, find.widgetWithText(ChoiceChip, 'Vandaag'));
+    final to = DateTime.parse(backend.requestsTo('GET', '$base/events').last.url.queryParameters['to']!);
+    final now = DateTime.now();
+    expect(to.toLocal(), DateTime(now.year, now.month, now.day + 1));
+  });
+
+  testWidgets('filtert op een gevolgde moskee', (tester) async {
+    final backend = standardBackend()..on('GET', '/me/follows', [followJson()]);
+    await pumpApp(tester, backend: backend, tokenStore: signedInStore(backend), location: '/agenda');
+    expect(backend.requestsTo('GET', '$base/events').last.url.queryParametersAll['mosque'], isNull);
+
+    await tapVisible(tester, find.widgetWithText(ChoiceChip, 'Gevolgd'));
+    expect(backend.requestsTo('GET', '$base/events').last.url.queryParametersAll['mosque'], [slug]);
+  });
+
+  testWidgets('"gevolgd" zonder gevolgde moskeeën vraagt niets op en toont een lege lijst', (tester) async {
+    final backend = standardBackend();
+    await pumpApp(tester, backend: backend, location: '/agenda?moskee=gevolgd');
+    expect(backend.requestsTo('GET', '$base/events'), isEmpty);
+    expect(find.text('Geen activiteiten gevonden'), findsOneWidget);
   });
 
   testWidgets('opent met een categorie uit de link', (tester) async {

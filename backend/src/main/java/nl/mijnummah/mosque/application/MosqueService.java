@@ -10,6 +10,11 @@ import java.util.stream.Collectors;
 
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,6 +35,7 @@ import nl.mijnummah.mosque.domain.Slugs;
 import nl.mijnummah.mosque.infrastructure.MosqueAdministratorRepository;
 import nl.mijnummah.mosque.infrastructure.MosqueRepository;
 import nl.mijnummah.mosque.infrastructure.MosqueSettingsRepository;
+import nl.mijnummah.mosque.infrastructure.MosqueSpecifications;
 import nl.mijnummah.storage.ImageStorage;
 import nl.mijnummah.storage.StoredImageRef;
 
@@ -65,14 +71,25 @@ public class MosqueService {
                 .orElseThrow(MosqueNotFound::exception);
     }
 
-    /** All active mosques, e.g. for a "discover" screen. */
+    /**
+     * Active mosques for the "discover" screen of the app, alphabetical. {@code query} searches in the name,
+     * {@code city} is the exact place (both ignore case).
+     */
     @Transactional(readOnly = true)
-    public List<MosqueView> publicList() {
-        return mosques.findAll().stream()
-                .filter(Mosque::isActive)
-                .sorted(Comparator.comparing(Mosque::getName, String.CASE_INSENSITIVE_ORDER))
-                .map(mosque -> MosqueView.of(mosque, null))
-                .toList();
+    public Page<MosqueView> publicSearch(String query, String city, Pageable pageable) {
+        Specification<Mosque> spec = Specification.allOf(
+                MosqueSpecifications.status(MosqueStatus.ACTIVE),
+                MosqueSpecifications.nameMatches(query),
+                MosqueSpecifications.city(city));
+        Pageable sorted = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(),
+                Sort.by(Sort.Order.asc("name").ignoreCase(), Sort.Order.asc("id")));
+        return mosques.findAll(spec, sorted).map(mosque -> MosqueView.of(mosque, null));
+    }
+
+    /** Places with at least one active mosque, alphabetical, for the place filter in the app. */
+    @Transactional(readOnly = true)
+    public List<String> publicCities() {
+        return mosques.findCitiesByStatus(MosqueStatus.ACTIVE);
     }
 
     /**
