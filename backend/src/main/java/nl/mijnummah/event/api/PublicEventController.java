@@ -27,9 +27,11 @@ import nl.mijnummah.identity.AuthenticatedUser;
 class PublicEventController {
 
     private final PublicEventService eventService;
+    private final PublicEventResponses responses;
 
-    PublicEventController(PublicEventService eventService) {
+    PublicEventController(PublicEventService eventService, PublicEventResponses responses) {
         this.eventService = eventService;
+        this.responses = responses;
     }
 
     @GetMapping
@@ -45,13 +47,13 @@ class PublicEventController {
                                      @RequestParam(required = false) Integer page,
                                      @RequestParam(required = false) Integer size) {
         var pageable = PageRequests.of(page, size, Sort.by("startsAt", "id"));
-        return PageResponse.of(eventService.list(slug, viewer, category, from, to, pageable), EventResponse::from);
+        return responses.page(eventService.list(slug, viewer, category, from, to, pageable));
     }
 
     @GetMapping("/{eventId}")
     @Operation(summary = "Eén activiteit")
     EventResponse get(@AuthenticationPrincipal AuthenticatedUser viewer, @PathVariable String slug,
                       @PathVariable UUID eventId) {
-        return EventResponse.from(eventService.get(slug, eventId, viewer));
+        return responses.one(eventService.get(slug, eventId, viewer));
     }
 }

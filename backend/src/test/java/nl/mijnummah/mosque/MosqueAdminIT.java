@@ -20,7 +20,7 @@ class MosqueAdminIT extends AbstractIntegrationTest {
         assertThat(profile.field("id")).isEqualTo(id.toString());
         assertThat(profile.body().get("address").get("city").asString()).isEqualTo("Utrecht");
         assertThat(profile.field("timeZone")).isEqualTo("Europe/Amsterdam");
-        assertThat(api.get("/api/v1/public/mosques").body().size()).isEqualTo(1);
+        assertThat(api.get("/api/v1/public/mosques").body().get("items").size()).isEqualTo(1);
         assertThat(api.get("/api/v1/public/mosques/unknown").field("code")).isEqualTo("MOSQUE_NOT_FOUND");
     }
 

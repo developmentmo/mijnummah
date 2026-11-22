@@ -8,16 +8,17 @@ import nl.mijnummah.event.domain.EventCategory;
 import nl.mijnummah.event.domain.EventStatus;
 import nl.mijnummah.event.domain.EventDetails;
 import nl.mijnummah.event.domain.Visibility;
+import nl.mijnummah.mosque.MosqueCard;
 import nl.mijnummah.storage.ImageStorage;
 
 /**
- * An event. {@code status} is PUBLISHED or CANCELLED in public responses.
+ * An event. {@code status} is PUBLISHED or CANCELLED in public responses; {@code mosque} is where it takes place.
  *
  * @param registration whether and how people can register
  */
-record EventResponse(UUID id, String title, String description, EventCategory category, Instant startsAt,
-                     Instant endsAt, String location, String imageUrl, Visibility visibility, EventStatus status,
-                     Registration registration) {
+record EventResponse(UUID id, MosqueCard mosque, String title, String description, EventCategory category,
+                     Instant startsAt, Instant endsAt, String location, String imageUrl, Visibility visibility,
+                     EventStatus status, Registration registration) {
 
     /**
      * @param availablePlaces remaining places, null without a capacity limit
@@ -26,11 +27,16 @@ record EventResponse(UUID id, String title, String description, EventCategory ca
     record Registration(boolean enabled, Integer capacity, Integer availablePlaces, Boolean registeredByMe) {
     }
 
-    static EventResponse from(EventView view) {
+    /**
+     * @param mosqueAcceptsRegistrations false when the platform switched registrations off for the mosque; the event
+     *                                   then shows registration as disabled
+     */
+    static EventResponse from(EventView view, MosqueCard mosque, boolean mosqueAcceptsRegistrations) {
         var d = view.details();
-        return new EventResponse(view.id(), d.title(), d.description(), d.category(), d.startsAt(), d.endsAt(),
-                d.location(), imageUrl(d), d.visibility(), view.status(),
-                new Registration(d.registrationEnabled(), d.capacity(), view.availablePlaces(), view.registeredByMe()));
+        return new EventResponse(view.id(), mosque, d.title(), d.description(), d.category(), d.startsAt(),
+                d.endsAt(), d.location(), imageUrl(d), d.visibility(), view.status(),
+                new Registration(d.registrationEnabled() && mosqueAcceptsRegistrations, d.capacity(),
+                        view.availablePlaces(), view.registeredByMe()));
     }
 
     /** The uploaded image (path from the API base), otherwise the external image URL. */

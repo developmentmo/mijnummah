@@ -22,6 +22,10 @@ public final class MediaSpecifications {
         return (root, query, cb) -> cb.equal(root.get("mosqueId"), mosqueId);
     }
 
+    public static Specification<MediaItem> ofMosques(Collection<UUID> mosqueIds) {
+        return (root, query, cb) -> root.get("mosqueId").in(mosqueIds);
+    }
+
     public static Specification<MediaItem> status(MediaStatus status) {
         return (root, query, cb) -> status == null ? null : cb.equal(root.get("status"), status);
     }

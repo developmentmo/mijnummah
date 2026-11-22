@@ -17,21 +17,24 @@ public interface PushDeviceRepository extends JpaRepository<PushDevice, UUID> {
 
     Optional<PushDevice> findByToken(String token);
 
-    /** Insert, or move an existing token to this user and app; atomic, so concurrent registrations cannot collide. */
+    /**
+     * Insert, or move an existing token to this user; atomic, so concurrent registrations cannot collide. The
+     * mosque is always cleared: it is only filled for tokens of the former apps per mosque (013).
+     */
     @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query(nativeQuery = true, value = """
             insert into push_device (id, user_id, mosque_id, token, platform, created_at, last_seen_at, version)
-            values (:id, :userId, :mosqueId, :token, :platform, :now, :now, 0)
+            values (:id, :userId, null, :token, :platform, :now, :now, 0)
             on conflict (token) do update
                 set user_id = excluded.user_id, mosque_id = excluded.mosque_id, platform = excluded.platform,
                     last_seen_at = excluded.last_seen_at, version = push_device.version + 1""")
-    void upsert(@Param("id") UUID id, @Param("userId") UUID userId, @Param("mosqueId") UUID mosqueId,
-                @Param("token") String token, @Param("platform") String platform, @Param("now") Instant now);
+    void upsert(@Param("id") UUID id, @Param("userId") UUID userId, @Param("token") String token,
+                @Param("platform") String platform, @Param("now") Instant now);
 
-    /** Devices of these users in the app of this mosque; their apps of other mosques are left out. */
-    List<PushDevice> findByMosqueIdAndUserIdIn(UUID mosqueId, Collection<UUID> userIds);
+    /** All devices of these users: there is one central app, so a token is not tied to a mosque (D-060). */
+    List<PushDevice> findByUserIdIn(Collection<UUID> userIds);
 
-    long countByMosqueIdAndUserIdIn(UUID mosqueId, Collection<UUID> userIds);
+    long countByUserIdIn(Collection<UUID> userIds);
 
     @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("delete from PushDevice d where d.token = :token and d.userId = :userId")

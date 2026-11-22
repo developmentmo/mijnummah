@@ -22,9 +22,11 @@ import nl.mijnummah.common.web.PageResponse;
 class PublicAnnouncementController {
 
     private final AnnouncementService announcementService;
+    private final PublicAnnouncementResponses responses;
 
-    PublicAnnouncementController(AnnouncementService announcementService) {
+    PublicAnnouncementController(AnnouncementService announcementService, PublicAnnouncementResponses responses) {
         this.announcementService = announcementService;
+        this.responses = responses;
     }
 
     @GetMapping
@@ -33,12 +35,12 @@ class PublicAnnouncementController {
                                             @RequestParam(required = false) Integer page,
                                             @RequestParam(required = false) Integer size) {
         var pageable = PageRequests.of(page, size, Sort.unsorted());
-        return PageResponse.of(announcementService.publicList(slug, pageable), AnnouncementResponse::from);
+        return responses.page(announcementService.publicList(slug, pageable));
     }
 
     @GetMapping("/{announcementId}")
     @Operation(summary = "Eén aankondiging")
     AnnouncementResponse get(@PathVariable String slug, @PathVariable UUID announcementId) {
-        return AnnouncementResponse.from(announcementService.publicGet(slug, announcementId));
+        return responses.one(announcementService.publicGet(slug, announcementId));
     }
 }

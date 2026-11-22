@@ -14,6 +14,9 @@ public interface MosqueFollowRepository extends JpaRepository<MosqueFollow, Mosq
 
     List<MosqueFollow> findByUserIdOrderByCreatedAt(UUID userId);
 
+    @Query("select f.mosqueId from MosqueFollow f where f.userId = :userId")
+    List<UUID> findMosqueIdsByUserId(@Param("userId") UUID userId);
+
     /** Followers without a stored "off" for the topic (no row means on). */
     @Query("""
             select f.userId from MosqueFollow f

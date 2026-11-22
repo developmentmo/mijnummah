@@ -56,6 +56,18 @@ class FollowController {
         followService.unfollow(actor, mosqueId);
     }
 
+    @PutMapping("/{mosqueId}/favorite")
+    @Operation(summary = "Moskee als favoriet markeren; volgt de moskee als dat nog niet zo was (idempotent)")
+    FollowView favorite(@AuthenticationPrincipal AuthenticatedUser actor, @PathVariable UUID mosqueId) {
+        return followService.setFavorite(actor, mosqueId, true);
+    }
+
+    @DeleteMapping("/{mosqueId}/favorite")
+    @Operation(summary = "Favoriet weghalen; de moskee blijft gevolgd")
+    FollowView unfavorite(@AuthenticationPrincipal AuthenticatedUser actor, @PathVariable UUID mosqueId) {
+        return followService.setFavorite(actor, mosqueId, false);
+    }
+
     @GetMapping("/{mosqueId}")
     @Operation(summary = "Eén gevolgde moskee met meldingsvoorkeuren")
     FollowView get(@AuthenticationPrincipal AuthenticatedUser actor, @PathVariable UUID mosqueId) {

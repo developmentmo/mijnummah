@@ -11,4 +11,7 @@ public interface FollowerDirectory {
      * are active is not checked here.
      */
     List<UUID> followersToNotify(UUID mosqueId, NotificationTopic topic);
+
+    /** Mosques the user follows, in any status. */
+    List<UUID> followedMosqueIds(UUID userId);
 }

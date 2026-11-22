@@ -27,9 +27,11 @@ import nl.mijnummah.media.domain.MediaCategory;
 class PublicMediaController {
 
     private final PublicMediaService mediaService;
+    private final PublicMediaResponses responses;
 
-    PublicMediaController(PublicMediaService mediaService) {
+    PublicMediaController(PublicMediaService mediaService, PublicMediaResponses responses) {
         this.mediaService = mediaService;
+        this.responses = responses;
     }
 
     @GetMapping
@@ -42,20 +44,20 @@ class PublicMediaController {
                                      @RequestParam(required = false) Integer page,
                                      @RequestParam(required = false) Integer size) {
         var pageable = PageRequests.of(page, size, Sort.unsorted());
-        return PageResponse.of(mediaService.list(slug, viewer, q, category, pageable), MediaResponse::from);
+        return responses.page(mediaService.list(slug, viewer, q, category, pageable));
     }
 
     @GetMapping("/{mediaId}")
     @Operation(summary = "Eén media-item")
     MediaResponse get(@AuthenticationPrincipal AuthenticatedUser viewer, @PathVariable String slug,
                       @PathVariable UUID mediaId) {
-        return MediaResponse.from(mediaService.get(slug, mediaId, viewer));
+        return responses.one(mediaService.get(slug, mediaId, viewer));
     }
 
     @GetMapping("/{mediaId}/related")
     @Operation(summary = "Gerelateerde media (zelfde categorie of spreker, maximaal 4)")
     List<MediaResponse> related(@AuthenticationPrincipal AuthenticatedUser viewer, @PathVariable String slug,
                                 @PathVariable UUID mediaId) {
-        return mediaService.related(slug, mediaId, viewer).stream().map(MediaResponse::from).toList();
+        return responses.list(mediaService.related(slug, mediaId, viewer));
     }
 }

@@ -2,6 +2,9 @@ package nl.mijnummah.announcement.application;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.util.Collection;
+import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.context.ApplicationEventPublisher;
@@ -58,6 +61,33 @@ public class AnnouncementService {
         MosqueRef mosque = mosques.requireActiveBySlug(mosqueSlug);
         Instant now = Instant.now(clock);
         return announcements.findPublic(mosque.id(), now, pageable).map(a -> AnnouncementView.of(a, now));
+    }
+
+    /**
+     * News across mosques for the central app: all active mosques, or only those among {@code mosqueSlugs} when
+     * given (unknown and inactive slugs are ignored).
+     */
+    @Transactional(readOnly = true)
+    public Page<AnnouncementView> publicListAcross(Collection<String> mosqueSlugs, Pageable pageable) {
+        Set<UUID> mosqueIds = mosqueSlugs == null || mosqueSlugs.isEmpty()
+                ? mosques.activeIds()
+                : mosques.findActiveBySlugs(mosqueSlugs).keySet();
+        if (mosqueIds.isEmpty()) {
+            return Page.empty(pageable);
+        }
+        Instant now = Instant.now(clock);
+        return announcements.findPublicIn(mosqueIds, now, pageable).map(a -> AnnouncementView.of(a, now));
+    }
+
+    /** One public announcement of any active mosque, e.g. opened from a push notification. */
+    @Transactional(readOnly = true)
+    public AnnouncementView publicGet(UUID announcementId) {
+        Instant now = Instant.now(clock);
+        return announcements.findById(announcementId)
+                .filter(a -> a.getStatus() == AnnouncementStatus.PUBLISHED && !a.isExpired(now))
+                .filter(a -> !mosques.findActiveByIds(List.of(a.getMosqueId())).isEmpty())
+                .map(a -> AnnouncementView.of(a, now))
+                .orElseThrow(AnnouncementService::notFound);
     }
 
     @Transactional(readOnly = true)

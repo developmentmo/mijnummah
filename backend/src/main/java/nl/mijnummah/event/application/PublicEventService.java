@@ -2,6 +2,7 @@ package nl.mijnummah.event.application;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -62,6 +63,41 @@ public class PublicEventService {
         Page<Event> page = events.findAll(spec, pageable);
         List<EventView> content = views.of(page.getContent(), viewerId(viewer));
         return new PageImpl<>(content, page.getPageable(), page.getTotalElements());
+    }
+
+    /**
+     * The agenda across mosques for the central app: all active mosques, or only those among {@code mosqueSlugs}
+     * when given (unknown and inactive slugs are ignored, so a list of only those is empty).
+     */
+    @Transactional(readOnly = true)
+    public Page<EventView> listAcross(Collection<String> mosqueSlugs, AuthenticatedUser viewer, EventCategory category,
+                                      Instant from, Instant to, Pageable pageable) {
+        Set<UUID> mosqueIds = mosqueSlugs == null || mosqueSlugs.isEmpty()
+                ? mosques.activeIds()
+                : mosques.findActiveBySlugs(mosqueSlugs).keySet();
+        if (mosqueIds.isEmpty()) {
+            return Page.empty(pageable);
+        }
+        Specification<Event> spec = Specification.allOf(
+                EventSpecifications.ofMosques(mosqueIds),
+                EventSpecifications.statusIn(PUBLIC_STATUSES),
+                EventSpecifications.visibilityIn(visibleTo(viewer)),
+                EventSpecifications.category(category),
+                EventSpecifications.notOverBefore(from == null ? Instant.now(clock) : from),
+                EventSpecifications.startsBefore(to));
+        Page<Event> page = events.findAll(spec, pageable);
+        List<EventView> content = views.of(page.getContent(), viewerId(viewer));
+        return new PageImpl<>(content, page.getPageable(), page.getTotalElements());
+    }
+
+    /** One public event of any active mosque, e.g. opened from a push notification. */
+    @Transactional(readOnly = true)
+    public EventView get(UUID eventId, AuthenticatedUser viewer) {
+        Event event = events.findById(eventId)
+                .filter(candidate -> isVisible(candidate, viewer))
+                .filter(candidate -> !mosques.findActiveByIds(List.of(candidate.getMosqueId())).isEmpty())
+                .orElseThrow(EventNotFound::exception);
+        return views.of(event, viewerId(viewer));
     }
 
     @Transactional(readOnly = true)

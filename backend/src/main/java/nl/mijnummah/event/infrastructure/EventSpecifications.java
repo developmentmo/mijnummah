@@ -21,6 +21,10 @@ public final class EventSpecifications {
         return (root, query, cb) -> cb.equal(root.get("mosqueId"), mosqueId);
     }
 
+    public static Specification<Event> ofMosques(Collection<UUID> mosqueIds) {
+        return (root, query, cb) -> root.get("mosqueId").in(mosqueIds);
+    }
+
     public static Specification<Event> statusIn(Collection<EventStatus> statuses) {
         return (root, query, cb) -> root.get("status").in(statuses);
     }

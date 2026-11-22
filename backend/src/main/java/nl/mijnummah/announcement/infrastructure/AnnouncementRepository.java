@@ -1,6 +1,7 @@
 package nl.mijnummah.announcement.infrastructure;
 
 import java.time.Instant;
+import java.util.Collection;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -30,4 +31,14 @@ public interface AnnouncementRepository extends JpaRepository<Announcement, UUID
               and (a.expiresAt is null or a.expiresAt > :now)
             order by a.featured desc, a.publishedAt desc, a.id""")
     Page<Announcement> findPublic(@Param("mosqueId") UUID mosqueId, @Param("now") Instant now, Pageable pageable);
+
+    /** Published, not expired, in one of these mosques; newest first (featured has no meaning across mosques). */
+    @Query("""
+            select a from Announcement a
+            where a.mosqueId in :mosqueIds
+              and a.status = nl.mijnummah.announcement.domain.AnnouncementStatus.PUBLISHED
+              and (a.expiresAt is null or a.expiresAt > :now)
+            order by a.publishedAt desc, a.id""")
+    Page<Announcement> findPublicIn(@Param("mosqueIds") Collection<UUID> mosqueIds, @Param("now") Instant now,
+                                    Pageable pageable);
 }

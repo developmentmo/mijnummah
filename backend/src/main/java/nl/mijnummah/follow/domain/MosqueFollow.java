@@ -28,6 +28,10 @@ public class MosqueFollow {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
+    /** A favourite mosque is shown first in the app (020). Only a followed mosque can be a favourite. */
+    @Column(name = "favorite", nullable = false)
+    private boolean favorite;
+
     protected MosqueFollow() {
         // for JPA
     }
@@ -50,6 +54,14 @@ public class MosqueFollow {
 
     public Instant getCreatedAt() {
         return createdAt;
+    }
+
+    public boolean isFavorite() {
+        return favorite;
+    }
+
+    public void markFavorite(boolean favorite) {
+        this.favorite = favorite;
     }
 
     public record Key(UUID userId, UUID mosqueId) implements Serializable {

@@ -64,44 +64,54 @@ class PushFlowIT extends AbstractIntegrationTest {
                 .isEqualTo(204);
         assertThat(owners("gedeeld-toestel")).isEmpty();
 
-        ApiResponse invalid = api.put("/api/v1/me/devices",
-                Map.of("token", "x", "platform", "WINDOWS", "mosqueSlug", "mijn-ummah"), first.token());
-        assertThat(invalid.status()).isEqualTo(400);
-        ApiResponse withoutApp = api.put("/api/v1/me/devices", Map.of("token", "x", "platform", "ANDROID"),
+        ApiResponse invalid = api.put("/api/v1/me/devices", Map.of("token", "x", "platform", "WINDOWS"),
                 first.token());
-        assertThat(withoutApp.status()).isEqualTo(400);
-        ApiResponse unknownApp = registerDevice(first, "x", "bestaat-niet");
-        assertThat(unknownApp.status()).isEqualTo(404);
-        assertThat(unknownApp.field("code")).isEqualTo("MOSQUE_NOT_FOUND");
+        assertThat(invalid.status()).isEqualTo(400);
         assertThat(owners("x")).isEmpty();
+        // an older app still sends the mosque of the app; it is ignored
+        assertThat(api.put("/api/v1/me/devices", Map.of("token", "x", "platform", "IOS", "mosqueSlug", "oud"),
+                first.token()).status()).isEqualTo(204);
+        assertThat(owners("x")).containsExactly(first.id());
     }
 
     @Test
-    void aNotificationOnlyReachesTheAppOfTheMosqueThatSentIt() {
-        // one person follows both mosques and has both apps installed
-        Account member = follower("beide-apps", Map.of());
+    void oneDeviceReceivesTheNotificationsOfEveryMosqueItsUserFollows() {
+        // one person follows both mosques and has the central app on one phone
+        Account member = follower("beide-moskeeen", Map.of());
         api.put("/api/v1/me/follows/" + otherMosqueId, null, member.token());
-        registerDevice(member, "app-mijnummah", "mijn-ummah");
-        registerDevice(member, "app-andere", "andere-moskee");
+        registerDevice(member, "telefoon");
+        // a token from a former app per mosque loses its mosque when it registers again
+        jdbc.update("update push_device set mosque_id = ? where token = ?", otherMosqueId, "telefoon");
+        registerDevice(member, "telefoon");
+        assertThat(jdbc.queryForObject("select mosque_id from push_device where token = ?", UUID.class, "telefoon"))
+                .isNull();
         Account otherAdmin = mosqueAdmin(otherMosqueId, "ander-beheer");
+        Account outsider = user("volgt-niets");
+        registerDevice(outsider, "telefoon-buitenstaander");
 
-        ApiResponse ownAudience = api.get(adminPath(mosqueId, "notifications/audience?contentType=ANNOUNCEMENT"),
-                admin.token());
-        assertThat(ownAudience.body().get("followers").asInt()).isEqualTo(1);
-        assertThat(ownAudience.body().get("devices").asInt()).isEqualTo(1);
-        ApiResponse otherAudience = api.get(adminPath(otherMosqueId,
-                "notifications/audience?contentType=ANNOUNCEMENT"), otherAdmin.token());
-        assertThat(otherAudience.body().get("devices").asInt()).isEqualTo(1);
-
-        UUID announcementId = publishedAnnouncement("Alleen voor deze app", "Tekst");
+        UUID announcementId = publishedAnnouncement("Van de eerste moskee", "Tekst");
         api.post(adminPath(mosqueId, "announcements/" + announcementId + "/push"), null, admin.token());
         awaitCompleted();
-        assertThat(FCM.messages).extracting(m -> m.path("token").asString()).containsExactly("app-mijnummah");
+        assertThat(FCM.messages).extracting(m -> m.path("token").asString()).containsExactly("telefoon");
+        assertThat(FCM.messages.getFirst().path("data").path("mosqueId").asString()).isEqualTo(mosqueId.toString());
 
-        // the token moves with the app it was registered from: re-registering it for the other app moves it there
-        registerDevice(member, "app-mijnummah", "andere-moskee");
-        assertThat(jdbc.queryForObject("select mosque_id from push_device where token = ?", UUID.class,
-                "app-mijnummah")).isEqualTo(otherMosqueId);
+        FCM.reset();
+        api.post(adminPath(otherMosqueId, "notifications"),
+                Map.of("title", "Van de tweede", "body", "Bericht", "audience", "ALL_FOLLOWERS"), otherAdmin.token());
+        await().atMost(Duration.ofSeconds(10)).until(() -> FCM.messages.size() == 1);
+        assertThat(FCM.messages).extracting(m -> m.path("token").asString()).containsExactly("telefoon");
+
+        // the notifications screen of the app shows both, newest first, with the mosque
+        await().atMost(Duration.ofSeconds(10)).until(() -> api.get("/api/v1/me/notifications", member.token())
+                .body().get("items").size() == 2);
+        JsonNode inbox = api.get("/api/v1/me/notifications", member.token()).body().get("items");
+        assertThat(inbox.get(0).path("title").asString()).isEqualTo("Van de tweede");
+        assertThat(inbox.get(0).path("type").asString()).isEqualTo("message");
+        assertThat(inbox.get(0).path("mosque").path("slug").asString()).isEqualTo("andere-moskee");
+        assertThat(inbox.get(1).path("type").asString()).isEqualTo("announcement");
+        assertThat(inbox.get(1).path("contentId").asString()).isEqualTo(announcementId.toString());
+        assertThat(api.get("/api/v1/me/notifications", outsider.token()).body().get("items").size()).isZero();
+        assertThat(api.get("/api/v1/me/notifications").status()).isEqualTo(401);
     }
 
     @Test
@@ -312,13 +322,8 @@ class PushFlowIT extends AbstractIntegrationTest {
         return account;
     }
 
-    /** Registers the token from the app of mijn-ummah. */
     private ApiResponse registerDevice(Account account, String token) {
-        return registerDevice(account, token, "mijn-ummah");
-    }
-
-    private ApiResponse registerDevice(Account account, String token, String appMosqueSlug) {
-        return api.put("/api/v1/me/devices", Map.of("token", token, "platform", "ANDROID", "mosqueSlug", appMosqueSlug),
+        return api.put("/api/v1/me/devices", Map.of("token", token, "platform", "ANDROID"),
                 account == null ? null : account.token());
     }
 
