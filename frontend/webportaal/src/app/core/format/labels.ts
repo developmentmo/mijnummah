@@ -24,6 +24,7 @@ export const MEDIA_CATEGORY_LABELS: Record<MediaCategory, string> = {
   QURAN: 'Koran',
   COURSE: 'Cursus',
   YOUTH: 'Jongeren',
+  RECORDED_EVENT: 'Opname van een activiteit',
   OTHER: 'Overig',
 };
 
@@ -36,6 +37,7 @@ export const EVENT_STATUS_LABELS: Record<EventStatus, string> = {
   DRAFT: 'Concept',
   PUBLISHED: 'Gepubliceerd',
   CANCELLED: 'Geannuleerd',
+  ARCHIVED: 'Gearchiveerd',
 };
 
 export const CONTENT_STATUS_LABELS: Record<MediaStatus | AnnouncementStatus, string> = {

@@ -32,6 +32,7 @@ import { applyServerErrors, controlError } from '../../shared/forms/form-errors'
 import { HasUnsavedChanges } from '../../shared/forms/unsaved-changes.guard';
 import { PushPanel } from '../notifications/push-panel';
 import { Confirm } from '../../shared/ui/confirm-dialog';
+import { ImageField } from '../../shared/ui/image-field';
 import { Notifier } from '../../shared/ui/notifier';
 import { PageHeader } from '../../shared/ui/page-header';
 import { Skeleton } from '../../shared/ui/skeleton';
@@ -49,19 +50,21 @@ const EVENT_ERRORS: Record<string, string> = {
     'Er zijn al aanmeldingen voor deze activiteit. Annuleer de activiteit als hij niet doorgaat.',
   EVENT_NOT_DRAFT: 'Dit kan alleen bij een concept.',
   EVENT_CANCELLED: 'Deze activiteit is geannuleerd en kan niet meer worden gewijzigd.',
+  EVENT_ARCHIVED: 'Deze activiteit is gearchiveerd. Haal hem eerst uit het archief.',
   EVENT_NOT_PUBLISHED: 'Dit kan alleen bij een gepubliceerde activiteit.',
   CAPACITY_BELOW_REGISTRATIONS:
     'Het maximum aantal plaatsen is lager dan het aantal aanmeldingen. Kies een hoger maximum.',
   INVALID_EVENT: 'Controleer de tijden en het maximum aantal plaatsen.',
 };
 
-type Action = 'publish' | 'unpublish' | 'cancel' | 'delete';
+type Action = 'publish' | 'unpublish' | 'cancel' | 'archive' | 'restore' | 'delete';
 
 /** Activiteit aanmaken of wijzigen, plus publiceren, terugzetten, annuleren en verwijderen. */
 @Component({
   selector: 'mu-event-edit-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
+    ImageField,
     MatButton,
     MatFormFieldModule,
     MatInput,
@@ -84,7 +87,7 @@ export class EventEditPage implements OnInit, HasUnsavedChanges {
   private readonly confirm = inject(Confirm);
   private readonly notifier = inject(Notifier);
   protected readonly context = inject(MosqueContext);
-  private readonly mosqueId = this.context.current()!.id;
+  protected readonly mosqueId = this.context.current()!.id;
 
   /** Uit de route; leeg bij een nieuwe activiteit. */
   readonly eventId = input<string>();
@@ -177,6 +180,8 @@ export class EventEditPage implements OnInit, HasUnsavedChanges {
           publish: 'Gepubliceerd. De activiteit staat nu in de app.',
           unpublish: 'Teruggezet naar concept. De activiteit is niet meer zichtbaar in de app.',
           cancel: 'Activiteit geannuleerd.',
+          archive: 'Gearchiveerd. De activiteit staat niet meer in de app.',
+          restore: 'Uit het archief gehaald. De activiteit staat weer in de app.',
         }[action],
       );
     } catch (error) {
@@ -200,7 +205,7 @@ export class EventEditPage implements OnInit, HasUnsavedChanges {
     this.event.set(event);
     this.form.reset(eventToFormValue(event, this.context.timeZone()));
     this.registrationEnabled.set(event.registrationEnabled);
-    if (event.status === 'CANCELLED') this.form.disable();
+    if (event.status === 'CANCELLED' || event.status === 'ARCHIVED') this.form.disable();
     else this.form.enable();
   }
 
@@ -231,6 +236,19 @@ export class EventEditPage implements OnInit, HasUnsavedChanges {
           confirmLabel: 'Activiteit annuleren',
           cancelLabel: 'Niet annuleren',
           destructive: true,
+        });
+      case 'archive':
+        return this.confirm.ask({
+          title: 'Activiteit archiveren?',
+          message: `“${event.title}” verdwijnt uit de app. De gegevens en aanmeldingen blijven bewaard in het portaal.`,
+          note: 'Je kunt de activiteit later weer uit het archief halen.',
+          confirmLabel: 'Archiveren',
+        });
+      case 'restore':
+        return this.confirm.ask({
+          title: 'Uit het archief halen?',
+          message: `“${event.title}” komt weer in de app, ${event.cancelledAt ? 'als geannuleerd' : 'zoals vóór het archiveren'}.`,
+          confirmLabel: 'Terugzetten',
         });
       case 'delete':
         return this.confirm.ask({

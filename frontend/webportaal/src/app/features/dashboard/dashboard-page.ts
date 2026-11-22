@@ -1,11 +1,11 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject } from '@angular/core';
 import { MatButton } from '@angular/material/button';
 import { RouterLink } from '@angular/router';
-import { Observable, map } from 'rxjs';
 
 import { AdminApi } from '../../core/api/admin-api';
-import { AdminEvent, Page } from '../../core/api/models';
+import { AdminEvent, AuditEntry, MosqueFigures, Page } from '../../core/api/models';
 import { AuthService } from '../../core/auth/auth.service';
+import { auditActionLabel } from '../../core/format/audit';
 import { formatDateTime } from '../../core/format/dates';
 import { EVENT_CATEGORY_LABELS } from '../../core/format/labels';
 import { MosqueContext } from '../../core/mosque/mosque-context';
@@ -16,13 +16,16 @@ import { StatusMessage } from '../../shared/ui/status-message';
 
 interface Tile {
   label: string;
+  value: number;
   hint: string;
-  loadable: Loadable<number>;
   link: unknown[];
   query?: Record<string, string>;
 }
 
-/** Overzicht met alleen echte gegevens uit de backend: aantallen, eerstvolgende activiteiten, snelle acties. */
+/**
+ * Overzicht met alleen echte gegevens uit de backend: aantallen, eerstvolgende activiteiten, recente activiteit
+ * (alleen beheerders, uit het auditlog) en snelle acties.
+ */
 @Component({
   selector: 'mu-dashboard-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -50,50 +53,73 @@ export class DashboardPage implements OnInit {
     }),
   );
 
-  private count(fetch: () => Observable<Page<unknown>>): Loadable<number> {
-    return new Loadable(() => fetch().pipe(map((page) => page.totalItems)));
-  }
+  protected readonly figures = new Loadable<MosqueFigures>(() =>
+    this.api.mosqueFigures(this.mosqueId),
+  );
 
-  protected readonly tiles: Tile[] = [
-    {
-      label: 'Concepten in de agenda',
-      hint: 'Nog niet zichtbaar in de app',
-      loadable: this.count(() => this.api.events(this.mosqueId, { status: 'DRAFT', size: 1 })),
-      link: [...this.base, 'agenda'],
-      query: { status: 'DRAFT' },
-    },
-    {
-      label: 'Gepubliceerde video’s',
-      hint: 'In de mediabibliotheek van de app',
-      loadable: this.count(() =>
-        this.api.mediaList(this.mosqueId, { status: 'PUBLISHED', size: 1 }),
-      ),
-      link: [...this.base, 'media'],
-      query: { status: 'PUBLISHED' },
-    },
-    {
-      label: 'Concept-video’s',
-      hint: 'Klaar om te publiceren',
-      loadable: this.count(() => this.api.mediaList(this.mosqueId, { status: 'DRAFT', size: 1 })),
-      link: [...this.base, 'media'],
-      query: { status: 'DRAFT' },
-    },
-    {
-      label: 'Gepubliceerde aankondigingen',
-      hint: 'Inclusief verlopen aankondigingen',
-      loadable: this.count(() =>
-        this.api.announcements(this.mosqueId, { status: 'PUBLISHED', size: 1 }),
-      ),
-      link: [...this.base, 'aankondigingen'],
-      query: { status: 'PUBLISHED' },
-    },
-  ];
+  /** Het auditlog van de moskee is alleen voor beheerders (ADMIN). */
+  protected readonly showActivity = this.context.isAdmin;
+  protected readonly activity = new Loadable<Page<AuditEntry>>(() =>
+    this.api.auditLog({ mosqueId: this.mosqueId, size: 6 }),
+  );
+  protected readonly actionLabel = auditActionLabel;
+
+  protected readonly tiles = computed<Tile[]>(() => {
+    const f = this.figures.value();
+    if (!f) return [];
+    return [
+      {
+        label: 'Volgers',
+        value: f.followers,
+        hint: f.newFollowers
+          ? `${f.newFollowers} nieuw in de laatste 30 dagen`
+          : 'Volgen de moskee in de app',
+        link: [...this.base, 'pushmeldingen'],
+      },
+      {
+        label: 'Komende activiteiten',
+        value: f.upcomingEvents,
+        hint: f.draftEvents ? `En ${f.draftEvents} in concept` : 'Gepubliceerd in de agenda',
+        link: [...this.base, 'agenda'],
+        query: { status: 'PUBLISHED' },
+      },
+      {
+        label: 'Video’s in de app',
+        value: f.publishedVideos,
+        hint:
+          [
+            f.scheduledVideos ? `${f.scheduledVideos} gepland` : '',
+            f.draftVideos ? `${f.draftVideos} in concept` : '',
+          ]
+            .filter(Boolean)
+            .join(', ') || 'In de mediabibliotheek',
+        link: [...this.base, 'media'],
+      },
+      {
+        label: 'Aankondigingen in de app',
+        value: f.publishedAnnouncements,
+        hint: f.draftAnnouncements ? `En ${f.draftAnnouncements} in concept` : 'Niet verlopen',
+        link: [...this.base, 'aankondigingen'],
+      },
+      {
+        label: 'Pushmeldingen',
+        value: f.recentPushNotifications,
+        hint: 'Verstuurd in de laatste 30 dagen',
+        link: [...this.base, 'pushmeldingen'],
+      },
+    ];
+  });
 
   protected readonly categoryLabels = EVENT_CATEGORY_LABELS;
 
   ngOnInit(): void {
     void this.upcoming.load();
-    for (const tile of this.tiles) void tile.loadable.load();
+    void this.figures.load();
+    if (this.showActivity()) void this.activity.load();
+  }
+
+  protected at(iso: string): string {
+    return formatDateTime(iso, this.context.timeZone());
   }
 
   protected when(event: AdminEvent): string {

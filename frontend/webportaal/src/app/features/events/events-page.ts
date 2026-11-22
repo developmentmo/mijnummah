@@ -26,7 +26,7 @@ import { StatusBadge } from '../../shared/ui/status-badge';
 import { StatusMessage } from '../../shared/ui/status-message';
 
 const PAGE_SIZE = 20;
-const STATUSES: EventStatus[] = ['DRAFT', 'PUBLISHED', 'CANCELLED'];
+const STATUSES: EventStatus[] = ['DRAFT', 'PUBLISHED', 'CANCELLED', 'ARCHIVED'];
 
 /** Alle activiteiten, ook concepten en geannuleerde, nieuwste starttijd eerst. Filter en pagina staan in de URL. */
 @Component({

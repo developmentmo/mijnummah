@@ -71,6 +71,14 @@
       }
     </mat-form-field>
     <mat-form-field appearance="outline" class="mu-field-full">
+      <mat-label>Gebedstijden</mat-label>
+      <input matInput type="url" formControlName="prayerTimesUrl" maxlength="500" />
+      <mat-hint>Optioneel. Link naar het gebedsrooster op je website of een pdf.</mat-hint>
+      @if (form.controls.prayerTimesUrl.invalid) {
+        <mat-error>{{ controlError(form.controls.prayerTimesUrl) }}</mat-error>
+      }
+    </mat-form-field>
+    <mat-form-field appearance="outline" class="mu-field-full">
       <mat-label>Tijdzone</mat-label>
       <input matInput formControlName="timeZone" maxlength="50" />
       <mat-hint

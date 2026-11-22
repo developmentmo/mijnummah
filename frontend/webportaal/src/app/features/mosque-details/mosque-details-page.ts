@@ -76,6 +76,7 @@ export class MosqueDetailsPage implements OnInit, HasUnsavedChanges {
     email: ['', [Validators.email, Validators.maxLength(254)]],
     phone: ['', Validators.maxLength(30)],
     websiteUrl: ['', [Validators.maxLength(500), httpUrl]],
+    prayerTimesUrl: ['', [Validators.maxLength(500), httpUrl]],
     timeZone: ['', Validators.maxLength(50)],
   });
   protected readonly busy = signal(false);
@@ -115,6 +116,7 @@ export class MosqueDetailsPage implements OnInit, HasUnsavedChanges {
       email: blankToNull(v.email),
       phone: blankToNull(v.phone),
       websiteUrl: blankToNull(v.websiteUrl),
+      prayerTimesUrl: blankToNull(v.prayerTimesUrl),
       timeZone: blankToNull(v.timeZone),
     };
     try {
@@ -147,6 +149,7 @@ export class MosqueDetailsPage implements OnInit, HasUnsavedChanges {
       email: mosque.contact.email ?? '',
       phone: mosque.contact.phone ?? '',
       websiteUrl: mosque.contact.websiteUrl ?? '',
+      prayerTimesUrl: mosque.prayerTimesUrl ?? '',
       timeZone: mosque.timeZone ?? '',
     });
   }

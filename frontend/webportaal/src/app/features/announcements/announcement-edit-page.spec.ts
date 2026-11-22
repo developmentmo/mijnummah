@@ -112,6 +112,7 @@ describe('AnnouncementEditPage', () => {
       body: 'Tekst',
       featured: false,
       expiresAt: '2026-12-31T22:59:00Z',
+      imageId: null,
     });
   });
 });

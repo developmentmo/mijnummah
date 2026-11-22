@@ -38,6 +38,11 @@
         <mat-slide-toggle formControlName="featured"
           >Uitlichten op de startpagina van de app</mat-slide-toggle
         >
+        <mu-image-field
+          label="Afbeelding (optioneel)"
+          [mosqueId]="mosqueId"
+          [idControl]="form.controls.imageId"
+        />
       </fieldset>
 
       <fieldset class="mu-fieldset">

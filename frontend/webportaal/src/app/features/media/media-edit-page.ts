@@ -7,7 +7,7 @@ import {
   input,
   signal,
 } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButton } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
@@ -19,7 +19,8 @@ import { firstValueFrom, map } from 'rxjs';
 import { AdminApi } from '../../core/api/admin-api';
 import { ApiError, describeError } from '../../core/api/api-error';
 import { AdminEvent, AdminMedia } from '../../core/api/models';
-import { formatDate, formatDateTime } from '../../core/format/dates';
+import { APP_CONFIG } from '../../core/config/app-config';
+import { formatDate, formatDateTime, fromZonedParts, toZonedParts } from '../../core/format/dates';
 import {
   CONTENT_STATUS_LABELS,
   MEDIA_CATEGORY_LABELS,
@@ -32,6 +33,7 @@ import { applyServerErrors, controlError } from '../../shared/forms/form-errors'
 import { HasUnsavedChanges } from '../../shared/forms/unsaved-changes.guard';
 import { PushPanel } from '../notifications/push-panel';
 import { Confirm } from '../../shared/ui/confirm-dialog';
+import { ImageField } from '../../shared/ui/image-field';
 import { Notifier } from '../../shared/ui/notifier';
 import { PageHeader } from '../../shared/ui/page-header';
 import { Skeleton } from '../../shared/ui/skeleton';
@@ -49,6 +51,7 @@ const MEDIA_ERRORS: Record<string, string> = {
   VIDEO_ALREADY_ADDED: 'Deze video staat al in de mediabibliotheek.',
   INVALID_RELATED_EVENT: 'De gekoppelde activiteit hoort niet bij deze moskee.',
   INVALID_MEDIA: 'Controleer de duur van de video.',
+  INVALID_PUBLICATION_DATE: 'De publicatiedatum mag hooguit een jaar vooruit liggen.',
 };
 
 type Action = 'publish' | 'unpublish' | 'delete';
@@ -58,6 +61,7 @@ type Action = 'publish' | 'unpublish' | 'delete';
   selector: 'mu-media-edit-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
+    ImageField,
     MatButton,
     MatFormFieldModule,
     MatInput,
@@ -87,8 +91,19 @@ export class MediaEditPage implements OnInit, HasUnsavedChanges {
   private readonly router = inject(Router);
   private readonly confirm = inject(Confirm);
   private readonly notifier = inject(Notifier);
-  private readonly context = inject(MosqueContext);
-  private readonly mosqueId = this.context.current()!.id;
+  protected readonly context = inject(MosqueContext);
+  protected readonly mosqueId = this.context.current()!.id;
+  private readonly apiBaseUrl = inject(APP_CONFIG).apiBaseUrl;
+
+  /** Publicatiedatum en -tijd in de tijdzone van de moskee; los van het formulier met de gegevens. */
+  protected readonly publishDate = new FormControl('', {
+    nonNullable: true,
+    validators: Validators.required,
+  });
+  protected readonly publishTime = new FormControl('', {
+    nonNullable: true,
+    validators: Validators.required,
+  });
 
   readonly mediaId = input<string>();
 
@@ -196,6 +211,56 @@ export class MediaEditPage implements OnInit, HasUnsavedChanges {
     }
   }
 
+  /** Publiceren op de gekozen datum: in het verleden (oudere opname) of later (gepland). */
+  protected async publishAt(): Promise<void> {
+    const media = this.media();
+    if (!media || this.busy()) return;
+    this.publishDate.markAsTouched();
+    this.publishTime.markAsTouched();
+    if (this.publishDate.invalid || this.publishTime.invalid) return;
+    const at = fromZonedParts(
+      this.publishDate.value,
+      this.publishTime.value,
+      this.context.timeZone(),
+    );
+    const future = Date.parse(at) > Date.now();
+    const ok = await this.confirm.ask({
+      title: future ? 'Video inplannen?' : 'Publiceren met deze datum?',
+      message: future
+        ? `“${media.title}” verschijnt op ${this.when(at)} in de app.`
+        : `“${media.title}” staat direct in de app, met ${this.when(at)} als publicatiedatum.`,
+      note: 'Er wordt geen pushmelding verstuurd.',
+      confirmLabel: future ? 'Inplannen' : 'Publiceren',
+    });
+    if (!ok) return;
+    this.busy.set(true);
+    this.actionError.set(null);
+    try {
+      this.show(await firstValueFrom(this.api.publishMediaAt(this.mosqueId, media.id, at)));
+      this.notifier.success(
+        future ? `Ingepland voor ${this.when(at)}.` : 'Gepubliceerd. De video staat nu in de app.',
+      );
+    } catch (error) {
+      this.actionError.set(describeError(error, MEDIA_ERRORS));
+    } finally {
+      this.busy.set(false);
+    }
+  }
+
+  /** Gepubliceerd, maar de publicatiedatum moet nog komen. */
+  protected isScheduled(media: AdminMedia): boolean {
+    return (
+      media.status === 'PUBLISHED' &&
+      !!media.publishedAt &&
+      Date.parse(media.publishedAt) > Date.now()
+    );
+  }
+
+  protected thumbnail(media: AdminMedia): string | null {
+    const url = media.thumbnailUrl;
+    return url && url.startsWith('/') ? `${this.apiBaseUrl}${url}` : url;
+  }
+
   protected eventLabel(event: AdminEvent): string {
     return `${formatDate(event.startsAt, this.context.timeZone())} · ${event.title}`;
   }
@@ -207,6 +272,9 @@ export class MediaEditPage implements OnInit, HasUnsavedChanges {
   private show(media: AdminMedia): void {
     this.media.set(media);
     this.form.reset(mediaToFormValue(media));
+    const at = media.publishedAt ? toZonedParts(media.publishedAt, this.context.timeZone()) : null;
+    this.publishDate.reset(at?.date ?? '');
+    this.publishTime.reset(at?.time ?? '');
   }
 
   private confirmAction(action: Action, media: AdminMedia): Promise<boolean> {

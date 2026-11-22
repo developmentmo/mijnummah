@@ -101,11 +101,11 @@ describe('EventEditPage', () => {
     typeInto(titleInput, 'Gewijzigd');
     buttonByText(fixture.nativeElement, 'Wijzigingen opslaan').click();
     const { body, options } = apiError('VALIDATION_FAILED', 400, [
-      { field: 'imageUrl', message: 'must be an https URL' },
+      { field: 'location', message: 'size must be between 0 and 200' },
     ]);
     await respond(`${BASE}/e-1`, body, options);
     await fixture.whenStable();
-    expect(text(fixture.nativeElement)).toContain('Gebruik een link die met https:// begint.');
+    expect(text(fixture.nativeElement)).toContain('Deze tekst is te lang.');
   });
 
   it('publiceert pas na bevestiging en zegt dat er geen pushmelding gaat', async () => {

@@ -25,6 +25,12 @@
           message="Deze activiteit is geannuleerd. Hij blijft zichtbaar in de app, maar kan niet meer worden gewijzigd."
         />
       }
+      @if (event()?.status === 'ARCHIVED') {
+        <mu-status-message
+          kind="info"
+          message="Deze activiteit is gearchiveerd en staat niet in de app. Haal hem uit het archief om hem weer te tonen."
+        />
+      }
 
       <fieldset class="mu-fieldset">
         <legend>Over de activiteit</legend>
@@ -108,18 +114,12 @@
             <mat-error>{{ controlError(form.controls.location) }}</mat-error>
           }
         </mat-form-field>
-        <mat-form-field appearance="outline" class="mu-field-full">
-          <mat-label>Link naar afbeelding</mat-label>
-          <input matInput type="url" formControlName="imageUrl" maxlength="500" />
-          <mat-hint>Optioneel, een https-link. Uploaden kan nog niet.</mat-hint>
-          @if (form.controls.imageUrl.invalid) {
-            <mat-error>{{ controlError(form.controls.imageUrl) }}</mat-error>
-          }
-        </mat-form-field>
-        <p class="mu-body-small mu-muted" data-testid="beeldrechten">
-          Gebruik alleen afbeeldingen waarvan de moskee de rechten heeft. Staan er herkenbare mensen
-          op, vraag dan eerst hun toestemming.
-        </p>
+        <mu-image-field
+          label="Afbeelding (optioneel)"
+          [mosqueId]="mosqueId"
+          [idControl]="form.controls.imageId"
+          [urlControl]="form.controls.imageUrl"
+        />
       </fieldset>
 
       <fieldset class="mu-fieldset">
@@ -151,7 +151,7 @@
       @if (saveError(); as message) {
         <mu-status-message kind="error" [message]="message" />
       }
-      @if (event()?.status !== 'CANCELLED') {
+      @if (event()?.status !== 'CANCELLED' && event()?.status !== 'ARCHIVED') {
         <div class="mu-form-actions">
           <button matButton="filled" type="submit" [disabled]="busy()">
             {{ isNew() ? 'Opslaan als concept' : 'Wijzigingen opslaan' }}
@@ -181,6 +181,12 @@
               <dd>{{ when(e.cancelledAt) }}</dd>
             </div>
           }
+          @if (e.archivedAt) {
+            <div>
+              <dt>Gearchiveerd</dt>
+              <dd>{{ when(e.archivedAt) }}</dd>
+            </div>
+          }
           <div>
             <dt>Aanmeldingen</dt>
             <dd>
@@ -200,7 +206,7 @@
         @if (actionError(); as message) {
           <mu-status-message kind="error" [message]="message" />
         }
-        @if (form.dirty && e.status !== 'CANCELLED') {
+        @if (form.dirty && e.status !== 'CANCELLED' && e.status !== 'ARCHIVED') {
           <p class="mu-hint">Sla eerst je wijzigingen op.</p>
         }
         <div class="mu-side-actions">
@@ -242,6 +248,29 @@
               >
                 Activiteit annuleren
               </button>
+              <button
+                matButton="outlined"
+                type="button"
+                [disabled]="busy() || form.dirty"
+                (click)="run('archive')"
+              >
+                Archiveren
+              </button>
+            }
+            @case ('CANCELLED') {
+              <button
+                matButton="outlined"
+                type="button"
+                [disabled]="busy()"
+                (click)="run('archive')"
+              >
+                Archiveren
+              </button>
+            }
+            @case ('ARCHIVED') {
+              <button matButton="filled" type="button" [disabled]="busy()" (click)="run('restore')">
+                Uit het archief halen
+              </button>
             }
           }
           @if (context.isAdmin() && e.registrationEnabled) {
@@ -255,9 +284,11 @@
           [ineligibleReason]="
             e.status === 'CANCELLED'
               ? 'Deze activiteit is geannuleerd.'
-              : e.status === 'DRAFT'
-                ? 'Publiceer de activiteit eerst. Daarna kun je een pushmelding versturen.'
-                : 'Deze activiteit is voorbij.'
+              : e.status === 'ARCHIVED'
+                ? 'Deze activiteit is gearchiveerd.'
+                : e.status === 'DRAFT'
+                  ? 'Publiceer de activiteit eerst. Daarna kun je een pushmelding versturen.'
+                  : 'Deze activiteit is voorbij.'
           "
           [blocked]="form.dirty"
           defaultTitleHint="de titel van de activiteit"

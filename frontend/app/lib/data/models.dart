@@ -59,6 +59,7 @@ enum EventCategory {
   fridayProgram('FRIDAY_PROGRAM', 'Vrijdagprogramma'),
   classes('CLASS', 'Les'),
   youth('YOUTH', 'Jongeren'),
+  recordedEvent('RECORDED_EVENT', 'Opname'),
   community('COMMUNITY', 'Gemeenschap'),
   other('OTHER', 'Overig');
 
@@ -179,6 +180,7 @@ enum MediaCategory {
   quran('QURAN', 'Koran'),
   course('COURSE', 'Cursus'),
   youth('YOUTH', 'Jongeren'),
+  recordedEvent('RECORDED_EVENT', 'Opname'),
   other('OTHER', 'Overig');
 
   const MediaCategory(this.apiValue, this.label);

@@ -58,7 +58,7 @@ Configuratie in `docker/`; de volledige productieopzet staat in [DEPLOYMENT.md](
 | `/inloggen`, `/wachtwoord-instellen` | Iedereen; de tweede met een code uit een uitnodiging of herstel-e-mail |
 | `/platform` | Platformbeheerder: dashboard; daaronder `moskeeen`, `moskeeen/nieuw`, `accounts`, `auditlog` |
 | `/moskeeen` | Moskee kiezen (beheerders van meer dan één moskee) |
-| `/m/:mosqueId/…` | Beheer van één moskee: gegevens (met logo, omslagfoto en configuratie), agenda, media, aankondigingen, beheerders |
+| `/m/:mosqueId/…` | Beheer van één moskee: overzicht met cijfers, gegevens (met logo, omslagfoto, gebedstijden en configuratie), agenda (met archief), media (met inplannen), aankondigingen, pushmeldingen, beheerders |
 
 ## Structuur
 

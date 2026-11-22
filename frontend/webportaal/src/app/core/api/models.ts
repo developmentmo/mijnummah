@@ -55,6 +55,8 @@ export interface AdminMosque {
   description: string | null;
   address: Address;
   contact: Contact;
+  /** Link naar het gebedsrooster van de moskee (website of pdf), of null. */
+  prayerTimesUrl: string | null;
   timeZone: string;
   /** Pad van het logo en de omslagfoto (vanaf de API-basis), of null. */
   logoUrl: string | null;
@@ -78,13 +80,15 @@ export interface MosqueDetailsRequest {
   email: string | null;
   phone: string | null;
   websiteUrl: string | null;
+  prayerTimesUrl: string | null;
   timeZone: string | null;
 }
 
 export type Visibility = 'PUBLIC' | 'REGISTERED_USERS';
 export type EventCategory =
   'LECTURE' | 'FRIDAY_PROGRAM' | 'CLASS' | 'YOUTH' | 'COMMUNITY' | 'OTHER';
-export type EventStatus = 'DRAFT' | 'PUBLISHED' | 'CANCELLED';
+/** ARCHIVED: verborgen in de app, bewaard voor de administratie; terug te zetten. */
+export type EventStatus = 'DRAFT' | 'PUBLISHED' | 'CANCELLED' | 'ARCHIVED';
 
 export interface AdminEvent {
   id: string;
@@ -95,7 +99,11 @@ export interface AdminEvent {
   startsAt: string;
   endsAt: string | null;
   location: string | null;
+  /** Getoonde afbeelding: de geüploade (pad vanaf de API-basis) of de externe link. */
   imageUrl: string | null;
+  /** Alleen de externe link (oudere activiteiten). */
+  externalImageUrl: string | null;
+  imageId: string | null;
   visibility: Visibility;
   registrationEnabled: boolean;
   capacity: number | null;
@@ -104,6 +112,7 @@ export interface AdminEvent {
   status: EventStatus;
   publishedAt: string | null;
   cancelledAt: string | null;
+  archivedAt: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -116,6 +125,7 @@ export interface EventRequest {
   endsAt: string | null;
   location: string | null;
   imageUrl: string | null;
+  imageId: string | null;
   visibility: Visibility;
   registrationEnabled: boolean;
   capacity: number | null;
@@ -133,7 +143,8 @@ export interface Registrant {
   updatedAt: string;
 }
 
-export type MediaCategory = 'LECTURE' | 'KHUTBAH' | 'QURAN' | 'COURSE' | 'YOUTH' | 'OTHER';
+export type MediaCategory =
+  'LECTURE' | 'KHUTBAH' | 'QURAN' | 'COURSE' | 'YOUTH' | 'RECORDED_EVENT' | 'OTHER';
 export type MediaStatus = 'DRAFT' | 'PUBLISHED';
 
 export interface Video {
@@ -153,13 +164,16 @@ export interface AdminMedia {
   video: Video;
   /** Getoonde thumbnail: de eigen afbeelding of die van YouTube. */
   thumbnailUrl: string | null;
-  /** Alleen de zelf ingestelde thumbnail. */
+  /** Alleen de zelf ingestelde externe thumbnail. */
   customThumbnailUrl: string | null;
+  /** De geüploade thumbnail. */
+  thumbnailImageId: string | null;
   durationSeconds: number | null;
   recordedOn: string | null;
   relatedEventId: string | null;
   visibility: Visibility;
   status: MediaStatus;
+  /** In de toekomst: gepland, de video verschijnt dan pas in de app. */
   publishedAt: string | null;
   createdAt: string;
   updatedAt: string;
@@ -172,6 +186,7 @@ export interface MediaRequest {
   category: MediaCategory;
   videoUrl: string;
   thumbnailUrl: string | null;
+  thumbnailImageId: string | null;
   durationSeconds: number | null;
   recordedOn: string | null;
   relatedEventId: string | null;
@@ -186,6 +201,9 @@ export interface AdminAnnouncement {
   title: string;
   body: string;
   featured: boolean;
+  /** Pad van de afbeelding vanaf de API-basis, of null. */
+  imageUrl: string | null;
+  imageId: string | null;
   status: AnnouncementStatus;
   expired: boolean;
   publishedAt: string | null;
@@ -199,6 +217,7 @@ export interface AnnouncementRequest {
   body: string;
   featured: boolean;
   expiresAt: string | null;
+  imageId: string | null;
 }
 
 export interface Administrator {
@@ -291,12 +310,16 @@ export interface StoredImage {
 
 export type PushContentType = 'ANNOUNCEMENT' | 'EVENT' | 'MEDIA';
 export type PushStatus = 'SENDING' | 'SENT' | 'FAILED';
+/** Doelgroep van een eigen bericht: volgers die meldingen over dat onderwerp (of minstens één) aan hebben. */
+export type PushTarget = 'ALL_FOLLOWERS' | 'ANNOUNCEMENTS' | 'EVENTS' | 'MEDIA';
 
 export interface PushNotification {
   id: string;
   mosqueId: string;
-  contentType: PushContentType;
-  contentId: string;
+  /** MESSAGE: een eigen bericht zonder item. */
+  contentType: PushContentType | 'MESSAGE';
+  contentId: string | null;
+  audience: PushTarget | null;
   title: string;
   body: string;
   status: PushStatus;
@@ -320,4 +343,21 @@ export interface PushAudience {
 export interface PushText {
   title: string | null;
   body: string | null;
+}
+
+/** Aantallen voor het dashboard van één moskee. */
+export interface MosqueFigures {
+  followers: number;
+  /** Nieuwe volgers in de laatste 30 dagen. */
+  newFollowers: number;
+  upcomingEvents: number;
+  draftEvents: number;
+  publishedVideos: number;
+  /** Gepubliceerd met een publicatiedatum die nog moet komen. */
+  scheduledVideos: number;
+  draftVideos: number;
+  publishedAnnouncements: number;
+  draftAnnouncements: number;
+  /** Pushmeldingen in de laatste 30 dagen. */
+  recentPushNotifications: number;
 }

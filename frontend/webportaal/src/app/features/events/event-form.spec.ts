@@ -57,6 +57,7 @@ describe('activiteitformulier', () => {
       endsAt: '2026-11-06T19:00:00Z',
       location: null,
       imageUrl: null,
+      imageId: null,
       visibility: 'PUBLIC',
       registrationEnabled: false,
       capacity: null,

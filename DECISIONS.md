@@ -626,3 +626,22 @@ Belangrijke architectuur- en ontwerpbeslissingen. Status: **Voorgesteld** (wacht
   verandert niets, dus de modulegrenzen voor gedrag blijven intact.
 - **Gevolg:** Een hernoemde tabel of kolom breekt het dashboard; `PlatformAdminIT` vangt dat. Bij veel data kan dit
   later een materialized view of cache worden.
+
+## D-059 — Moskeeportaal: afbeeldingen per ID, inplannen, archief, eigen pushberichten
+
+- **Status:** Besloten (fase C)
+- **Besluit:**
+  - Afbeeldingen bij activiteiten, aankondigingen en video's zijn uploads (`image_id`), net als logo en omslag
+    (D-056). De oudere externe links blijven als terugval; het antwoord geeft één `imageUrl`/`thumbnailUrl`.
+  - Een video inplannen gebruikt `published_at` in de toekomst met status `PUBLISHED`; de publieke API filtert op
+    `published_at <= nu`. Er is geen aparte status of geplande taak.
+  - Archiveren is een eigen status `ARCHIVED` met `archived_at`; terugzetten herstelt gepubliceerd of geannuleerd.
+  - Een eigen pushbericht is een `push_notification` met `content_type = MESSAGE` en een doelgroep
+    (`ALL_FOLLOWERS`, `ANNOUNCEMENTS`, `EVENTS`, `MEDIA`) op basis van de bestaande meldingsvoorkeuren.
+  - Gebedstijden zijn in deze fase een link (`prayer_times_url`), geen eigen rooster.
+  - Het moskeedashboard telt met alleen-lezen SQL, zoals D-058, maar per moskee en voor EDITOR en ADMIN.
+- **Waarom:** Zo min mogelijk nieuwe begrippen: inplannen zonder scheduler kan niet mislukken, en een eigen bericht
+  hergebruikt verzending, status en aantallen van de bestaande pushmeldingen. Een rooster met berekening per dag is
+  een eigen project; een link (bijv. naar een pdf of de site van de moskee) dekt de behoefte nu.
+- **Gevolg:** Een ingeplande video krijgt geen automatische pushmelding; de beheerder verstuurt die na het
+  publicatiemoment. De centrale app (fase D) moet gebedstijden en de nieuwe categorie tonen.

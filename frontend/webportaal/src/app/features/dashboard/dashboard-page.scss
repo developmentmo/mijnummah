@@ -97,3 +97,16 @@
   text-decoration: underline;
   cursor: pointer;
 }
+
+.activity {
+  display: grid;
+  gap: var(--mu-space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.activity li {
+  display: grid;
+  gap: var(--mu-space-1);
+}

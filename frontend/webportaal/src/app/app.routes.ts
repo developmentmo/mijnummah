@@ -164,6 +164,12 @@ export const routes: Routes = [
               ),
           },
           {
+            path: 'pushmeldingen',
+            title: title('Pushmeldingen'),
+            loadComponent: () =>
+              import('./features/notifications/push-page').then((m) => m.PushPage),
+          },
+          {
             path: 'gegevens',
             title: title('Moskeegegevens'),
             canActivate: [mosqueAdminGuard],

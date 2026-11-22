@@ -80,21 +80,38 @@ Onder `/admin/mosques/{mosqueId}`:
 
 | Pad | Acties |
 |---|---|
-| (de moskee zelf) | GET (EDITOR), PUT gegevens (ADMIN) |
+| (de moskee zelf) | GET (EDITOR), PUT gegevens (ADMIN), met `prayerTimesUrl` (http(s)-link naar de gebedstijden, optioneel) |
+| `/dashboard` | GET (EDITOR): `{followers, newFollowers, upcomingEvents, draftEvents, publishedVideos, scheduledVideos, draftVideos, publishedAnnouncements, draftAnnouncements, recentPushNotifications}`; "nieuw" en "recent" zijn de laatste 30 dagen |
 | `/images` | POST multipart `file` (EDITOR): afbeelding uploaden, JPEG of PNG tot 10 MB, geeft `{id, path, width, height}`; PUT `{logoImageId, coverImageId}` (ADMIN): logo en omslagfoto instellen, `null` verwijdert |
 | `/administrators` | GET, POST `{email, role}`, PUT `/{id}` `{role}`, DELETE `/{id}` (ADMIN); de laatste ADMIN blijft altijd |
-| `/events` | GET (filters `status`, `from`), POST, GET/PUT/DELETE `/{id}`, POST `/{id}/publish`, `/unpublish`, `/cancel` |
+| `/events` | GET (filters `status`, `from`; `status=ARCHIVED` voor het archief), POST, GET/PUT/DELETE `/{id}`, POST `/{id}/publish`, `/unpublish`, `/cancel`, `/archive`, `/restore` |
 | `/events/{id}/registrations` | GET: wie zich heeft aangemeld (ADMIN; bevat persoonsgegevens) |
-| `/media` | GET (filters `status`, `q`), POST, GET/PUT/DELETE `/{id}`, POST `/{id}/publish`, `/unpublish` |
+| `/media` | GET (filters `status`, `q`), POST, GET/PUT/DELETE `/{id}`, POST `/{id}/publish` (optioneel `{publishedAt}`), `/unpublish` |
 | `/announcements` | GET (filter `status`), POST, GET/PUT/DELETE `/{id}`, POST `/{id}/publish`, `/unpublish` |
+| `/notifications` | GET: verstuurde pushmeldingen met status en aantallen (EDITOR); POST `{title, body, audience}` (ADMIN): eigen bericht, `202` |
+| `/notifications/audience` | GET met `contentType` of `audience`: hoeveel volgers en toestellen een melding nu bereikt |
 
 Nieuwe content is altijd eerst een concept. Regels: een activiteit met aanmeldingen kan niet terug naar concept
 (annuleer haar), alleen concepten zonder aanmeldingen kunnen worden verwijderd, annuleren is definitief, de
 capaciteit kan niet onder het aantal aanmeldingen. Een aankondiging publiceren verstuurt geen pushmelding.
 Een video wordt opgegeven als YouTube-link of video-ID; de backend slaat alleen de verwijzing op.
 
+Afbeeldingen bij content: `imageId` (activiteit, aankondiging) of `thumbnailImageId` (video) verwijst naar een
+upload van dezelfde moskee (`404 IMAGE_NOT_FOUND` anders). Het antwoord geeft `imageUrl` / `thumbnailUrl` als pad
+`/api/v1/public/images/{id}`, of de oudere externe link als er geen upload is.
+
+Archiveren kan bij een gepubliceerde of geannuleerde activiteit (een concept geeft `422 EVENT_NOT_PUBLISHED`). Een
+gearchiveerde activiteit verdwijnt uit de app en de publieke API, kan niet worden gewijzigd (`EVENT_ARCHIVED`) en
+komt met `/restore` terug in haar vorige status.
+
+Een video publiceren met `publishedAt` in de toekomst plant haar in: ze staat op `PUBLISHED`, maar verschijnt pas
+vanaf dat moment in de app; een pushmelding kan pas dan (`CONTENT_NOT_PUBLISHED`). Een datum in het verleden kan
+(bijv. de opnamedatum); meer dan 366 dagen vooruit geeft `400 INVALID_PUBLICATION_DATE`. Zonder datum blijft een
+eerder gekozen datum staan.
+
 Een pushmelding (POST `/{events|media|announcements}/{id}/push`, ADMIN) gaat naar de actieve volgers van deze
-moskee met het onderwerp aan. (Tot fase D zijn toestellen nog aan de moskee van de app gekoppeld, V13; met één
+moskee met het onderwerp aan. Een eigen bericht (POST `/notifications`) kiest de doelgroep: `ALL_FOLLOWERS`
+(volgers met minstens één onderwerp aan), `ANNOUNCEMENTS`, `EVENTS` of `MEDIA`. (Tot fase D zijn toestellen nog aan de moskee van de app gekoppeld, V13; met één
 centrale app wordt dat de gebruiker.)
 
 ### Platform
