@@ -23,13 +23,14 @@ record MediaRequest(
         @Schema(description = "YouTube-link of video-ID, bijv. https://www.youtube.com/watch?v=dQw4w9WgXcQ")
         @NotBlank @Size(max = 500) String videoUrl,
         @Size(max = 500) @Pattern(regexp = "^https://\\S+$", message = "must be an https URL") String thumbnailUrl,
+        UUID thumbnailImageId,
         @Min(1) Integer durationSeconds,
         LocalDate recordedOn,
         UUID relatedEventId,
         Visibility visibility) {
 
     MediaInput toInput() {
-        return new MediaInput(title, description, speaker, category, videoUrl, thumbnailUrl, durationSeconds,
+        return new MediaInput(title, description, speaker, category, videoUrl, thumbnailUrl, thumbnailImageId, durationSeconds,
                 recordedOn, relatedEventId, visibility);
     }
 }

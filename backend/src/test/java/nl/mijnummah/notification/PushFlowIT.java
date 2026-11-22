@@ -185,6 +185,47 @@ class PushFlowIT extends AbstractIntegrationTest {
     }
 
     @Test
+    void anAdminSendsAFreeMessageToTheChosenAudience() {
+        Audience people = audience();
+        Account editor = user("redacteur");
+        grant(mosqueId, editor, "EDITOR");
+        String path = adminPath(mosqueId, "notifications");
+
+        ApiResponse all = api.get(path + "/audience?audience=ALL_FOLLOWERS", admin.token());
+        assertThat(all.body().get("followers").asInt()).as("active followers with any topic on").isEqualTo(2);
+        ApiResponse news = api.get(path + "/audience?audience=ANNOUNCEMENTS", admin.token());
+        assertThat(news.body().get("followers").asInt()).isEqualTo(1);
+
+        Map<String, Object> message = Map.of("title", "Ramadan Mubarak", "body", "Het eerste tarawih-gebed is vanavond.",
+                "audience", "ANNOUNCEMENTS");
+        assertThat(api.post(path, message, editor.token()).status()).isEqualTo(403);
+        assertThat(api.post(path, Map.of("title", "", "body", "x", "audience", "ANNOUNCEMENTS"), admin.token())
+                .status()).isEqualTo(400);
+
+        ApiResponse sent = api.post(path, message, admin.token());
+        assertThat(sent.status()).isEqualTo(202);
+        assertThat(sent.field("contentType")).isEqualTo("MESSAGE");
+        assertThat(sent.field("audience")).isEqualTo("ANNOUNCEMENTS");
+        assertThat(sent.body().get("contentId").isNull()).isTrue();
+        assertThat(sent.body().get("recipientCount").asInt()).isEqualTo(2);
+        awaitCompleted();
+        assertThat(FCM.messages).extracting(m -> m.path("token").asString())
+                .containsExactlyInAnyOrder(people.wantsEverything() + "-telefoon", people.wantsEverything() + "-tablet");
+        JsonNode delivered = FCM.messages.getFirst();
+        assertThat(delivered.path("data").path("type").asString()).isEqualTo("message");
+        assertThat(delivered.path("data").path("mosqueId").asString()).isEqualTo(mosqueId.toString());
+
+        // a second message is allowed (unlike a second notification about the same item)
+        FCM.reset();
+        ApiResponse toEveryone = api.post(path, Map.of("title", "Eid Mubarak", "body", "Het Eid-gebed is om 8:30.",
+                "audience", "ALL_FOLLOWERS"), admin.token());
+        assertThat(toEveryone.status()).isEqualTo(202);
+        assertThat(toEveryone.body().get("recipientCount").asInt()).isEqualTo(3);
+        awaitCompleted();
+        assertThat(api.get(path, editor.token()).body().get("items").size()).isEqualTo(2);
+    }
+
+    @Test
     void devicesWhoseAppIsGoneAreCountedAsFailedAndRemoved() {
         Account follower = follower("volger", Map.of());
         registerDevice(follower, "dead-oude-telefoon");

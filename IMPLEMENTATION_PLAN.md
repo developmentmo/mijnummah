@@ -27,8 +27,8 @@ moskeeën. Het herontwerp (plan in `herontwerp/plan.md` in de projectbestanden) 
 | Fase | Onderwerp | Status |
 |---|---|---|
 | A | Fundament: Liquibase, één merk, moskeestatus, auditlog, afbeeldingsopslag | Voltooid (PR #15 gemerged) |
-| B | Superuser-portaal | Geïmplementeerd; PR wacht op beoordeling |
-| C | Moskeebeheerportaal | Nog niet begonnen |
+| B | Superuser-portaal | Voltooid (PR #16 gemerged) |
+| C | Moskeebeheerportaal | Geïmplementeerd; PR wacht op beoordeling |
 | D | Centrale mobiele app | Nog niet begonnen |
 | E | Pilot Noeroel Islam als eerste tenant via het portaal | Nog niet begonnen |
 | F | Productie (alleen met expliciete toestemming) | Nog niet begonnen |
@@ -82,6 +82,28 @@ Niet gedaan of afwijkend:
 
 - Routes onder `/admin/platform` en `/platform` in plaats van `/superadmin` (D-058).
 - De publieke activiteiten tonen nog niet dat aanmelden voor een moskee uit staat (fase D).
+- Geen browser-end-to-end-tests; wel unit- en integratietests.
+
+## Fase C — Moskeebeheerportaal
+
+Gebouwd:
+
+- Overzicht per moskee met volgers (en nieuwe volgers), komende activiteiten, video's (ook ingepland en concept),
+  aankondigingen, pushmeldingen, eerstvolgende activiteiten en, voor beheerders, recente acties uit het auditlog.
+- Afbeelding uploaden bij activiteiten en aankondigingen, thumbnail bij video's; alleen eigen afbeeldingen van de
+  moskee, met een melding over beeldrechten (D-059).
+- Activiteiten archiveren en terugzetten; een gearchiveerde activiteit is weg uit de app en niet te wijzigen.
+- Video's: publicatiedatum kiezen (inplannen of terugdateren), categorie "Opname van een activiteit".
+- Moskeegegevens: link naar de gebedstijden.
+- Pagina Pushmeldingen: eigen bericht naar een gekozen doelgroep (ADMIN), met bereik vooraf, en alle verstuurde
+  meldingen met status en aantallen afgeleverd en mislukt.
+- App: geüploade afbeeldingen komen van de eigen API; de nieuwe videocategorie heet "Opname".
+- Database: `019_mosque_portal_content` (alleen toevoegingen en ruimere checks).
+
+Niet gedaan of afwijkend:
+
+- Gebedstijden zijn een link, geen rooster (D-059). De app toont de link nog niet (fase D).
+- Een pushmelding bij publiceren blijft een aparte, bewuste stap naast publiceren.
 - Geen browser-end-to-end-tests; wel unit- en integratietests.
 
 ---

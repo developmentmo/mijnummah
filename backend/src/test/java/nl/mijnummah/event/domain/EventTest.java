@@ -48,17 +48,17 @@ class EventTest {
     void detailsRejectAnEndBeforeTheStartAndCapacityWithoutRegistration() {
         Instant start = NOW.plus(Duration.ofDays(1));
         assertThatThrownBy(() -> new EventDetails("Les", null, EventCategory.CLASS, start, start, null, null, null,
-                false, null)).isInstanceOf(InvalidEventException.class);
+                null, false, null)).isInstanceOf(InvalidEventException.class);
         assertThatThrownBy(() -> new EventDetails("Les", null, EventCategory.CLASS, start, null, null, null, null,
-                false, 10)).isInstanceOf(InvalidEventException.class);
+                null, false, 10)).isInstanceOf(InvalidEventException.class);
         assertThatThrownBy(() -> new EventDetails("Les", null, EventCategory.CLASS, start, null, null, null, null,
-                true, 0)).isInstanceOf(InvalidEventException.class);
+                null, true, 0)).isInstanceOf(InvalidEventException.class);
     }
 
     @Test
     void detailsTrimTextAndDefaultToPublicVisibility() {
-        var details = new EventDetails("  Les  ", "  ", EventCategory.CLASS, NOW, null, " Zaal 1 ", null, null, false,
-                null);
+        var details = new EventDetails("  Les  ", "  ", EventCategory.CLASS, NOW, null, " Zaal 1 ", null, null, null,
+                false, null);
         assertThat(details.title()).isEqualTo("Les");
         assertThat(details.description()).isNull();
         assertThat(details.location()).isEqualTo("Zaal 1");
@@ -73,13 +73,13 @@ class EventTest {
         assertThat(withoutEnd.isOver(start)).isTrue();
 
         Event withEnd = Event.draft(mosqueId, new EventDetails("Les", null, EventCategory.CLASS, start,
-                start.plus(Duration.ofHours(2)), null, null, Visibility.PUBLIC, false, null), actor, NOW);
+                start.plus(Duration.ofHours(2)), null, null, null, Visibility.PUBLIC, false, null), actor, NOW);
         assertThat(withEnd.isOver(start.plus(Duration.ofHours(1)))).isFalse();
         assertThat(withEnd.isOver(start.plus(Duration.ofHours(2)))).isTrue();
     }
 
     private EventDetails details() {
         return new EventDetails("Lezing", null, EventCategory.LECTURE, NOW.plus(Duration.ofDays(3)), null, null, null,
-                Visibility.PUBLIC, true, 50);
+                null, Visibility.PUBLIC, true, 50);
     }
 }

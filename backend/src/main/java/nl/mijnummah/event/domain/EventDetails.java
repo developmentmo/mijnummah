@@ -2,8 +2,12 @@ package nl.mijnummah.event.domain;
 
 import java.time.Instant;
 import java.util.Objects;
+import java.util.UUID;
 
-/** The editable fields of an event, validated together. Text is trimmed; blank optional fields become null. */
+/**
+ * The editable fields of an event, validated together. Text is trimmed; blank optional fields become null.
+ * {@code imageId} is an uploaded image of the same mosque; {@code imageUrl} an external https image (older events).
+ */
 public record EventDetails(
         String title,
         String description,
@@ -12,6 +16,7 @@ public record EventDetails(
         Instant endsAt,
         String location,
         String imageUrl,
+        UUID imageId,
         Visibility visibility,
         boolean registrationEnabled,
         Integer capacity) {

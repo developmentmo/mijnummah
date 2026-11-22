@@ -104,14 +104,12 @@
             <mat-hint>Optioneel, bijv. de lezing waarvan dit de opname is</mat-hint>
           }
         </mat-form-field>
-        <mat-form-field appearance="outline" class="mu-field-full">
-          <mat-label>Eigen thumbnail (link)</mat-label>
-          <input matInput type="url" formControlName="thumbnailUrl" maxlength="500" />
-          <mat-hint>Optioneel. Leeg = de afbeelding van YouTube.</mat-hint>
-          @if (form.controls.thumbnailUrl.invalid) {
-            <mat-error>{{ controlError(form.controls.thumbnailUrl) }}</mat-error>
-          }
-        </mat-form-field>
+        <mu-image-field
+          label="Eigen thumbnail (optioneel, anders die van YouTube)"
+          [mosqueId]="mosqueId"
+          [idControl]="form.controls.thumbnailImageId"
+          [urlControl]="form.controls.thumbnailUrl"
+        />
         <mat-radio-group
           formControlName="visibility"
           aria-label="Wie ziet deze video?"
@@ -137,9 +135,13 @@
     @if (media(); as m) {
       <aside class="mu-side-panel" aria-labelledby="status-titel">
         <h2 id="status-titel" class="mu-title-medium">Status</h2>
-        <mu-status-badge [status]="m.status" [label]="statusLabels[m.status]" />
-        @if (m.thumbnailUrl) {
-          <img class="thumb" [src]="m.thumbnailUrl" alt="" />
+        @if (isScheduled(m)) {
+          <mu-status-badge status="SCHEDULED" label="Gepland" />
+        } @else {
+          <mu-status-badge [status]="m.status" [label]="statusLabels[m.status]" />
+        }
+        @if (thumbnail(m); as src) {
+          <img class="thumb" [src]="src" alt="" />
         }
         <a [href]="m.video.watchUrl" target="_blank" rel="noopener noreferrer"
           >Bekijken op YouTube</a
@@ -147,7 +149,7 @@
         <dl>
           @if (m.publishedAt) {
             <div>
-              <dt>Gepubliceerd</dt>
+              <dt>{{ isScheduled(m) ? 'Verschijnt in de app op' : 'Publicatiedatum' }}</dt>
               <dd>{{ when(m.publishedAt) }}</dd>
             </div>
           }
@@ -192,11 +194,46 @@
             Verwijderen
           </button>
         </div>
+        <fieldset class="mu-fieldset publish-at">
+          <legend class="mu-title-small">Publicatiedatum</legend>
+          <p class="mu-hint">
+            Kies een datum in de toekomst om de video in te plannen, of een eerdere datum voor een
+            oudere opname. Tijden in {{ context.timeZone() }}.
+          </p>
+          <div class="mu-form-row">
+            <mat-form-field appearance="outline">
+              <mat-label>Datum</mat-label>
+              <input matInput type="date" [formControl]="publishDate" />
+              @if (publishDate.invalid) {
+                <mat-error>Kies een datum.</mat-error>
+              }
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Tijd</mat-label>
+              <input matInput type="time" [formControl]="publishTime" />
+              @if (publishTime.invalid) {
+                <mat-error>Kies een tijd.</mat-error>
+              }
+            </mat-form-field>
+          </div>
+          <button
+            matButton="outlined"
+            type="button"
+            [disabled]="busy() || form.dirty"
+            (click)="publishAt()"
+          >
+            {{ m.status === 'DRAFT' ? 'Publiceren op deze datum' : 'Publicatiedatum wijzigen' }}
+          </button>
+        </fieldset>
         <mu-push-panel
           contentType="MEDIA"
           [contentId]="m.id"
-          [eligible]="m.status === 'PUBLISHED'"
-          ineligibleReason="Publiceer de video eerst. Daarna kun je een pushmelding versturen."
+          [eligible]="m.status === 'PUBLISHED' && !isScheduled(m)"
+          [ineligibleReason]="
+            isScheduled(m)
+              ? 'De video is ingepland. Verstuur een pushmelding als hij in de app staat.'
+              : 'Publiceer de video eerst. Daarna kun je een pushmelding versturen.'
+          "
           [blocked]="form.dirty"
           defaultTitleHint="de titel van de video"
           defaultBodyHint="soort video en spreker, bijvoorbeeld ‘Lezing van Imam Yusuf’"

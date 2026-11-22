@@ -31,16 +31,20 @@ record MediaResponse(UUID id, String title, String description, String speaker, 
                 view.embedUrl());
     }
 
-    /** Admin view: adds status, the raw thumbnail setting and audit timestamps. */
+    /**
+     * Admin view: adds status, the raw thumbnail settings and audit timestamps. A {@code publishedAt} in the future
+     * means the item is scheduled: it becomes visible in the app at that moment.
+     */
     record Admin(UUID id, UUID mosqueId, String title, String description, String speaker, MediaCategory category,
-                 Video video, String thumbnailUrl, String customThumbnailUrl, Integer durationSeconds,
+                 Video video, String thumbnailUrl, String customThumbnailUrl, UUID thumbnailImageId,
+                 Integer durationSeconds,
                  LocalDate recordedOn, UUID relatedEventId, Visibility visibility, MediaStatus status,
                  Instant publishedAt, Instant createdAt, Instant updatedAt) {
 
         static Admin from(MediaView view) {
             var d = view.details();
             return new Admin(view.id(), view.mosqueId(), d.title(), d.description(), d.speaker(), d.category(),
-                    videoOf(view), view.thumbnailUrl(), d.thumbnailUrl(), d.durationSeconds(), d.recordedOn(),
+                    videoOf(view), view.thumbnailUrl(), d.thumbnailUrl(), d.thumbnailImageId(), d.durationSeconds(), d.recordedOn(),
                     d.relatedEventId(), d.visibility(), view.status(), view.publishedAt(), view.createdAt(),
                     view.updatedAt());
         }

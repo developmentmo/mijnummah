@@ -1,6 +1,7 @@
 package nl.mijnummah.media.application;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -34,10 +35,13 @@ import nl.mijnummah.notification.PushNotificationView;
 import nl.mijnummah.notification.PushNotifications;
 import nl.mijnummah.notification.PushRequest;
 import nl.mijnummah.notification.PushText;
+import nl.mijnummah.storage.ImageStorage;
 
 /** Media management for a mosque's administrators and editors ({@link MosquePermission#MANAGE_CONTENT}). */
 @Service
 public class MediaAdminService {
+
+    private static final Duration MAX_SCHEDULE_AHEAD = Duration.ofDays(366);
 
     private final MediaItemRepository items;
     private final MediaViews views;
@@ -45,18 +49,20 @@ public class MediaAdminService {
     private final EventDirectory events;
     private final MosqueAccessService access;
     private final PushNotifications push;
+    private final ImageStorage images;
     private final ApplicationEventPublisher audit;
     private final Clock clock;
 
     public MediaAdminService(MediaItemRepository items, MediaViews views, VideoProviders providers,
                              EventDirectory events, MosqueAccessService access, PushNotifications push,
-                             ApplicationEventPublisher audit, Clock clock) {
+                             ImageStorage images, ApplicationEventPublisher audit, Clock clock) {
         this.items = items;
         this.views = views;
         this.providers = providers;
         this.events = events;
         this.access = access;
         this.push = push;
+        this.images = images;
         this.audit = audit;
         this.clock = clock;
     }
@@ -99,10 +105,15 @@ public class MediaAdminService {
     }
 
     @Transactional
-    public MediaView publish(AuthenticatedUser actor, UUID mosqueId, UUID mediaId) {
+    public MediaView publish(AuthenticatedUser actor, UUID mosqueId, UUID mediaId, Instant publishAt) {
         access.require(actor, mosqueId, MosquePermission.MANAGE_CONTENT);
         MediaItem item = load(mosqueId, mediaId);
-        item.publish(actor.id(), Instant.now(clock));
+        Instant now = Instant.now(clock);
+        if (publishAt != null && publishAt.isAfter(now.plus(MAX_SCHEDULE_AHEAD))) {
+            throw new InvalidMediaException("INVALID_PUBLICATION_DATE",
+                    "The publication date can be at most a year ahead.");
+        }
+        item.publish(actor.id(), now, publishAt);
         audit.publishEvent(AuditEvent.of(actor.id(), mosqueId, "VIDEO_PUBLISHED", "VIDEO", mediaId));
         return views.of(item);
     }
@@ -124,8 +135,9 @@ public class MediaAdminService {
     public PushNotificationView sendPush(AuthenticatedUser actor, UUID mosqueId, UUID mediaId, PushText text) {
         access.require(actor, mosqueId, MosquePermission.MANAGE_CONTENT);
         MediaItem item = load(mosqueId, mediaId);
-        if (item.getStatus() != MediaStatus.PUBLISHED) {
-            throw new PushContentNotPublishedException("Only a published video can be sent as a push notification.");
+        if (!item.isLive(Instant.now(clock))) {
+            throw new PushContentNotPublishedException(
+                    "Only a published video whose publication date has come can be sent as a push notification.");
         }
         MediaDetails details = item.details();
         return push.send(actor, new PushRequest(mosqueId, PushContentType.MEDIA, mediaId,
@@ -139,6 +151,7 @@ public class MediaAdminService {
             case QURAN -> "Koranrecitatie";
             case COURSE -> "Les";
             case YOUTH -> "Video voor jongeren";
+            case RECORDED_EVENT -> "Opname van een activiteit";
             case OTHER -> "Video";
         };
         return details.speaker() == null ? kind + " nu te bekijken in de app" : kind + " van " + details.speaker();
@@ -162,8 +175,11 @@ public class MediaAdminService {
         if (input.relatedEventId() != null && !events.existsInMosque(input.relatedEventId(), mosqueId)) {
             throw new InvalidMediaException("INVALID_RELATED_EVENT", "relatedEventId is not an event of this mosque.");
         }
+        if (input.thumbnailImageId() != null) {
+            images.requireOwnedBy(input.thumbnailImageId(), mosqueId);
+        }
         return new MediaDetails(input.title(), input.description(), input.speaker(), input.category(), video,
-                input.thumbnailUrl(), input.durationSeconds(), input.recordedOn(), input.relatedEventId(),
+                input.thumbnailUrl(), input.thumbnailImageId(), input.durationSeconds(), input.recordedOn(), input.relatedEventId(),
                 input.visibility());
     }
 

@@ -5,7 +5,10 @@ import java.time.ZoneId;
 import java.util.Locale;
 import java.util.Objects;
 
-/** The editable profile of a mosque. Text is trimmed; blank optional fields become null. */
+/**
+ * The editable profile of a mosque. Text is trimmed; blank optional fields become null. {@code prayerTimesUrl} links
+ * to the mosque's own prayer timetable (website or PDF).
+ */
 public record MosqueDetails(
         String name,
         String description,
@@ -16,6 +19,7 @@ public record MosqueDetails(
         String email,
         String phone,
         String websiteUrl,
+        String prayerTimesUrl,
         String timeZone) {
 
     public MosqueDetails {
@@ -28,6 +32,7 @@ public record MosqueDetails(
         email = email == null || email.isBlank() ? null : email.trim().toLowerCase(Locale.ROOT);
         phone = trimToNull(phone);
         websiteUrl = trimToNull(websiteUrl);
+        prayerTimesUrl = trimToNull(prayerTimesUrl);
         timeZone = timeZone == null || timeZone.isBlank() ? "Europe/Amsterdam" : timeZone.trim();
         try {
             ZoneId.of(timeZone);

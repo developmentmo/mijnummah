@@ -2,9 +2,10 @@ package nl.mijnummah.announcement.domain;
 
 import java.time.Instant;
 import java.util.Objects;
+import java.util.UUID;
 
-/** The editable fields of an announcement. */
-public record AnnouncementDetails(String title, String body, boolean featured, Instant expiresAt) {
+/** The editable fields of an announcement; {@code imageId} is an uploaded image of the same mosque. */
+public record AnnouncementDetails(String title, String body, boolean featured, Instant expiresAt, UUID imageId) {
 
     public AnnouncementDetails {
         title = Objects.requireNonNull(trimToNull(title), "title");

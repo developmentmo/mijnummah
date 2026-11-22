@@ -47,6 +47,9 @@ public class MediaItem {
     @Column(name = "thumbnail_url", length = 500)
     private String thumbnailUrl;
 
+    @Column(name = "thumbnail_image_id")
+    private UUID thumbnailImageId;
+
     @Column(name = "duration_seconds")
     private Integer durationSeconds;
 
@@ -102,13 +105,24 @@ public class MediaItem {
         apply(details, actorId, now);
     }
 
-    /** The first publication time is kept, so re-publishing does not move an item to the top of the list. */
-    public void publish(UUID actorId, Instant now) {
+    /**
+     * Publishes at {@code publishAt} when given: in the past (an older recording) or in the future (the item becomes
+     * visible at that moment). Without it the first publication time is kept, so re-publishing does not move an
+     * item to the top of the list.
+     */
+    public void publish(UUID actorId, Instant now, Instant publishAt) {
         status = MediaStatus.PUBLISHED;
-        if (publishedAt == null) {
+        if (publishAt != null) {
+            publishedAt = publishAt;
+        } else if (publishedAt == null) {
             publishedAt = now;
         }
         touch(actorId, now);
+    }
+
+    /** Published and its publication time has come. */
+    public boolean isLive(Instant now) {
+        return status == MediaStatus.PUBLISHED && publishedAt != null && !publishedAt.isAfter(now);
     }
 
     public void unpublish(UUID actorId, Instant now) {
@@ -124,6 +138,7 @@ public class MediaItem {
         videoProvider = details.video().provider();
         videoId = details.video().videoId();
         thumbnailUrl = details.thumbnailUrl();
+        thumbnailImageId = details.thumbnailImageId();
         durationSeconds = details.durationSeconds();
         recordedOn = details.recordedOn();
         relatedEventId = details.relatedEventId();
@@ -138,7 +153,7 @@ public class MediaItem {
 
     public MediaDetails details() {
         return new MediaDetails(title, description, speaker, category, new VideoReference(videoProvider, videoId),
-                thumbnailUrl, durationSeconds, recordedOn, relatedEventId, visibility);
+                thumbnailUrl, thumbnailImageId, durationSeconds, recordedOn, relatedEventId, visibility);
     }
 
     public UUID getId() {

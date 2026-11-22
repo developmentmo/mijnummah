@@ -68,6 +68,7 @@ export class Shell {
         { label: 'Agenda', path: `${base}/agenda` },
         { label: 'Lezingen en video’s', path: `${base}/media` },
         { label: 'Aankondigingen', path: `${base}/aankondigingen` },
+        { label: 'Pushmeldingen', path: `${base}/pushmeldingen` },
       ];
       if (this.context.isAdmin()) {
         items.push(

@@ -18,6 +18,7 @@ void main() {
   test('onbekende categorieën worden Overig', () {
     expect(Event.fromJson(eventJson(category: 'NIEUW')).category, EventCategory.other);
     expect(MediaItem.fromJson(mediaJson(category: 'NIEUW')).category, MediaCategory.other);
+    expect(MediaItem.fromJson(mediaJson(category: 'RECORDED_EVENT')).category, MediaCategory.recordedEvent);
   });
 
   test('leest een media-item zonder video', () {

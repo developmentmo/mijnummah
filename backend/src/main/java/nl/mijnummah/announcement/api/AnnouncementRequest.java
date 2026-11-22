@@ -1,6 +1,7 @@
 package nl.mijnummah.announcement.api;
 
 import java.time.Instant;
+import java.util.UUID;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -11,9 +12,10 @@ record AnnouncementRequest(
         @NotBlank @Size(max = 150) String title,
         @NotBlank @Size(max = 5000) String body,
         Boolean featured,
-        Instant expiresAt) {
+        Instant expiresAt,
+        UUID imageId) {
 
     AnnouncementDetails toDetails() {
-        return new AnnouncementDetails(title, body, Boolean.TRUE.equals(featured), expiresAt);
+        return new AnnouncementDetails(title, body, Boolean.TRUE.equals(featured), expiresAt, imageId);
     }
 }

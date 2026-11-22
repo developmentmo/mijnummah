@@ -15,17 +15,17 @@ benoemde constraints (`pk_`, `fk_`, `uk_`, `ix_`, `ck_`), statuswaarden als teks
 |---|---|---|
 | `app_user` | Accounts, platformrol (`PLATFORM_ADMIN`, `USER`), status, laatste login met wachtwoord (`last_login_at`, 018) | E-mail uniek en verplicht in kleine letters; wachtwoord alleen als adaptieve hash |
 | `refresh_token` | Refresh tokens als SHA-256-hash, per loginfamilie | Hash uniek; vervaldatum na aanmaak |
-| `mosque` | De tenant: slug, naam, adres, contact, tijdzone, status (`ACTIVE`, `INACTIVE`, `BLOCKED`), logo en omslagfoto | Slug uniek en `^[a-z0-9]+(-[a-z0-9]+)*$`; logo en omslag verwijzen naar `image` (`ON DELETE SET NULL`) |
+| `mosque` | De tenant: slug, naam, adres, contact, link naar gebedstijden (`prayer_times_url`, 019), tijdzone, status (`ACTIVE`, `INACTIVE`, `BLOCKED`), logo en omslagfoto | Slug uniek en `^[a-z0-9]+(-[a-z0-9]+)*$`; logo en omslag verwijzen naar `image` (`ON DELETE SET NULL`) |
 | `mosque_settings` | Configuratie per moskee (017): aanmelden en push aan of uit | PK en FK op `mosque` (`ON DELETE CASCADE`); bestaande moskeeën kregen een rij met alles aan |
 | `mosque_administrator` | Rol per gebruiker per moskee (`ADMIN`, `EDITOR`) | Uniek per (moskee, gebruiker) |
-| `event` | Activiteiten | `ends_at > starts_at`; capaciteit > 0 en alleen met aanmelding; gepubliceerd heeft `published_at` |
+| `event` | Activiteiten, met optionele afbeelding (`image_id`, 019) en archief (`ARCHIVED`, `archived_at`) | `ends_at > starts_at`; capaciteit > 0 en alleen met aanmelding; gepubliceerd heeft `published_at`; gearchiveerd heeft `archived_at` |
 | `event_registration` | Aanmeldingen (`CONFIRMED`, `CANCELLED`) | Uniek per (activiteit, gebruiker); FK op (event_id, mosque_id) |
-| `media_item` | Verwijzing naar een externe video (`YOUTUBE` + video-ID) | Video uniek per moskee; gerelateerde activiteit via FK op (event_id, mosque_id) |
-| `announcement` | Aankondigingen met optionele vervaldatum | Gepubliceerd heeft `published_at` |
+| `media_item` | Verwijzing naar een externe video (`YOUTUBE` + video-ID), met optionele thumbnail (`thumbnail_image_id`, 019); `published_at` mag in de toekomst liggen (ingepland) | Video uniek per moskee; gerelateerde activiteit via FK op (event_id, mosque_id) |
+| `announcement` | Aankondigingen met optionele vervaldatum en afbeelding (`image_id`, 019) | Gepubliceerd heeft `published_at` |
 | `mosque_follow` | Wie welke moskee volgt | PK (gebruiker, moskee) |
 | `notification_preference` | Afwijkende voorkeur per onderwerp (`ANNOUNCEMENTS`, `EVENTS`, `MEDIA`) | FK op de volgrelatie met `ON DELETE CASCADE` |
 | `push_device` | Pushtoken van een geïnstalleerde app: gebruiker, moskee van de app, platform | Token uniek; `mosque_id` (V13) mag alleen leeg zijn bij tokens van vóór fase 7, die nooit worden aangeschreven |
-| `push_notification` | Verstuurde pushmelding per content-item met aantallen | Uniek per content-item; aantallen kloppen met elkaar |
+| `push_notification` | Verstuurde pushmelding per content-item, of een eigen bericht (`MESSAGE`, zonder content-item, met `audience`; 019), met aantallen | Uniek per content-item; `MESSAGE` precies als `content_id` leeg is; aantallen kloppen met elkaar |
 | `audit_log` | Belangrijke beheeractie: wanneer, wie, welke moskee, actie, soort en ID van het object (015) | Actie in hoofdletters; `actor_user_id` wordt leeg als het account verdwijnt; na `RETENTION_AUDIT_LOG` (standaard 730 dagen) verwijderd |
 | `image` | Geüploade afbeelding: moskee, type (`image/jpeg`, `image/png`), afmetingen; het bestand staat in de afbeeldingenmap | Hoort bij precies één moskee (`ON DELETE CASCADE`); een moskee kan alleen eigen afbeeldingen koppelen |
 
@@ -44,8 +44,9 @@ voor optimistic locking: als twee beheerders tegelijk hetzelfde item opslaan, kr
 - Een pushtoken hoort bij de app van één moskee (`push_device.mosque_id`); versturen selecteert op die moskee, zodat
   een melding van moskee B nooit in de app van moskee A verschijnt.
 - Indexen op `(mosque_id, status, starts_at)` en `(mosque_id, status, published_at)` dienen de publieke lijsten.
-- Een afbeelding (`image`) hoort bij één moskee; koppelen als logo of omslag controleert dat de afbeelding van
-  dezelfde moskee is (`IMAGE_NOT_FOUND` anders, getest in `ImageFlowIT`).
+- Een afbeelding (`image`) hoort bij één moskee; koppelen als logo, omslag of afbeelding bij content controleert dat
+  de afbeelding van dezelfde moskee is (`IMAGE_NOT_FOUND` anders, getest in `ImageFlowIT` en `MosquePortalIT`).
+  Wordt een afbeelding verwijderd, dan wordt de verwijzing leeg (`ON DELETE SET NULL`).
 
 ## Wat er niet in staat
 

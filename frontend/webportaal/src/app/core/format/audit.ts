@@ -15,6 +15,8 @@ const ACTIONS: Record<string, string> = {
   EVENT_PUBLISHED: 'Activiteit gepubliceerd',
   EVENT_UNPUBLISHED: 'Activiteit offline gehaald',
   EVENT_CANCELLED: 'Activiteit geannuleerd',
+  EVENT_ARCHIVED: 'Activiteit gearchiveerd',
+  EVENT_RESTORED: 'Activiteit uit het archief gehaald',
   EVENT_DELETED: 'Activiteit verwijderd',
   VIDEO_CREATED: 'Video aangemaakt',
   VIDEO_UPDATED: 'Video gewijzigd',

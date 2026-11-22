@@ -13,6 +13,7 @@ import nl.mijnummah.event.EventSummary;
 import nl.mijnummah.media.domain.MediaItem;
 import nl.mijnummah.media.domain.VideoProvider;
 import nl.mijnummah.media.domain.VideoProviders;
+import nl.mijnummah.storage.ImageStorage;
 
 @Component
 class MediaViews {
@@ -42,7 +43,8 @@ class MediaViews {
         var details = item.details();
         VideoProvider provider = providers.get(details.video().provider());
         String videoId = details.video().videoId();
-        String thumbnail = details.thumbnailUrl() != null ? details.thumbnailUrl() : provider.defaultThumbnailUrl(videoId);
+        String thumbnail = details.thumbnailImageId() != null ? ImageStorage.publicPath(details.thumbnailImageId())
+                : details.thumbnailUrl() != null ? details.thumbnailUrl() : provider.defaultThumbnailUrl(videoId);
         return new MediaView(item.getId(), item.getMosqueId(), details, provider.watchUrl(videoId),
                 provider.embedUrl(videoId), thumbnail, relatedEvent, item.getStatus(), item.getPublishedAt(),
                 item.getCreatedAt(), item.getUpdatedAt());

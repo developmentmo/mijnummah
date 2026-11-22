@@ -35,6 +35,7 @@ describe('Shell', () => {
       'Agenda',
       'Lezingen en video’s',
       'Aankondigingen',
+      'Pushmeldingen',
       'Moskeegegevens',
       'Beheerders',
     ]);
@@ -47,6 +48,7 @@ describe('Shell', () => {
       'Agenda',
       'Lezingen en video’s',
       'Aankondigingen',
+      'Pushmeldingen',
     ]);
   });
 

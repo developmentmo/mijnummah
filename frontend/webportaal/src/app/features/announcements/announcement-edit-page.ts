@@ -25,6 +25,7 @@ import { applyServerErrors, controlError } from '../../shared/forms/form-errors'
 import { HasUnsavedChanges } from '../../shared/forms/unsaved-changes.guard';
 import { PushPanel } from '../notifications/push-panel';
 import { Confirm } from '../../shared/ui/confirm-dialog';
+import { ImageField } from '../../shared/ui/image-field';
 import { Notifier } from '../../shared/ui/notifier';
 import { PageHeader } from '../../shared/ui/page-header';
 import { Skeleton } from '../../shared/ui/skeleton';
@@ -52,6 +53,7 @@ type Action = 'publish' | 'unpublish' | 'delete';
   selector: 'mu-announcement-edit-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
+    ImageField,
     MatButton,
     MatFormFieldModule,
     MatInput,
@@ -72,7 +74,7 @@ export class AnnouncementEditPage implements OnInit, HasUnsavedChanges {
   private readonly confirm = inject(Confirm);
   private readonly notifier = inject(Notifier);
   protected readonly context = inject(MosqueContext);
-  private readonly mosqueId = this.context.current()!.id;
+  protected readonly mosqueId = this.context.current()!.id;
 
   readonly announcementId = input<string>();
 

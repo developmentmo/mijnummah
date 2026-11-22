@@ -270,6 +270,7 @@ export class MosqueCreatePage implements HasUnsavedChanges {
             email: blankToNull(v.email),
             phone: blankToNull(v.phone),
             websiteUrl: blankToNull(v.websiteUrl),
+            prayerTimesUrl: null,
             timeZone: null,
           },
           firstAdministrator: v.withAdministrator

@@ -132,7 +132,11 @@ const STATUSES: MediaStatus[] = ['DRAFT', 'PUBLISHED'];
                   </td>
                   <td class="nowrap">{{ duration(item.durationSeconds) || '—' }}</td>
                   <td>
-                    <mu-status-badge [status]="item.status" [label]="statusLabels[item.status]" />
+                    @if (isScheduled(item)) {
+                      <mu-status-badge status="SCHEDULED" label="Gepland" />
+                    } @else {
+                      <mu-status-badge [status]="item.status" [label]="statusLabels[item.status]" />
+                    }
                   </td>
                 </tr>
               }
@@ -169,6 +173,13 @@ export class MediaPage {
   private readonly api = inject(AdminApi);
   private readonly router = inject(Router);
   private readonly mosqueId = inject(MosqueContext).current()!.id;
+
+  /** Gepubliceerd met een publicatiedatum die nog moet komen. */
+  protected isScheduled(item: AdminMedia): boolean {
+    return (
+      item.status === 'PUBLISHED' && !!item.publishedAt && Date.parse(item.publishedAt) > Date.now()
+    );
+  }
 
   readonly status = input<string>();
   readonly q = input<string>();

@@ -27,6 +27,7 @@ import nl.mijnummah.notification.PushNotificationView;
 import nl.mijnummah.notification.PushNotifications;
 import nl.mijnummah.notification.PushRequest;
 import nl.mijnummah.notification.PushText;
+import nl.mijnummah.storage.ImageStorage;
 
 /** Public announcements of active mosques, and their management ({@link MosquePermission#MANAGE_CONTENT}). */
 @Service
@@ -36,16 +37,18 @@ public class AnnouncementService {
     private final MosqueDirectory mosques;
     private final MosqueAccessService access;
     private final PushNotifications push;
+    private final ImageStorage images;
     private final ApplicationEventPublisher audit;
     private final Clock clock;
 
     public AnnouncementService(AnnouncementRepository announcements, MosqueDirectory mosques,
-                               MosqueAccessService access, PushNotifications push, ApplicationEventPublisher audit,
-                               Clock clock) {
+                               MosqueAccessService access, PushNotifications push, ImageStorage images,
+                               ApplicationEventPublisher audit, Clock clock) {
         this.announcements = announcements;
         this.mosques = mosques;
         this.access = access;
         this.push = push;
+        this.images = images;
         this.audit = audit;
         this.clock = clock;
     }
@@ -87,6 +90,7 @@ public class AnnouncementService {
     @Transactional
     public AnnouncementView create(AuthenticatedUser actor, UUID mosqueId, AnnouncementDetails details) {
         access.require(actor, mosqueId, MosquePermission.MANAGE_CONTENT);
+        requireOwnImage(details, mosqueId);
         Instant now = Instant.now(clock);
         Announcement announcement = announcements.save(Announcement.draft(mosqueId, details, actor.id(), now));
         audit.publishEvent(AuditEvent.of(actor.id(), mosqueId, "ANNOUNCEMENT_CREATED", "ANNOUNCEMENT", announcement.getId()));
@@ -97,6 +101,7 @@ public class AnnouncementService {
     public AnnouncementView update(AuthenticatedUser actor, UUID mosqueId, UUID announcementId,
                                    AnnouncementDetails details) {
         access.require(actor, mosqueId, MosquePermission.MANAGE_CONTENT);
+        requireOwnImage(details, mosqueId);
         Announcement announcement = load(mosqueId, announcementId);
         Instant now = Instant.now(clock);
         announcement.update(details, actor.id(), now);
@@ -155,5 +160,11 @@ public class AnnouncementService {
 
     private static NotFoundException notFound() {
         return new NotFoundException("ANNOUNCEMENT_NOT_FOUND", "Announcement not found.");
+    }
+
+    private void requireOwnImage(AnnouncementDetails details, UUID mosqueId) {
+        if (details.imageId() != null) {
+            images.requireOwnedBy(details.imageId(), mosqueId);
+        }
     }
 }

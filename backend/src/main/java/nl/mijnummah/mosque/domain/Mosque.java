@@ -52,6 +52,9 @@ public class Mosque {
     @Column(name = "website_url", length = 500)
     private String websiteUrl;
 
+    @Column(name = "prayer_times_url", length = 500)
+    private String prayerTimesUrl;
+
     @Column(name = "time_zone", nullable = false, length = 50)
     private String timeZone;
 
@@ -115,13 +118,14 @@ public class Mosque {
         email = details.email();
         phone = details.phone();
         websiteUrl = details.websiteUrl();
+        prayerTimesUrl = details.prayerTimesUrl();
         timeZone = details.timeZone();
         updatedAt = now;
     }
 
     public MosqueDetails details() {
         return new MosqueDetails(name, description, street, postalCode, city, countryCode, email, phone, websiteUrl,
-                timeZone);
+                prayerTimesUrl, timeZone);
     }
 
     public UUID getId() {

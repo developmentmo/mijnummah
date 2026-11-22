@@ -48,7 +48,7 @@ bijgewerkt.
 | Lokaal op het toestel: sessie en profiel | Beveiligde opslag (Keychain / Android Keystore) | Ingelogd blijven | Overeenkomst | Alleen de app | Tot uitloggen | Uitloggen, app verwijderen |
 | Lokaal op het toestel: offline-kopie van openbare lijsten, themakeuze | `shared_preferences` | Werken zonder verbinding | Gerechtvaardigd belang | Alleen de app | Tot uitloggen (cache) of app verwijderen | Uitloggen wist de cache |
 | Auditlog: wie (account-ID), wanneer, welke actie, op welk item en welke moskee | `audit_log` | Verantwoording en controle van beheeracties | Gerechtvaardigd belang | ADMIN van die moskee (eigen moskee), platformbeheerder (alles) | 730 dagen, daarna nachtelijk verwijderd (`RETENTION_AUDIT_LOG`) | Automatisch; bij verwijderen van het account blijft de regel zonder account-ID staan; bij verwijderen van de moskee verdwijnt hij |
-| Geüploade afbeeldingen (logo, omslagfoto) | `image` en de map `STORAGE_DIRECTORY` | Moskee herkenbaar maken in app en portaal | Gerechtvaardigd belang | Openbaar voor wie het (niet te raden) adres kent | Zolang de moskee bestaat | Met de moskee; bij opslaan opnieuw gecodeerd, zodat EXIF-gegevens (zoals locatie en toestel) verdwijnen |
+| Geüploade afbeeldingen (logo, omslagfoto, afbeeldingen bij content) | `image` en de map `STORAGE_DIRECTORY` | Moskee herkenbaar maken in app en portaal | Gerechtvaardigd belang | Openbaar voor wie het (niet te raden) adres kent | Zolang de moskee bestaat | Met de moskee; bij opslaan opnieuw gecodeerd, zodat EXIF-gegevens (zoals locatie en toestel) verdwijnen |
 | Back-ups van de database en de afbeeldingen | Back-upmap op de server en een externe kopie | Herstel na storing of fout | Gerechtvaardigd belang | Alleen de beheerder van de server | 30 dagen (instelbaar, `BACKUP_KEEP_DAYS`) | Oudere back-ups worden automatisch verwijderd; een verwijderd account verdwijnt dus na uiterlijk 30 dagen ook uit de back-ups |
 
 De bewaartermijnen voor sessies, herstelcodes, aanmeldingen en pushtokens worden elke nacht (03:30 Europe/Amsterdam)
@@ -97,8 +97,9 @@ is een voorstel; de moskee kan ze aanpassen zonder codewijziging.
 
 ## Beeld- en publicatierechten
 
-- Het portaal wijst bij de afbeelding van een activiteit en bij een video op beeldrechten en toestemming van
-  herkenbare personen.
+- Het portaal wijst bij elke upload (activiteit, aankondiging, thumbnail van een video, logo en omslag) op
+  beeldrechten en toestemming van herkenbare personen. Geüploade afbeeldingen worden opnieuw gecodeerd, zodat
+  EXIF-gegevens verdwijnen.
 - Video's worden niet opgeslagen: het platform bewaart alleen een YouTube-link. De moskee is verantwoordelijk voor
   de rechten op de video en de toestemming van spreker en zichtbare personen.
 - In de app speelt de video af via `youtube-nocookie.com` (privacy-enhanced mode). Bij afspelen maakt het toestel wel

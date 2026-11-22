@@ -118,6 +118,6 @@ class DefaultMosqueAccessServiceTest {
 
     private static Mosque mosque(String slug) {
         return Mosque.create(slug, new MosqueDetails("Moskee " + slug, null, null, null, null, "NL", null, null, null,
-                "Europe/Amsterdam"), Instant.now());
+                null, "Europe/Amsterdam"), Instant.now());
     }
 }

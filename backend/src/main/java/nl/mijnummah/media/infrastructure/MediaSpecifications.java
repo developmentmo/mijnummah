@@ -1,5 +1,6 @@
 package nl.mijnummah.media.infrastructure;
 
+import java.time.Instant;
 import java.util.Collection;
 import java.util.Locale;
 import java.util.UUID;
@@ -23,6 +24,12 @@ public final class MediaSpecifications {
 
     public static Specification<MediaItem> status(MediaStatus status) {
         return (root, query, cb) -> status == null ? null : cb.equal(root.get("status"), status);
+    }
+
+    /** Published and its publication time has come (scheduled items are not visible yet). */
+    public static Specification<MediaItem> liveAt(Instant now) {
+        return (root, query, cb) -> cb.and(cb.equal(root.get("status"), MediaStatus.PUBLISHED),
+                cb.lessThanOrEqualTo(root.get("publishedAt"), now));
     }
 
     public static Specification<MediaItem> visibilityIn(Collection<Visibility> visibilities) {

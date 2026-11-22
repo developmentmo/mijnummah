@@ -41,7 +41,7 @@ class MosqueBootstrap implements ApplicationRunner {
             return;
         }
         var details = new MosqueDetails(properties.name(), null, null, null, properties.city(), "NL", null, null, null,
-                "Europe/Amsterdam");
+                null, "Europe/Amsterdam");
         Mosque mosque = mosqueService.createUnchecked(properties.slug(), details);
         log.info("Created mosque '{}' ({})", mosque.getName(), mosque.getSlug());
         userDirectory.findActiveByEmail(properties.adminEmail()).ifPresent(user -> {

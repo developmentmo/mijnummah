@@ -10,7 +10,8 @@ import nl.mijnummah.media.domain.MediaStatus;
 /**
  * A media item with the provider URLs resolved.
  *
- * @param thumbnailUrl the administrator's thumbnail, or the provider's default
+ * @param thumbnailUrl the uploaded thumbnail (path from the API base), the administrator's external thumbnail, or
+ *                     the provider's default
  * @param relatedEvent the linked event when it is publicly listed (public views) or exists (admin views)
  */
 public record MediaView(UUID id, UUID mosqueId, MediaDetails details, String watchUrl, String embedUrl,

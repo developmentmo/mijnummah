@@ -34,6 +34,8 @@ import {
   Registrant,
   StoredImage,
   UserStatus,
+  MosqueFigures,
+  PushTarget,
 } from './models';
 
 const PUSH_PATHS: Record<PushContentType, string> = {
@@ -182,7 +184,7 @@ export class AdminApi {
   eventAction(
     mosqueId: string,
     eventId: string,
-    action: 'publish' | 'unpublish' | 'cancel',
+    action: 'publish' | 'unpublish' | 'cancel' | 'archive' | 'restore',
   ): Observable<AdminEvent> {
     return this.http.post<AdminEvent>(this.mosque(mosqueId, `/events/${eventId}/${action}`), null);
   }
@@ -221,6 +223,13 @@ export class AdminApi {
     action: 'publish' | 'unpublish',
   ): Observable<AdminMedia> {
     return this.http.post<AdminMedia>(this.mosque(mosqueId, `/media/${mediaId}/${action}`), null);
+  }
+
+  /** Publiceren op een gekozen moment: in het verleden (oudere opname) of in de toekomst (gepland). */
+  publishMediaAt(mosqueId: string, mediaId: string, publishedAt: string): Observable<AdminMedia> {
+    return this.http.post<AdminMedia>(this.mosque(mosqueId, `/media/${mediaId}/publish`), {
+      publishedAt,
+    });
   }
 
   deleteMedia(mosqueId: string, mediaId: string): Observable<void> {
@@ -349,5 +358,31 @@ export class AdminApi {
     return this.http.get<PushAudience>(this.mosque(mosqueId, '/notifications/audience'), {
       params: params({ contentType }),
     });
+  }
+
+  /** Bereik van een eigen bericht aan deze doelgroep. */
+  messageAudience(mosqueId: string, audience: PushTarget): Observable<PushAudience> {
+    return this.http.get<PushAudience>(this.mosque(mosqueId, '/notifications/audience'), {
+      params: params({ audience }),
+    });
+  }
+
+  /** Verstuurde pushmeldingen van de moskee, nieuwste eerst. */
+  pushHistory(mosqueId: string, page = 0, size = 20): Observable<Page<PushNotification>> {
+    return this.http.get<Page<PushNotification>>(this.mosque(mosqueId, '/notifications'), {
+      params: params({ page, size }),
+    });
+  }
+
+  /** Een eigen bericht als pushmelding (alleen ADMIN). */
+  sendMessage(
+    mosqueId: string,
+    message: { title: string; body: string; audience: PushTarget },
+  ): Observable<PushNotification> {
+    return this.http.post<PushNotification>(this.mosque(mosqueId, '/notifications'), message);
+  }
+
+  mosqueFigures(mosqueId: string): Observable<MosqueFigures> {
+    return this.http.get<MosqueFigures>(this.mosque(mosqueId, '/dashboard'));
   }
 }

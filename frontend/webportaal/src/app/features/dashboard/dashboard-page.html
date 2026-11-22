@@ -63,27 +63,64 @@
 </section>
 
 <section aria-labelledby="cijfers">
-  <h2 id="cijfers" class="mu-title-large">Content</h2>
-  <ul class="tiles">
-    @for (tile of tiles; track tile.label) {
-      <li class="tile">
-        <a [routerLink]="tile.link" [queryParams]="tile.query">
-          @if (tile.loadable.error()) {
-            <span class="mu-body-medium">Niet geladen</span>
-          } @else if (tile.loadable.value() !== null) {
-            <span class="mu-display-medium count">{{ tile.loadable.value() }}</span>
-          } @else {
-            <mu-skeleton width="var(--mu-space-12)" height="var(--mu-space-10)" />
-          }
-          <span class="mu-title-small">{{ tile.label }}</span>
-          <span class="mu-body-small mu-muted">{{ tile.hint }}</span>
-        </a>
-        @if (tile.loadable.error()) {
-          <button type="button" class="retry mu-label-large" (click)="tile.loadable.load()">
-            Opnieuw proberen
-          </button>
-        }
-      </li>
-    }
-  </ul>
+  <h2 id="cijfers" class="mu-title-large">In cijfers</h2>
+  @if (figures.error(); as message) {
+    <mu-status-message
+      kind="error"
+      [message]="message"
+      actionLabel="Opnieuw proberen"
+      (action)="figures.load()"
+    />
+  } @else if (figures.value()) {
+    <ul class="tiles">
+      @for (tile of tiles(); track tile.label) {
+        <li class="tile">
+          <a [routerLink]="tile.link" [queryParams]="tile.query">
+            <span class="mu-display-medium count">{{ tile.value }}</span>
+            <span class="mu-title-small">{{ tile.label }}</span>
+            <span class="mu-body-small mu-muted">{{ tile.hint }}</span>
+          </a>
+        </li>
+      }
+    </ul>
+  } @else {
+    <div class="tiles" aria-busy="true" aria-label="Aantallen laden">
+      <mu-skeleton height="var(--mu-space-16)" />
+      <mu-skeleton height="var(--mu-space-16)" />
+      <mu-skeleton height="var(--mu-space-16)" />
+    </div>
+  }
 </section>
+
+@if (showActivity()) {
+  <section aria-labelledby="recent" class="panel">
+    <div class="panel__head">
+      <h2 id="recent" class="mu-title-large">Recente activiteiten</h2>
+    </div>
+    @if (activity.error(); as message) {
+      <mu-status-message
+        kind="error"
+        [message]="message"
+        actionLabel="Opnieuw proberen"
+        (action)="activity.load()"
+      />
+    } @else if (activity.value(); as page) {
+      @if (page.items.length === 0) {
+        <p class="mu-body-medium mu-muted">Nog geen activiteiten.</p>
+      } @else {
+        <ul class="activity">
+          @for (entry of page.items; track entry.id) {
+            <li>
+              <span class="mu-body-medium">{{ actionLabel(entry.action) }}</span>
+              <span class="mu-body-small mu-muted">
+                {{ entry.actor?.displayName ?? 'verwijderd account' }} · {{ at(entry.occurredAt) }}
+              </span>
+            </li>
+          }
+        </ul>
+      }
+    } @else {
+      <mu-skeleton height="var(--mu-space-12)" />
+    }
+  </section>
+}

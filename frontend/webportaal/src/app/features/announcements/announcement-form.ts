@@ -17,6 +17,7 @@ export function createAnnouncementForm(fb: FormBuilder) {
       featured: [false],
       expiresDate: [''],
       expiresTime: [''],
+      imageId: fb.control<string | null>(null),
     },
     { validators: expiryComplete },
   );
@@ -32,6 +33,7 @@ export function announcementToFormValue(announcement: AdminAnnouncement, timeZon
     featured: announcement.featured,
     expiresDate: expires?.date ?? '',
     expiresTime: expires?.time ?? '',
+    imageId: announcement.imageId,
   };
 }
 
@@ -47,5 +49,6 @@ export function formToAnnouncementRequest(
     expiresAt: v.expiresDate
       ? fromZonedParts(v.expiresDate, v.expiresTime || '23:59', timeZone)
       : null,
+    imageId: v.imageId,
   };
 }
