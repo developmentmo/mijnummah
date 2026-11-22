@@ -43,8 +43,11 @@ server {
         try_files $uri =404;
     }
 
-    # Single-page app: onbekende paden openen de app, die zelf routeert.
+    # Single-page app: onbekende paden openen de app, die zelf routeert. Bestanden zonder hash in de naam (logo's,
+    # favicon) laat de browser altijd controleren, zodat een nieuw logo direct zichtbaar is.
     location / {
+        include /etc/nginx/conf.d/security-headers.inc;
+        add_header Cache-Control "no-cache" always;
         try_files $uri $uri/ /index.html;
     }
 }
