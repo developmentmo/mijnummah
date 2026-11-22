@@ -1,7 +1,4 @@
 import 'package:flutter/material.dart';
-
-import '../../helpers/fake_backend.dart';
-
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mijnummah_app/core/design/design.dart';
 
@@ -9,40 +6,47 @@ import '../../helpers/fixtures.dart';
 import '../../helpers/test_app.dart';
 
 void main() {
-  testWidgets('toont welkom, aankondigingen, activiteiten en lezingen uit de backend', (tester) async {
+  testWidgets('toont welkom, moskeeën, activiteiten, video\'s en nieuws van alle moskeeën', (tester) async {
     final backend = standardBackend()
       ..on('GET', '$base/announcements', page([announcementJson(featured: true)]))
       ..on('GET', '$base/events', page([eventJson()]))
-      ..onRequest('GET', '$base/media', (request) async {
-        final lectureOnly = request.url.queryParameters['category'] == 'LECTURE';
-        return FakeBackendJson.of(
-          page(
-            lectureOnly
-                ? [mediaJson()]
-                : [mediaJson(), mediaJson(id: 'm2', title: 'Vrijdagpreek over familie', category: 'KHUTBAH')],
-          ),
-        );
-      });
+      ..on('GET', '$base/media', page([mediaJson()]));
     await pumpApp(tester, backend: backend);
 
     expect(find.byType(BrandLogo), findsWidgets);
     expect(find.text('Assalamoe alaikoem'), findsOneWidget);
     expect(find.textContaining('Welkom bij Mijn Ummah'), findsOneWidget);
-    expect(find.text('Nieuwe lestijden'), findsOneWidget);
-    expect(find.text('Uitgelicht'), findsOneWidget);
+    expect(find.text('Moskeeën ontdekken'), findsOneWidget);
     expect(find.text('Lezing over geduld'), findsOneWidget);
-    expect(find.text('Bekijk de hele agenda'), findsOneWidget);
+    // Zonder gevolgde moskeeën komt de content van alle moskeeën: geen mosque-filter.
+    expect(backend.requestsTo('GET', '$base/events').last.url.queryParametersAll['mosque'], isNull);
 
-    await tester.scrollUntilVisible(find.text('Nieuw toegevoegd'), 300, scrollable: find.byType(Scrollable).first);
+    await tester.scrollUntilVisible(find.text('Nieuwe lestijden'), 300, scrollable: find.byType(Scrollable).first);
     expect(find.text('Tafsir van soera Al-Asr'), findsOneWidget);
-    // Een video die al bij "Lezingen" staat, wordt bij "Nieuw toegevoegd" niet herhaald.
-    expect(find.text('Vrijdagpreek over familie'), findsOneWidget);
+    expect(find.text('Uitgelicht'), findsOneWidget);
+  });
+
+  testWidgets('wie moskeeën volgt, ziet hun content en de eigen moskeeën bovenaan', (tester) async {
+    final backend = standardBackend()
+      ..on('GET', '/me/follows', [followJson(favorite: true)])
+      ..on('GET', '$base/events', page([eventJson()]));
+    await pumpApp(tester, backend: backend, tokenStore: signedInStore(backend));
+
+    expect(find.text('Assalamoe alaikoem, Fatima'), findsOneWidget);
+    expect(find.text('Jouw moskeeën'), findsOneWidget);
+    expect(find.textContaining('moskeeën die je volgt'), findsOneWidget);
+    final events = backend.requestsTo('GET', '$base/events');
+    expect(events, hasLength(1));
+    expect(events.single.url.queryParametersAll['mosque'], [slug]);
+
+    await tapVisible(tester, find.bySemanticsLabel('Mijn Ummah, favoriet'));
+    expect(find.text('Een moskee midden in de wijk.'), findsOneWidget);
   });
 
   testWidgets('verbergt lege secties en legt uit dat er geen activiteiten zijn', (tester) async {
     await pumpApp(tester);
-    expect(find.text('Aankondigingen'), findsNothing);
-    expect(find.text('Lezingen'), findsWidgets); // tabblad
+    expect(find.text('Nieuws'), findsNothing);
+    expect(find.text('Nieuwe video\'s'), findsNothing);
     expect(find.textContaining('Er staan nu geen activiteiten gepland'), findsOneWidget);
   });
 
@@ -52,32 +56,20 @@ void main() {
       ..on('GET', '$base/announcements', page([announcementJson()]));
     await pumpApp(tester, backend: backend);
     expect(find.text('Er ging iets mis'), findsOneWidget);
-    expect(find.text('Nieuwe lestijden'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Nieuwe lestijden'), 300, scrollable: find.byType(Scrollable).first);
 
     backend.on('GET', '$base/events', page([eventJson()]));
     await tapVisible(tester, find.text('Opnieuw proberen'));
     expect(find.text('Lezing over geduld'), findsOneWidget);
   });
 
-  testWidgets('nodigt een bezoeker uit om in te loggen en te volgen', (tester) async {
+  testWidgets('nodigt een bezoeker uit om in te loggen en moskeeën te volgen', (tester) async {
     await pumpApp(tester);
-    expect(find.text('Volg Mijn Ummah'), findsOneWidget);
+    expect(find.text('Volg je moskeeën'), findsOneWidget);
     expect(find.textContaining('geen lidmaatschap'), findsOneWidget);
 
-    await tapVisible(tester, find.text('Inloggen om te volgen'));
+    await tapVisible(tester, find.text('Inloggen of account maken'));
     expect(find.text('E-mailadres'), findsOneWidget);
-  });
-
-  testWidgets('een ingelogde gebruiker kan direct volgen', (tester) async {
-    final backend = standardBackend()..on('PUT', '/me/follows/$mosqueId', followJson());
-    await pumpApp(tester, backend: backend, tokenStore: signedInStore(backend));
-    expect(find.text('Assalamoe alaikoem, Fatima'), findsOneWidget);
-
-    backend.on('GET', '/me/follows/$mosqueId', followJson());
-    await tapVisible(tester, find.text('Volgen'));
-    expect(backend.requestsTo('PUT', '/me/follows/$mosqueId'), hasLength(1));
-    expect(find.text('Je volgt nu Mijn Ummah.'), findsOneWidget);
-    expect(find.text('Volg Mijn Ummah'), findsNothing);
   });
 
   testWidgets('toont zonder verbinding de laatst opgehaalde gegevens met een melding', (tester) async {
@@ -90,5 +82,26 @@ void main() {
     await settle(tester);
     expect(find.text('Je bent offline'), findsOneWidget);
     expect(find.text('Lezing over geduld'), findsOneWidget);
+  });
+
+  testWidgets('bij de eerste start verschijnt de introductie, die je kunt overslaan', (tester) async {
+    await pumpApp(tester, preferences: {'onboarding.done': false});
+    expect(find.text('Moskeeën bij jou in de buurt'), findsOneWidget);
+
+    await tester.tap(find.text('Overslaan'));
+    await settle(tester);
+    expect(find.text('Assalamoe alaikoem'), findsOneWidget);
+  });
+
+  testWidgets('de introductie eindigt met aan de slag', (tester) async {
+    await pumpApp(tester, preferences: {'onboarding.done': false});
+    await tester.tap(find.text('Volgende'));
+    await settle(tester);
+    await tester.tap(find.text('Volgende'));
+    await settle(tester);
+    expect(find.textContaining('geen lidmaatschap'), findsOneWidget);
+    await tester.tap(find.text('Aan de slag met Mijn Ummah'));
+    await settle(tester);
+    expect(find.text('Assalamoe alaikoem'), findsOneWidget);
   });
 }

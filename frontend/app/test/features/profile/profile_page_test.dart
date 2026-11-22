@@ -21,18 +21,19 @@ void main() {
     expect(find.textContaining('niet via de app'), findsOneWidget);
   });
 
-  testWidgets('een volger ziet en wijzigt de meldingsvoorkeuren', (tester) async {
+  testWidgets('een volger ziet en wijzigt de meldingsvoorkeuren per moskee', (tester) async {
     late final FakeBackend backend;
     backend = standardBackend()
-      ..on('GET', '/me/follows/$mosqueId', followJson(media: false))
+      ..on('GET', '/me/follows', [followJson(media: false)])
       ..onRequest('PUT', '/me/follows/$mosqueId/notifications', (request) async {
-        backend.on('GET', '/me/follows/$mosqueId', followJson(media: true));
+        backend.on('GET', '/me/follows', [followJson(media: true)]);
         return FakeBackendJson.of(followJson(media: true));
       });
     await pumpApp(tester, backend: backend, location: '/profiel', tokenStore: signedInStore(backend));
 
-    expect(find.text('Je volgt Mijn Ummah sinds 1 september 2026.'), findsOneWidget);
+    expect(find.text('Volgt sinds 1 september 2026'), findsOneWidget);
     expect(find.textContaining('Pushmeldingen zijn in deze versie van de app niet ingesteld'), findsOneWidget);
+    await tapVisible(tester, find.text('Mijn Ummah'));
     final media = find.widgetWithText(SwitchListTile, 'Nieuwe lezingen');
     expect(tester.widget<SwitchListTile>(media).value, isFalse);
 
@@ -41,22 +42,63 @@ void main() {
     expect(tester.widget<SwitchListTile>(media).value, isTrue);
   });
 
+  testWidgets('maakt een gevolgde moskee favoriet', (tester) async {
+    final backend = standardBackend()
+      ..on('GET', '/me/follows', [followJson()])
+      ..on('PUT', '/me/follows/$mosqueId/favorite', followJson(favorite: true));
+    await pumpApp(tester, backend: backend, location: '/profiel', tokenStore: signedInStore(backend));
+
+    await tapVisible(tester, find.text('Mijn Ummah'));
+    backend.on('GET', '/me/follows', [followJson(favorite: true)]);
+    await tapVisible(tester, find.widgetWithText(SwitchListTile, 'Favoriet'));
+    expect(backend.requestsTo('PUT', '/me/follows/$mosqueId/favorite'), hasLength(1));
+    expect(find.textContaining('Favoriet · volgt sinds'), findsOneWidget);
+  });
+
   testWidgets('ontvolgen vraagt om bevestiging', (tester) async {
     late final FakeBackend backend;
     backend = standardBackend()
-      ..on('GET', '/me/follows/$mosqueId', followJson())
+      ..on('GET', '/me/follows', [followJson()])
       ..onRequest('DELETE', '/me/follows/$mosqueId', (_) async {
-        backend.fail('GET', '/me/follows/$mosqueId', 404, 'NOT_FOLLOWING');
+        backend.on('GET', '/me/follows', []);
         return FakeBackendJson.of(null, status: 204);
       });
     await pumpApp(tester, backend: backend, location: '/profiel', tokenStore: signedInStore(backend));
 
+    await tapVisible(tester, find.text('Mijn Ummah'));
     await tapVisible(tester, find.widgetWithText(TextButton, 'Ontvolgen'));
     expect(find.text('Mijn Ummah ontvolgen?'), findsOneWidget);
     await tester.tap(find.widgetWithText(FilledButton, 'Ontvolgen'));
     await settle(tester);
     expect(backend.requestsTo('DELETE', '/me/follows/$mosqueId'), hasLength(1));
-    expect(find.text('Volg Mijn Ummah'), findsOneWidget);
+    expect(find.textContaining('Je volgt nog geen moskeeën'), findsOneWidget);
+  });
+
+  testWidgets('linkt naar meldingen en favorieten', (tester) async {
+    final backend = standardBackend()
+      ..on(
+        'GET',
+        '/me/notifications',
+        page([
+          {
+            'id': 'n1',
+            'mosque': mosqueRef(),
+            'type': 'announcement',
+            'contentId': 'a1',
+            'title': 'Nieuwe lestijden',
+            'body': 'De lessen beginnen later.',
+            'sentAt': '2030-10-03T09:00:00Z',
+          },
+        ]),
+      )
+      ..on('GET', '$base/announcements/a1', announcementJson());
+    await pumpApp(tester, backend: backend, location: '/profiel', tokenStore: signedInStore(backend));
+
+    await tapVisible(tester, find.text('Meldingen'));
+    expect(find.text('Nieuwe lestijden'), findsOneWidget);
+    await tester.tap(find.text('Nieuwe lestijden'));
+    await settle(tester);
+    expect(find.text('Vanaf volgende week beginnen de lessen een half uur later.'), findsOneWidget);
   });
 
   testWidgets('toont de eigen komende aanmeldingen', (tester) async {

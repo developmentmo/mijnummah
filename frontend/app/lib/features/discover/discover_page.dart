@@ -1,167 +1,214 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/design/design.dart';
-import '../../core/providers.dart';
 import '../../core/widgets/async_view.dart';
+import '../../core/widgets/choice_chip_row.dart';
 import '../../core/widgets/content_width.dart';
-import '../../core/widgets/external_links.dart';
-import '../../core/widgets/info_row.dart';
 import '../../core/widgets/offline_banner.dart';
-import '../../core/widgets/section_header.dart';
 import '../../data/models.dart';
+import '../../data/paged.dart';
+import '../mosques/mosque_widgets.dart';
+import '../profile/follow_card.dart';
+import 'discover_providers.dart';
 
-/// Kennismaken met de moskee: wie ze is, waar ze zit, hoe je contact opneemt en welke activiteiten er zijn.
-class DiscoverPage extends ConsumerWidget {
+/// Moskeeën ontdekken: zoeken op naam, filteren op plaats, een profiel openen en volgen.
+class DiscoverPage extends ConsumerStatefulWidget {
   const DiscoverPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<DiscoverPage> createState() => _DiscoverPageState();
+}
+
+class _DiscoverPageState extends ConsumerState<DiscoverPage> {
+  final _search = TextEditingController();
+  Timer? _debounce;
+  MosqueQuery _query = (text: '', city: null);
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    _search.dispose();
+    super.dispose();
+  }
+
+  void _setText(String value) => setState(() => _query = (text: value.trim(), city: _query.city));
+
+  void _onSearchChanged(String value) {
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 400), () {
+      if (mounted) _setText(value);
+    });
+    setState(() {}); // toont of verbergt de wisknop
+  }
+
+  void _clear() {
+    _debounce?.cancel();
+    _search.clear();
+    setState(() => _query = (text: '', city: null));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final provider = mosqueListProvider(_query);
+    final cities = ref.watch(citiesProvider).value?.data ?? const <String>[];
     return Scaffold(
-      appBar: AppBar(title: const Text('Ontdekken')),
-      body: AsyncView(
-        value: ref.watch(mosqueProvider),
-        onRetry: () => ref.invalidate(mosqueProvider),
-        loading: ListView(
-          padding: const EdgeInsets.all(TokSpace.s4),
-          children: const [
-            Skeleton(height: 32),
-            SizedBox(height: TokSpace.s3),
-            Skeleton(height: 72),
-            SizedBox(height: TokSpace.s6),
-            Skeleton(height: 120),
-          ],
-        ),
-        data: (fetched) => RefreshIndicator(
-          onRefresh: () => ref.refresh(mosqueProvider.future),
-          child: _Discover(
-            mosque: fetched.data,
-            cachedAt: fetched.cachedAt,
-            onRetry: () => ref.invalidate(mosqueProvider),
+      appBar: AppBar(title: const Text('Moskeeën ontdekken')),
+      body: Column(
+        children: [
+          ContentWidth(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(TokSpace.s4, TokSpace.s2, TokSpace.s4, 0),
+              child: TextField(
+                controller: _search,
+                onChanged: _onSearchChanged,
+                onSubmitted: (value) {
+                  _debounce?.cancel();
+                  _setText(value);
+                },
+                textInputAction: TextInputAction.search,
+                decoration: InputDecoration(
+                  labelText: 'Zoek een moskee op naam',
+                  prefixIcon: const Icon(Icons.search),
+                  suffixIcon: _search.text.isEmpty
+                      ? null
+                      : IconButton(
+                          tooltip: 'Zoekopdracht wissen',
+                          icon: const Icon(Icons.close),
+                          onPressed: () {
+                            _debounce?.cancel();
+                            _search.clear();
+                            _setText('');
+                          },
+                        ),
+                ),
+              ),
+            ),
           ),
-        ),
+          if (cities.length > 1)
+            ChoiceChipRow<String?>(
+              semanticLabel: 'Filter op plaats',
+              options: [(null, 'Alle plaatsen'), for (final city in cities) (city, city)],
+              selected: _query.city,
+              onSelected: (city) => setState(() => _query = (text: _query.text, city: city)),
+            ),
+          Expanded(
+            child: RefreshIndicator(
+              onRefresh: () => ref.refresh(provider.future),
+              child: AsyncView(
+                value: ref.watch(provider),
+                onRetry: () => ref.invalidate(provider),
+                loading: ListView(
+                  padding: const EdgeInsets.all(TokSpace.s4),
+                  children: [
+                    for (var i = 0; i < 4; i++)
+                      const Padding(
+                        padding: EdgeInsets.only(bottom: TokSpace.s3),
+                        child: Skeleton(height: 72),
+                      ),
+                  ],
+                ),
+                data: (paged) => _MosqueList(
+                  paged: paged,
+                  filtered: _query.text.isNotEmpty || _query.city != null,
+                  onClear: _clear,
+                  onLoadMore: () => ref.read(provider.notifier).loadMore(),
+                  onRetry: () => ref.invalidate(provider),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
-class _Discover extends StatelessWidget {
-  const _Discover({required this.mosque, required this.cachedAt, required this.onRetry});
+class _MosqueList extends StatelessWidget {
+  const _MosqueList({
+    required this.paged,
+    required this.filtered,
+    required this.onClear,
+    required this.onLoadMore,
+    required this.onRetry,
+  });
 
-  final Mosque mosque;
-  final DateTime? cachedAt;
+  final Paged<Mosque> paged;
+  final bool filtered;
+  final VoidCallback onClear;
+  final VoidCallback onLoadMore;
   final VoidCallback onRetry;
-
-  static const _activities = <(EventCategory, IconData, String)>[
-    (EventCategory.lecture, Icons.record_voice_over_outlined, 'Lezingen door sprekers en imams'),
-    (EventCategory.fridayProgram, Icons.mosque_outlined, 'Het vrijdaggebed en het programma eromheen'),
-    (EventCategory.classes, Icons.menu_book_outlined, 'Lessen voor kinderen en volwassenen'),
-    (EventCategory.youth, Icons.groups_outlined, 'Activiteiten voor jongeren'),
-    (EventCategory.community, Icons.diversity_3_outlined, 'Ontmoetingen voor de hele gemeenschap'),
-  ];
 
   @override
   Widget build(BuildContext context) {
-    final text = Theme.of(context).textTheme;
-    final address = mosque.addressLine;
-    final hasContact = mosque.email != null || mosque.phone != null || mosque.websiteUrl != null;
-    final website = mosque.websiteUrl == null ? null : Uri.tryParse(mosque.websiteUrl!);
+    return ContentWidth(
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(TokSpace.s4, TokSpace.s2, TokSpace.s4, TokSpace.s8),
+        children: [
+          if (paged.cachedAt != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: TokSpace.s3),
+              child: OfflineBanner(savedAt: paged.cachedAt!, onRetry: onRetry),
+            ),
+          if (paged.items.isEmpty)
+            filtered
+                ? StatePlaceholder(
+                    icon: Icons.search_off,
+                    title: 'Geen moskee gevonden',
+                    message: 'Probeer een andere naam of plaats.',
+                    actionLabel: 'Alle moskeeën tonen',
+                    onAction: onClear,
+                  )
+                : const StatePlaceholder(
+                    icon: Icons.mosque_outlined,
+                    title: 'Nog geen moskeeën',
+                    message: 'Zodra er moskeeën zijn aangesloten, vind je ze hier.',
+                  )
+          else ...[
+            for (final mosque in paged.items)
+              Padding(
+                padding: const EdgeInsets.only(bottom: TokSpace.s3),
+                child: MosqueTile(mosque: mosque),
+              ),
+            if (paged.loadMoreFailed)
+              const Padding(
+                padding: EdgeInsets.only(bottom: TokSpace.s3),
+                child: StatusMessage(kind: StatusKind.error, message: 'Meer moskeeën laden is niet gelukt.'),
+              ),
+            if (paged.hasMore)
+              Center(
+                child: paged.loadingMore
+                    ? const Padding(padding: EdgeInsets.all(TokSpace.s3), child: CircularProgressIndicator())
+                    : OutlinedButton(onPressed: onLoadMore, child: const Text('Meer moskeeën laden')),
+              ),
+          ],
+        ],
+      ),
+    );
+  }
+}
 
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(TokSpace.s4, TokSpace.s2, TokSpace.s4, TokSpace.s8),
-      children: [
-        ContentWidth(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              if (cachedAt != null) ...[
-                OfflineBanner(savedAt: cachedAt!, onRetry: onRetry),
-                const SizedBox(height: TokSpace.s4),
-              ],
-              const Align(
-                alignment: Alignment.centerLeft,
-                child: BrandLogo(variant: BrandLogoVariant.compact, height: 56),
-              ),
-              const SizedBox(height: TokSpace.s3),
-              Semantics(header: true, child: Text(mosque.name, style: text.headlineLarge)),
-              if (mosque.description != null) ...[
-                const SizedBox(height: TokSpace.s2),
-                Text(mosque.description!, style: text.bodyLarge),
-              ],
-              const SectionHeader(title: 'Kennismaken'),
-              Text(
-                'Wil je de moskee leren kennen? Kom naar een activiteit die voor iedereen toegankelijk is, bekijk een '
-                'lezing terug of neem contact op.',
-                style: text.bodyMedium,
-              ),
-              const SizedBox(height: TokSpace.s3),
-              Wrap(
-                spacing: TokSpace.s2,
-                runSpacing: TokSpace.s2,
-                children: [
-                  FilledButton.icon(
-                    onPressed: () => context.go('/agenda'),
-                    icon: const Icon(Icons.calendar_month_outlined),
-                    label: const Text('Bekijk de agenda'),
-                  ),
-                  OutlinedButton.icon(
-                    onPressed: () => context.go('/lezingen'),
-                    icon: const Icon(Icons.play_circle_outline),
-                    label: const Text('Lezingen terugkijken'),
-                  ),
-                ],
-              ),
-              if (address != null || hasContact) const SectionHeader(title: 'Adres en contact'),
-              if (address != null)
-                InfoRow(
-                  icon: Icons.place_outlined,
-                  label: 'Adres, opent de kaart',
-                  value: address,
-                  onTap: () => openExternal(context, mapsUri('$address, ${mosque.name}')),
-                ),
-              if (mosque.phone != null)
-                InfoRow(
-                  icon: Icons.phone_outlined,
-                  label: 'Bellen',
-                  value: mosque.phone!,
-                  onTap: () => openExternal(context, Uri(scheme: 'tel', path: mosque.phone!.replaceAll(' ', ''))),
-                ),
-              if (mosque.email != null)
-                InfoRow(
-                  icon: Icons.mail_outline,
-                  label: 'E-mailen',
-                  value: mosque.email!,
-                  onTap: () => openExternal(context, Uri(scheme: 'mailto', path: mosque.email!)),
-                ),
-              if (website != null && website.hasScheme)
-                InfoRow(
-                  icon: Icons.language_outlined,
-                  label: 'Website',
-                  value: website.host.isEmpty ? mosque.websiteUrl! : website.host,
-                  onTap: () => openExternal(context, website),
-                ),
-              const SectionHeader(title: 'Activiteiten'),
-              Card(
-                child: Column(
-                  children: [
-                    for (final (index, (category, icon, description)) in _activities.indexed) ...[
-                      if (index > 0) const Divider(height: 1),
-                      ListTile(
-                        leading: Icon(icon),
-                        title: Text(category.label),
-                        subtitle: Text(description),
-                        trailing: const Icon(Icons.chevron_right),
-                        onTap: () => context.go('/agenda?categorie=${category.apiValue}'),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
+/// Een moskee in een lijst: logo, naam en plaats, met een knop om te volgen. Tikken opent het profiel.
+class MosqueTile extends StatelessWidget {
+  const MosqueTile({super.key, required this.mosque});
+
+  final Mosque mosque;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: TokSpace.s4, vertical: TokSpace.s2),
+        leading: MosqueAvatar(name: mosque.name, logoUrl: mosque.logoUrl, size: 48),
+        title: Text(mosque.name),
+        subtitle: mosque.city == null ? null : Text(mosque.city!),
+        trailing: FollowButton(mosque: mosque.summary, compact: true),
+        onTap: () => context.push('/moskee/${Uri.encodeComponent(mosque.slug)}'),
+      ),
     );
   }
 }

@@ -39,7 +39,8 @@ bijgewerkt.
 | E-mailadres, naam, wachtwoordhash (BCrypt), rol, status, tijdstip van de laatste login | `app_user` | Inloggen, account beheren, herstel-e-mail | Overeenkomst (art. 6 lid 1b) | De gebruiker zelf; platformbeheerder (accountbeheer); moskeebeheerder ziet naam en e-mail alleen bij beheerders en bij aanmeldingen voor eigen activiteiten | Zolang het account bestaat | Gebruiker verwijdert zelf in de app (`POST /me/deletion`); of platformbeheerder |
 | Sessies (hash van refresh token) | `refresh_token` | Ingelogd blijven, uitloggen op alle toestellen | Overeenkomst | Niemand leest ze; alleen de backend vergelijkt hashes | Geldig 30 dagen; verlopen sessies worden 7 dagen daarna automatisch verwijderd | Uitloggen, wachtwoord wijzigen, account verwijderen, nachtelijke opschoning |
 | Herstelcodes (hash) | `password_reset_code` | Wachtwoord vergeten | Overeenkomst | Niemand leest ze | Geldig 30 minuten; 1 dag na verlopen automatisch verwijderd | Nachtelijke opschoning; met het account |
-| Volgen en meldingsvoorkeuren | `mosque_follow`, `notification_preference` | Bepalen wie welke melding krijgt | Toestemming (art. 6 lid 1a), zie "Open punten" over art. 9 | De gebruiker; moskeebeheerder ziet alleen aantallen | Tot ontvolgen of account verwijderen | Ontvolgen in de app; met het account |
+| Volgen, favoriete moskeeën en meldingsvoorkeuren | `mosque_follow` (met `favorite`), `notification_preference` | Bepalen wie welke melding krijgt; eigen moskeeën bovenaan tonen | Toestemming (art. 6 lid 1a), zie "Open punten" over art. 9 | De gebruiker; moskeebeheerder ziet alleen aantallen | Tot ontvolgen of account verwijderen | Ontvolgen in de app; met het account |
+| Bewaarde video's | `media_favorite` | De gebruiker vindt video's terug | Overeenkomst | Alleen de gebruiker (geen beheerder ziet wie wat bewaart) | Tot verwijderen of account verwijderen | Verwijderen in de app; met het account of de video |
 | Pushtoken en platform (Android/iOS) | `push_device` | Meldingen afleveren | Toestemming (toestemmingsvraag van het besturingssysteem) | Niemand leest ze; de backend stuurt ze naar FCM | Tot uitloggen, account verwijderen, FCM meldt het token als ongeldig, of 270 dagen niet meer gezien | Uitloggen, toestemming intrekken + uitloggen, nachtelijke opschoning |
 | Aanmeldingen voor activiteiten | `event_registration` | Plaatsen beheren, beheerder weet wie komt | Overeenkomst | De gebruiker; ADMIN van die moskee (naam en e-mail in de aanmeldlijst) | Tot 365 dagen na afloop van de activiteit | Afmelden in de app; met het account; nachtelijke opschoning |
 | Beheerdersrollen | `mosque_administrator` | Wie mag wat beheren | Gerechtvaardigd belang / overeenkomst met de moskee | Platformbeheerder, ADMIN van die moskee | Tot de rol wordt ingetrokken | ADMIN of platformbeheerder |
@@ -65,8 +66,9 @@ is een voorstel; de moskee kan ze aanpassen zonder codewijziging.
   `Info.plist`) en wordt pas aangezet als er toestemming is. Dit is nog niet op een echt toestel gecontroleerd (geen
   Firebase-project beschikbaar).
 - De gebruiker zet per onderwerp (aankondigingen, activiteiten, lezingen) meldingen aan of uit in de app, en kan de
-  toestemming op elk moment intrekken in de instellingen van het toestel. Ontvolgen of uitloggen meldt het toestel
-  af bij de backend.
+  toestemming op elk moment intrekken in de instellingen van het toestel. Na ontvolgen krijgt het toestel geen
+  meldingen meer van die moskee; uitloggen meldt het toestel af bij de backend. Het toestel hoort bij de gebruiker en
+  krijgt de meldingen van alle moskeeën die hij volgt (D-060).
 - Alleen een ADMIN van de moskee kan een melding versturen, alleen over gepubliceerde content, één keer per item
   (D-033). Meldingen bevatten de titel en een korte tekst, geen persoonsgegevens.
 
@@ -119,7 +121,7 @@ is een voorstel; de moskee kan ze aanpassen zonder codewijziging.
 
 | Recht | Hoe |
 |---|---|
-| Verwijdering | In de app: Account → Account verwijderen. Verwijdert account, sessies, volgen, voorkeuren, pushtokens, herstelcodes en aanmeldingen direct. Beheerders en auteurs via de platformbeheerder |
+| Verwijdering | In de app: Account → Account verwijderen. Verwijdert account, sessies, volgen, voorkeuren, bewaarde video's, pushtokens, herstelcodes en aanmeldingen direct. Beheerders en auteurs via de platformbeheerder |
 | Rectificatie | Naam en wachtwoord: de gebruiker in de app (wachtwoord) of de platformbeheerder; e-mailadres wijzigen kan nog niet zelf |
 | Inzage en dataportabiliteit | Nog geen knop. Op verzoek stelt de platformbeheerder een overzicht samen uit de tabellen hierboven (handmatig, binnen een maand) |
 | Bezwaar en intrekken van toestemming | Meldingen uitzetten per onderwerp, ontvolgen, toestemming intrekken in het toestel |

@@ -38,11 +38,16 @@ class InMemoryTokenStore implements TokenStore {
 
 /// Een backend met een moskee en lege lijsten; tests vullen aan wat ze nodig hebben.
 FakeBackend standardBackend() => FakeBackend()
-  ..on('GET', base, mosqueJson())
+  ..on('GET', mosqueBase, mosqueJson())
+  ..on('GET', '$base/mosques', page([mosqueJson()]))
+  ..on('GET', '$base/mosques/cities', ['Voorbeeldstad'])
   ..on('GET', '$base/events', page([]))
   ..on('GET', '$base/media', page([]))
   ..on('GET', '$base/announcements', page([]))
-  ..fail('GET', '/me/follows/$mosqueId', 404, 'NOT_FOLLOWING')
+  ..on('GET', '/me/follows', [])
+  ..on('GET', '/me/favorite-media/ids', [])
+  ..on('GET', '/me/favorite-media', page([]))
+  ..on('GET', '/me/notifications', page([]))
   ..on('GET', '/me/event-registrations', page([]));
 
 /// Zet een ingelogde sessie klaar.
@@ -87,7 +92,8 @@ Future<void> pumpApp(
   addTearDown(tester.view.reset);
   addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
 
-  SharedPreferences.setMockInitialValues(preferences);
+  // De introductie is in de meeste tests al gezien; een test zet `onboarding.done` op false om haar te zien.
+  SharedPreferences.setMockInitialValues({'onboarding.done': true, ...preferences});
   final prefs = await SharedPreferences.getInstance();
   final fake = backend ?? standardBackend();
 
@@ -96,7 +102,7 @@ Future<void> pumpApp(
       retry: (_, _) => null,
       overrides: [
         sharedPreferencesProvider.overrideWithValue(prefs),
-        appConfigProvider.overrideWithValue(const AppConfig(apiBaseUrl: FakeBackend.baseUrl, mosqueSlug: slug)),
+        appConfigProvider.overrideWithValue(const AppConfig(apiBaseUrl: FakeBackend.baseUrl)),
         httpClientProvider.overrideWithValue(fake.client),
         tokenStoreProvider.overrideWithValue(tokenStore ?? InMemoryTokenStore()),
         if (push != null) pushMessagingProvider.overrideWithValue(push),

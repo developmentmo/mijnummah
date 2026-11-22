@@ -7,51 +7,55 @@ import '../../core/brand/brand.g.dart';
 import '../../core/design/design.dart';
 import '../../core/providers.dart';
 import '../../core/widgets/content_width.dart';
-import '../../core/widgets/failure_messages.dart';
 import '../../core/widgets/offline_banner.dart';
-import '../../core/widgets/section_header.dart';
+import '../../core/widgets/preview_section.dart';
 import '../../data/models.dart';
 import '../agenda/agenda_providers.dart';
 import '../agenda/event_card.dart';
 import '../announcements/announcement_card.dart';
 import '../announcements/announcement_providers.dart';
+import '../discover/discover_providers.dart';
 import '../lectures/lectures_providers.dart';
 import '../lectures/media_card.dart';
-import '../profile/follow_card.dart';
+import '../mosques/mosque_filter.dart';
+import '../mosques/mosque_widgets.dart';
+import '../profile/follow_providers.dart';
 
-/// Startpagina: welkom, uitgelichte aankondigingen, de eerstvolgende activiteiten, lezingen en nieuwe video's.
+const _allMosques = (text: '', city: null);
+
+/// Startpagina: welkom, je eigen (of uitgelichte) moskeeën, en de activiteiten, video's en het nieuws daarvan.
+/// Wie moskeeën volgt, ziet hier wat die moskeeën doen; anders wat er bij alle moskeeën gebeurt.
 class HomePage extends ConsumerWidget {
   const HomePage({super.key});
 
-  Future<void> _refresh(WidgetRef ref) async {
+  Future<void> _refresh(WidgetRef ref, MosqueFilter scope) async {
     ref
-      ..invalidate(mosqueProvider)
-      ..invalidate(homeAnnouncementsProvider)
-      ..invalidate(upcomingEventsProvider)
-      ..invalidate(latestLecturesProvider)
-      ..invalidate(latestMediaProvider);
-    await ref.read(upcomingEventsProvider.future).then((_) {}, onError: (_) {});
+      ..invalidate(myFollowsProvider)
+      ..invalidate(mosqueListProvider(_allMosques))
+      ..invalidate(upcomingEventsProvider(scope))
+      ..invalidate(latestMediaProvider(scope))
+      ..invalidate(latestNewsProvider(scope));
+    await ref.read(upcomingEventsProvider(scope).future).then((_) {}, onError: (_) {});
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final announcements = ref.watch(homeAnnouncementsProvider);
-    final events = ref.watch(upcomingEventsProvider);
-    final lectures = ref.watch(latestLecturesProvider);
-    final latest = ref.watch(latestMediaProvider);
-    final cachedAt = [
-      announcements,
-      events,
-      lectures,
-      latest,
-    ].map((value) => value.value?.cachedAt).whereType<DateTime>().firstOrNull;
-
-    final lectureIds = {for (final item in lectures.value?.data.items ?? const <MediaItem>[]) item.id};
+    final follows = ref.watch(myFollowsProvider);
+    final following = follows.value?.isNotEmpty ?? false;
+    final scope = following ? MosqueFilter.followed : MosqueFilter.all;
+    // Tot bekend is of de gebruiker moskeeën volgt, staan de secties op "laden" (geen dubbele verzoeken).
+    final ready = follows.hasValue || follows.hasError;
+    const pending = AsyncLoading<Never>();
+    final events = ready ? ref.watch(upcomingEventsProvider(scope)) : pending;
+    final media = ready ? ref.watch(latestMediaProvider(scope)) : pending;
+    final news = ready ? ref.watch(latestNewsProvider(scope)) : pending;
+    final cachedAt = [events, media, news].map((value) => value.value?.cachedAt).whereType<DateTime>().firstOrNull;
+    final scopeQuery = following ? '?moskee=gevolgd' : '';
 
     return Scaffold(
       appBar: AppBar(title: const BrandLogo(height: 32), toolbarHeight: 64),
       body: RefreshIndicator(
-        onRefresh: () => _refresh(ref),
+        onRefresh: () => _refresh(ref, scope),
         child: ListView(
           padding: const EdgeInsets.fromLTRB(TokSpace.s4, TokSpace.s2, TokSpace.s4, TokSpace.s8),
           children: [
@@ -59,49 +63,19 @@ class HomePage extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const _Welcome(),
+                  _Welcome(following: following),
                   if (cachedAt != null) ...[
                     const SizedBox(height: TokSpace.s4),
-                    OfflineBanner(savedAt: cachedAt, onRetry: () => _refresh(ref)),
+                    OfflineBanner(savedAt: cachedAt, onRetry: () => _refresh(ref, scope)),
                   ],
-                  _Section<PageResult<Announcement>>(
-                    title: 'Aankondigingen',
-                    value: announcements,
-                    hideWhenEmpty: true,
-                    isEmpty: (page) => page.items.isEmpty,
-                    onRetry: () => ref.invalidate(homeAnnouncementsProvider),
-                    skeleton: const Card(
-                      child: Padding(
-                        padding: EdgeInsets.all(TokComponent.cardPadding),
-                        child: Column(
-                          children: [
-                            Skeleton(height: 20),
-                            SizedBox(height: TokSpace.s2),
-                            Skeleton(),
-                          ],
-                        ),
-                      ),
-                    ),
-                    builder: (page) => Column(
-                      children: [
-                        for (final announcement in page.items)
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: TokSpace.s3),
-                            child: AnnouncementCard(
-                              announcement: announcement,
-                              onTap: () => context.push('/aankondiging/${announcement.id}'),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                  _Section<PageResult<Event>>(
+                  if (following) _MyMosques(follows: follows.requireValue) else const _FeaturedMosques(),
+                  PreviewSection<PageResult<Event>>(
                     title: 'Binnenkort',
                     actionLabel: 'Hele agenda',
-                    onAction: () => context.go('/agenda'),
+                    onAction: () => context.go('/agenda$scopeQuery'),
                     value: events,
                     isEmpty: (page) => page.items.isEmpty,
-                    onRetry: () => ref.invalidate(upcomingEventsProvider),
+                    onRetry: () => ref.invalidate(upcomingEventsProvider(scope)),
                     skeleton: const EventCardSkeleton(),
                     empty: Text(
                       'Er staan nu geen activiteiten gepland. Kijk later nog eens in de agenda.',
@@ -115,52 +89,51 @@ class HomePage extends ConsumerWidget {
                             padding: const EdgeInsets.only(bottom: TokSpace.s3),
                             child: EventCard(event: event, onTap: () => context.push('/activiteit/${event.id}')),
                           ),
-                        OutlinedButton.icon(
-                          onPressed: () => context.go('/agenda'),
-                          icon: const Icon(Icons.calendar_month_outlined),
-                          label: const Text('Bekijk de hele agenda'),
-                        ),
                       ],
                     ),
                   ),
-                  _Section<PageResult<MediaItem>>(
-                    title: 'Lezingen',
-                    actionLabel: 'Alle lezingen',
-                    onAction: () => context.go('/lezingen'),
-                    value: lectures,
+                  PreviewSection<PageResult<MediaItem>>(
+                    title: 'Nieuwe video\'s',
+                    actionLabel: 'Bibliotheek',
+                    onAction: () => context.go('/lezingen$scopeQuery'),
+                    value: media,
                     hideWhenEmpty: true,
                     isEmpty: (page) => page.items.isEmpty,
-                    onRetry: () => ref.invalidate(latestLecturesProvider),
-                    skeleton: const _MediaRail(children: [MediaCardSkeleton(), MediaCardSkeleton()]),
-                    builder: (page) => _MediaRail(
+                    onRetry: () => ref.invalidate(latestMediaProvider(scope)),
+                    skeleton: const CardRail(children: [MediaCardSkeleton(), MediaCardSkeleton()]),
+                    builder: (page) => CardRail(
                       children: [
                         for (final item in page.items)
                           MediaCard(item: item, onTap: () => context.push('/lezing/${item.id}')),
                       ],
                     ),
                   ),
-                  _Section<List<MediaItem>>(
-                    title: 'Nieuw toegevoegd',
-                    actionLabel: 'Bibliotheek',
-                    onAction: () => context.go('/lezingen'),
-                    value: latest.whenData(
-                      (fetched) => fetched.map(
-                        (page) => page.items.where((item) => !lectureIds.contains(item.id)).take(4).toList(),
-                      ),
-                    ),
+                  PreviewSection<PageResult<Announcement>>(
+                    title: 'Nieuws',
+                    actionLabel: 'Al het nieuws',
+                    onAction: () => context.push('/nieuws$scopeQuery'),
+                    value: news,
                     hideWhenEmpty: true,
-                    isEmpty: (items) => items.isEmpty,
-                    onRetry: () => ref.invalidate(latestMediaProvider),
-                    skeleton: const _MediaRail(children: [MediaCardSkeleton(), MediaCardSkeleton()]),
-                    builder: (items) => _MediaRail(
+                    isEmpty: (page) => page.items.isEmpty,
+                    onRetry: () => ref.invalidate(latestNewsProvider(scope)),
+                    skeleton: const Skeleton(height: 96),
+                    builder: (page) => Column(
                       children: [
-                        for (final item in items)
-                          MediaCard(item: item, onTap: () => context.push('/lezing/${item.id}')),
+                        for (final announcement in page.items)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: TokSpace.s3),
+                            child: AnnouncementCard(
+                              announcement: announcement,
+                              onTap: () => context.push('/aankondiging/${announcement.id}'),
+                            ),
+                          ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: TokSpace.s6),
-                  const FollowInvitation(),
+                  if (ref.watch(currentUserIdProvider) == null) ...[
+                    const SizedBox(height: TokSpace.s6),
+                    const _SignInInvitation(),
+                  ],
                 ],
               ),
             ),
@@ -172,13 +145,14 @@ class HomePage extends ConsumerWidget {
 }
 
 class _Welcome extends ConsumerWidget {
-  const _Welcome();
+  const _Welcome({required this.following});
+
+  final bool following;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final text = Theme.of(context).textTheme;
     final name = ref.watch(authControllerProvider).value?.displayName;
-    final mosqueName = ref.watch(mosqueProvider).value?.data.name ?? Brand.name;
     return Padding(
       padding: const EdgeInsets.only(top: TokSpace.s2),
       child: Column(
@@ -190,7 +164,9 @@ class _Welcome extends ConsumerWidget {
           ),
           const SizedBox(height: TokSpace.s2),
           Text(
-            'Welkom bij $mosqueName. Hier vind je wat er in onze moskee gebeurt: activiteiten, lezingen en nieuws.',
+            following
+                ? 'Welkom terug bij ${Brand.name}. Hier zie je wat er gebeurt bij de moskeeën die je volgt.'
+                : 'Welkom bij ${Brand.name}. Ontdek activiteiten, lezingen en nieuws van moskeeën bij jou in de buurt.',
             style: text.bodyLarge?.copyWith(color: context.colors.onSurfaceMuted),
           ),
         ],
@@ -199,85 +175,134 @@ class _Welcome extends ConsumerWidget {
   }
 }
 
-/// Sectie op de startpagina met eigen laad-, fout- en lege toestand, zodat één mislukte lijst de rest niet blokkeert.
-class _Section<T> extends StatelessWidget {
-  const _Section({
-    required this.title,
-    required this.value,
-    required this.isEmpty,
-    required this.onRetry,
-    required this.skeleton,
-    required this.builder,
-    this.actionLabel,
-    this.onAction,
-    this.empty,
-    this.hideWhenEmpty = false,
-  });
+/// De gevolgde moskeeën, favorieten eerst.
+class _MyMosques extends StatelessWidget {
+  const _MyMosques({required this.follows});
 
-  final String title;
-  final String? actionLabel;
-  final VoidCallback? onAction;
-  final AsyncValue<Fetched<T>> value;
-  final bool Function(T data) isEmpty;
-  final VoidCallback onRetry;
-  final Widget skeleton;
-  final Widget Function(T data) builder;
-  final Widget? empty;
-  final bool hideWhenEmpty;
+  final List<FollowStatus> follows;
 
   @override
   Widget build(BuildContext context) {
-    final Widget content;
-    if (value.hasError && !value.isLoading) {
-      final failure = describeFailure(value.error!);
-      content = StatusMessage(
-        kind: StatusKind.error,
-        title: failure.title,
-        message: failure.message,
-        actionLabel: 'Opnieuw proberen',
-        onAction: onRetry,
-      );
-    } else if (value.hasValue) {
-      final data = value.requireValue.data;
-      if (isEmpty(data)) {
-        if (hideWhenEmpty || empty == null) return const SizedBox.shrink();
-        content = empty!;
-      } else {
-        content = builder(data);
-      }
-    } else {
-      content = Semantics(label: '$title worden geladen', child: skeleton);
-    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        SectionHeader(title: title, actionLabel: actionLabel, onAction: onAction),
-        content,
+        PreviewSection<List<FollowStatus>>(
+          title: 'Jouw moskeeën',
+          actionLabel: 'Meer ontdekken',
+          onAction: () => context.go('/ontdekken'),
+          value: AsyncData(Fetched(follows)),
+          isEmpty: (list) => list.isEmpty,
+          onRetry: () {},
+          skeleton: const SizedBox.shrink(),
+          builder: (list) => CardRail(
+            width: 160,
+            children: [for (final follow in list) _MosqueCard(mosque: follow.mosque, favorite: follow.favorite)],
+          ),
+        ),
       ],
     );
   }
 }
 
-/// Horizontaal scrollende rij kaarten. De hoogte volgt de inhoud, zodat grotere tekst niet wordt afgekapt.
-class _MediaRail extends StatelessWidget {
-  const _MediaRail({required this.children});
+/// Zonder gevolgde moskeeën: een greep uit de aangesloten moskeeën.
+class _FeaturedMosques extends ConsumerWidget {
+  const _FeaturedMosques();
 
-  final List<Widget> children;
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final mosques = ref.watch(mosqueListProvider(_allMosques));
+    return PreviewSection<List<Mosque>>(
+      title: 'Moskeeën ontdekken',
+      actionLabel: 'Alle moskeeën',
+      onAction: () => context.go('/ontdekken'),
+      value: mosques.whenData((paged) => Fetched(paged.items.take(8).toList(), cachedAt: paged.cachedAt)),
+      hideWhenEmpty: true,
+      isEmpty: (list) => list.isEmpty,
+      onRetry: () => ref.invalidate(mosqueListProvider(_allMosques)),
+      skeleton: const CardRail(width: 160, children: [Skeleton(height: 120), Skeleton(height: 120)]),
+      builder: (list) => CardRail(
+        width: 160,
+        children: [for (final mosque in list) _MosqueCard(mosque: mosque.summary, city: mosque.city)],
+      ),
+    );
+  }
+}
+
+class _MosqueCard extends StatelessWidget {
+  const _MosqueCard({required this.mosque, this.city, this.favorite = false});
+
+  final MosqueSummary mosque;
+  final String? city;
+  final bool favorite;
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      clipBehavior: Clip.none,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          for (final child in children)
-            Padding(
-              padding: const EdgeInsets.only(right: TokSpace.s3),
-              child: SizedBox(width: 260, child: child),
+    final text = Theme.of(context).textTheme;
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: Semantics(
+        button: true,
+        label: [mosque.name, ?city, if (favorite) 'favoriet'].join(', '),
+        excludeSemantics: true,
+        child: InkWell(
+          onTap: () => context.push('/moskee/${Uri.encodeComponent(mosque.slug)}'),
+          child: Padding(
+            padding: const EdgeInsets.all(TokSpace.s3),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    MosqueAvatar(name: mosque.name, logoUrl: mosque.logoUrl, size: 48),
+                    const Spacer(),
+                    if (favorite) Icon(Icons.star, color: context.colors.accentText, size: TokIconSize.md),
+                  ],
+                ),
+                const SizedBox(height: TokSpace.s2),
+                Text(mosque.name, style: text.titleSmall, maxLines: 2, overflow: TextOverflow.ellipsis),
+                if (city != null) Text(city!, style: text.bodySmall),
+              ],
             ),
-        ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SignInInvitation extends StatelessWidget {
+  const _SignInInvitation();
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    final text = Theme.of(context).textTheme;
+    return Card(
+      color: c.primaryContainer,
+      child: Padding(
+        padding: const EdgeInsets.all(TokComponent.cardPadding),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.favorite_outline, color: c.onPrimaryContainer),
+                const SizedBox(width: TokSpace.s2),
+                Expanded(
+                  child: Text('Volg je moskeeën', style: text.titleMedium?.copyWith(color: c.onPrimaryContainer)),
+                ),
+              ],
+            ),
+            const SizedBox(height: TokSpace.s2),
+            Text(
+              'Met een account volg je moskeeën, krijg je meldingen van hun nieuws en bewaar je video\'s. Volgen is '
+              'gratis en is geen lidmaatschap van een moskee.',
+              style: text.bodyMedium?.copyWith(color: c.onPrimaryContainer),
+            ),
+            const SizedBox(height: TokSpace.s3),
+            FilledButton(onPressed: () => context.push('/inloggen'), child: const Text('Inloggen of account maken')),
+          ],
+        ),
       ),
     );
   }

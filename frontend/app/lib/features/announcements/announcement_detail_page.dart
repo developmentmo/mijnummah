@@ -8,6 +8,7 @@ import '../../core/widgets/content_width.dart';
 import '../../core/widgets/detail_app_bar.dart';
 import '../../core/widgets/offline_banner.dart';
 import '../../core/widgets/tag.dart';
+import '../mosques/mosque_widgets.dart';
 import 'announcement_providers.dart';
 
 class AnnouncementDetailPage extends ConsumerWidget {
@@ -58,6 +59,10 @@ class AnnouncementDetailPage extends ConsumerWidget {
                       Text('Geldig tot ${Dates.weekdayDate(announcement.expiresAt!)}', style: text.bodySmall),
                     const SizedBox(height: TokSpace.s4),
                     SelectableText(announcement.body, style: text.bodyLarge),
+                    if (announcement.mosque case final mosque?) ...[
+                      const SizedBox(height: TokSpace.s6),
+                      MosqueLinkTile(mosque: mosque),
+                    ],
                   ],
                 ),
               ),

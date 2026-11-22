@@ -49,11 +49,7 @@ final authServiceProvider = Provider<AuthService>((ref) {
 final pushMessagingProvider = Provider<PushMessaging>((ref) => const UnsupportedPushMessaging());
 
 final pushRegistrationProvider = Provider<PushRegistration>((ref) {
-  final registration = PushRegistration(
-    ref.watch(apiClientProvider),
-    ref.watch(pushMessagingProvider),
-    mosqueSlug: ref.watch(appConfigProvider).mosqueSlug,
-  );
+  final registration = PushRegistration(ref.watch(apiClientProvider), ref.watch(pushMessagingProvider));
   ref.onDispose(registration.dispose);
   return registration;
 });
@@ -123,14 +119,29 @@ class AuthController extends AsyncNotifier<UserProfile?> {
 /// hiernaar, zodat ze na in- of uitloggen opnieuw worden opgehaald.
 final currentUserIdProvider = Provider<String?>((ref) => ref.watch(authControllerProvider).value?.id);
 
-final mosqueRepositoryProvider = Provider<MosqueRepository>(
-  (ref) => MosqueRepository(ref.watch(apiClientProvider), ref.watch(appConfigProvider).mosqueSlug),
-);
+final contentRepositoryProvider = Provider<ContentRepository>((ref) => ContentRepository(ref.watch(apiClientProvider)));
 
 final meRepositoryProvider = Provider<MeRepository>((ref) => MeRepository(ref.watch(apiClientProvider)));
 
-/// Profiel van de moskee (naam, beschrijving, adres, contact).
-final mosqueProvider = FutureProvider<Fetched<Mosque>>((ref) => ref.watch(mosqueRepositoryProvider).mosque());
+/// Profiel van een moskee (naam, beschrijving, adres, contact, logo en omslag), op slug.
+final mosqueProvider = FutureProvider.autoDispose.family<Fetched<Mosque>, String>(
+  (ref, slug) => ref.watch(contentRepositoryProvider).mosque(slug),
+);
+
+/// Of de gebruiker de introductie al heeft gezien (of overgeslagen); bewaard tussen app-starts.
+final onboardingProvider = NotifierProvider<OnboardingController, bool>(OnboardingController.new);
+
+class OnboardingController extends Notifier<bool> {
+  static const _key = 'onboarding.done';
+
+  @override
+  bool build() => ref.watch(sharedPreferencesProvider).getBool(_key) ?? false;
+
+  Future<void> finish() async {
+    state = true;
+    await ref.read(sharedPreferencesProvider).setBool(_key, true);
+  }
+}
 
 /// Licht, donker of de instelling van het toestel; bewaard tussen app-starts.
 final themeModeProvider = NotifierProvider<ThemeModeController, ThemeMode>(ThemeModeController.new);

@@ -49,10 +49,19 @@ class ApiClient {
   AccessTokenSource? tokens;
 
   Uri uri(String path, [Map<String, Object?>? query]) {
-    final params = <String, String>{
-      for (final entry in (query ?? const <String, Object?>{}).entries)
-        if (entry.value != null && '${entry.value}'.isNotEmpty) entry.key: '${entry.value}',
-    };
+    // Een lijst wordt een herhaalde parameter (`mosque=a&mosque=b`); lege waarden vallen weg.
+    final params = <String, Object>{};
+    for (final MapEntry(:key, :value) in (query ?? const <String, Object?>{}).entries) {
+      if (value is Iterable<Object?>) {
+        final values = [
+          for (final v in value)
+            if (v != null && '$v'.isNotEmpty) '$v',
+        ];
+        if (values.isNotEmpty) params[key] = values;
+      } else if (value != null && '$value'.isNotEmpty) {
+        params[key] = '$value';
+      }
+    }
     return Uri.parse('$_baseUrl/api/v1$path').replace(queryParameters: params.isEmpty ? null : params);
   }
 
@@ -79,7 +88,7 @@ class ApiClient {
 
   Future<Object?> put(String path, {Object? body}) async => _decode(await _send('PUT', uri(path), body: body));
 
-  Future<void> delete(String path) async => _send('DELETE', uri(path));
+  Future<Object?> delete(String path) async => _decode(await _send('DELETE', uri(path)));
 
   /// Verwijdert de offline-cache, bijvoorbeeld bij uitloggen (de cache kan `registeredByMe` bevatten).
   Future<void> clearCache() => _cache.clear();

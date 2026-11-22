@@ -9,42 +9,78 @@ import '../../core/widgets/content_width.dart';
 import '../../core/widgets/offline_banner.dart';
 import '../../data/models.dart';
 import '../../data/paged.dart';
+import '../mosques/mosque_filter.dart';
+import '../mosques/mosque_widgets.dart';
 import 'agenda_providers.dart';
 import 'event_card.dart';
 
-/// Overzicht van aankomende activiteiten, te filteren op categorie.
+/// Overzicht van aankomende activiteiten van alle moskeeën, te filteren op moskee, periode en categorie.
 class AgendaPage extends ConsumerStatefulWidget {
-  const AgendaPage({super.key, this.initialCategory});
+  const AgendaPage({
+    super.key,
+    this.initialCategory,
+    this.initialMosque = MosqueFilter.all,
+    this.initialPeriod = AgendaPeriod.all,
+  });
 
   final EventCategory? initialCategory;
+  final MosqueFilter initialMosque;
+  final AgendaPeriod initialPeriod;
 
   @override
   ConsumerState<AgendaPage> createState() => _AgendaPageState();
 }
 
 class _AgendaPageState extends ConsumerState<AgendaPage> {
-  late EventCategory? _category = widget.initialCategory;
+  late AgendaQuery _query = _initial;
+
+  AgendaQuery get _initial =>
+      (mosque: widget.initialMosque, category: widget.initialCategory, period: widget.initialPeriod);
 
   @override
   void didUpdateWidget(AgendaPage oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.initialCategory != oldWidget.initialCategory) _category = widget.initialCategory;
+    if (widget.initialCategory != oldWidget.initialCategory ||
+        widget.initialMosque != oldWidget.initialMosque ||
+        widget.initialPeriod != oldWidget.initialPeriod) {
+      _query = _initial;
+    }
   }
 
-  void _select(EventCategory? category) {
-    setState(() => _category = category);
-    context.go(category == null ? '/agenda' : '/agenda?categorie=${category.apiValue}');
+  /// Zet de filters ook in het adres, zodat een link (of de knop "Hele agenda" bij een moskee) dezelfde lijst opent.
+  void _apply(AgendaQuery query) {
+    setState(() => _query = query);
+    final params = {
+      'moskee': ?query.mosque.queryValue,
+      if (query.period != AgendaPeriod.all) 'periode': query.period.queryValue,
+      'categorie': ?query.category?.apiValue,
+    };
+    context.go(Uri(path: '/agenda', queryParameters: params.isEmpty ? null : params).toString());
   }
 
   @override
   Widget build(BuildContext context) {
-    final provider = agendaProvider(_category);
+    final provider = agendaProvider(_query);
     final value = ref.watch(provider);
+    final filtered = _query.category != null || _query.period != AgendaPeriod.all || !_query.mosque.isAll;
     return Scaffold(
       appBar: AppBar(title: const Text('Agenda')),
       body: Column(
         children: [
-          _CategoryFilter(selected: _category, onSelected: _select),
+          MosqueFilterRow(
+            selected: _query.mosque,
+            onSelected: (mosque) => _apply((mosque: mosque, category: _query.category, period: _query.period)),
+          ),
+          ChoiceChipRow<AgendaPeriod>(
+            semanticLabel: 'Filter op periode',
+            options: [for (final period in AgendaPeriod.values) (period, period.label)],
+            selected: _query.period,
+            onSelected: (period) => _apply((mosque: _query.mosque, category: _query.category, period: period)),
+          ),
+          _CategoryFilter(
+            selected: _query.category,
+            onSelected: (category) => _apply((mosque: _query.mosque, category: category, period: _query.period)),
+          ),
           Expanded(
             child: RefreshIndicator(
               onRefresh: () => ref.refresh(provider.future),
@@ -63,8 +99,8 @@ class _AgendaPageState extends ConsumerState<AgendaPage> {
                 ),
                 data: (paged) => _EventList(
                   paged: paged,
-                  category: _category,
-                  onShowAll: () => _select(null),
+                  filtered: filtered,
+                  onShowAll: () => _apply((mosque: MosqueFilter.all, category: null, period: AgendaPeriod.all)),
                   onLoadMore: () => ref.read(provider.notifier).loadMore(),
                   onRetry: () => ref.invalidate(provider),
                 ),
@@ -97,14 +133,14 @@ class _CategoryFilter extends StatelessWidget {
 class _EventList extends StatelessWidget {
   const _EventList({
     required this.paged,
-    required this.category,
+    required this.filtered,
     required this.onShowAll,
     required this.onLoadMore,
     required this.onRetry,
   });
 
   final Paged<Event> paged;
-  final EventCategory? category;
+  final bool filtered;
   final VoidCallback onShowAll;
   final VoidCallback onLoadMore;
   final VoidCallback onRetry;
@@ -119,18 +155,18 @@ class _EventList extends StatelessWidget {
               padding: const EdgeInsets.all(TokSpace.s4),
               child: OfflineBanner(savedAt: paged.cachedAt!, onRetry: onRetry),
             ),
-          category == null
-              ? const StatePlaceholder(
-                  icon: Icons.event_available_outlined,
-                  title: 'Nog geen activiteiten gepland',
-                  message: 'Zodra de moskee nieuwe activiteiten plant, vind je ze hier.',
-                )
-              : StatePlaceholder(
+          filtered
+              ? StatePlaceholder(
                   icon: Icons.filter_alt_off_outlined,
-                  title: 'Geen activiteiten in deze categorie',
-                  message: 'Er staan nu geen activiteiten gepland in "${category!.label}".',
+                  title: 'Geen activiteiten gevonden',
+                  message: 'Er staan geen activiteiten gepland die bij je filters passen.',
                   actionLabel: 'Alle activiteiten tonen',
                   onAction: onShowAll,
+                )
+              : const StatePlaceholder(
+                  icon: Icons.event_available_outlined,
+                  title: 'Nog geen activiteiten gepland',
+                  message: 'Zodra moskeeën nieuwe activiteiten plannen, vind je ze hier.',
                 ),
         ],
       );

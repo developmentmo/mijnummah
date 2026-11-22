@@ -645,3 +645,26 @@ Belangrijke architectuur- en ontwerpbeslissingen. Status: **Voorgesteld** (wacht
   een eigen project; een link (bijv. naar een pdf of de site van de moskee) dekt de behoefte nu.
 - **Gevolg:** Een ingeplande video krijgt geen automatische pushmelding; de beheerder verstuurt die na het
   publicatiemoment. De centrale app (fase D) moet gebedstijden en de nieuwe categorie tonen.
+
+## D-060 — Centrale app: content over alle moskeeën, toestellen per gebruiker, favorieten
+
+- **Status:** Besloten (fase D)
+- **Besluit:**
+  - De publieke API krijgt lijsten over alle actieve moskeeën heen (`/public/events`, `/public/media`,
+    `/public/announcements`) met een optioneel, herhaalbaar filter `mosque` (slugs) en detail op id. De oude lijsten
+    per moskee blijven bestaan. Elk item draagt een kleine moskeekaart (id, slug, naam, logo).
+  - De app vraagt de content van gevolgde moskeeën op door hun slugs mee te sturen; de feed zelf vraagt geen
+    inloggen en de backend hoeft er geen gebruikersstatus voor te kennen.
+  - Een pushtoken hoort bij de gebruiker. Ontvangers van een melding zijn de toestellen van de volgers met de
+    voorkeur voor dat onderwerp. `push_device.mosque_id` blijft staan maar wordt niet meer gebruikt; een oudere app
+    die nog `mosqueSlug` stuurt, werkt gewoon.
+  - Een favoriete moskee is een vlag op de volgrelatie (favoriet maken volgt zo nodig); een bewaarde video is een
+    eigen tabel `media_favorite`. Bewaarde video's die niet meer zichtbaar zijn, verdwijnen uit de lijst maar
+    blijven verwijderbaar.
+  - Het scherm Meldingen leest de verzonden pushmeldingen van gevolgde actieve moskeeën van de laatste 30 dagen; er
+    is geen aparte tabel met gelezen of ongelezen.
+- **Waarom:** Eén app voor alle moskeeën vraagt om lijsten over moskeeën heen, maar volgen is geen lidmaatschap en
+  publieke content moet zonder account werken. Met slugs in de vraag blijven de publieke endpoints anoniem en
+  cachebaar. Toestellen per gebruiker voorkomen dat iemand voor elke moskee een apart token nodig heeft.
+- **Gevolg:** Een gebruiker die een moskee ontvolgt, krijgt haar meldingen niet meer, maar zijn toestel blijft
+  aangemeld voor de andere moskeeën. Gelezen-status van meldingen is een latere uitbreiding.
