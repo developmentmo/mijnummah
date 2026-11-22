@@ -27,7 +27,7 @@ void main() {
 
     expect(find.byType(BrandLogo), findsWidgets);
     expect(find.text('Assalamoe alaikoem'), findsOneWidget);
-    expect(find.textContaining('Welkom bij Noeroel Islam'), findsOneWidget);
+    expect(find.textContaining('Welkom bij Mijn Ummah'), findsOneWidget);
     expect(find.text('Nieuwe lestijden'), findsOneWidget);
     expect(find.text('Uitgelicht'), findsOneWidget);
     expect(find.text('Lezing over geduld'), findsOneWidget);
@@ -61,7 +61,7 @@ void main() {
 
   testWidgets('nodigt een bezoeker uit om in te loggen en te volgen', (tester) async {
     await pumpApp(tester);
-    expect(find.text('Volg Noeroel Islam'), findsOneWidget);
+    expect(find.text('Volg Mijn Ummah'), findsOneWidget);
     expect(find.textContaining('geen lidmaatschap'), findsOneWidget);
 
     await tapVisible(tester, find.text('Inloggen om te volgen'));
@@ -76,8 +76,8 @@ void main() {
     backend.on('GET', '/me/follows/$mosqueId', followJson());
     await tapVisible(tester, find.text('Volgen'));
     expect(backend.requestsTo('PUT', '/me/follows/$mosqueId'), hasLength(1));
-    expect(find.text('Je volgt nu Noeroel Islam.'), findsOneWidget);
-    expect(find.text('Volg Noeroel Islam'), findsNothing);
+    expect(find.text('Je volgt nu Mijn Ummah.'), findsOneWidget);
+    expect(find.text('Volg Mijn Ummah'), findsNothing);
   });
 
   testWidgets('toont zonder verbinding de laatst opgehaalde gegevens met een melding', (tester) async {

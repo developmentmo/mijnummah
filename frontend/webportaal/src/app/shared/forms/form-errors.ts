@@ -15,7 +15,7 @@ export function controlError(control: AbstractControl | null): string {
   if (errors['httpUrl']) return 'Gebruik een link die met http:// of https:// begint.';
   if (errors['duration']) return 'Gebruik u:mm:ss, mm:ss of een aantal minuten.';
   if (errors['countryCode']) return 'Gebruik een landcode van twee letters, bijv. NL.';
-  if (errors['slug']) return 'Gebruik kleine letters, cijfers en streepjes, bijv. noeroel-islam.';
+  if (errors['slug']) return 'Gebruik kleine letters, cijfers en streepjes, bijv. mijn-ummah.';
   if (errors['youtube']) return 'Plak een YouTube-link, bijv. https://www.youtube.com/watch?v=…';
   if (errors['server']) return errors['server'];
   return 'Controleer dit veld.';

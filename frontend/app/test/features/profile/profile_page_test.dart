@@ -31,7 +31,7 @@ void main() {
       });
     await pumpApp(tester, backend: backend, location: '/profiel', tokenStore: signedInStore(backend));
 
-    expect(find.text('Je volgt Noeroel Islam sinds 1 september 2026.'), findsOneWidget);
+    expect(find.text('Je volgt Mijn Ummah sinds 1 september 2026.'), findsOneWidget);
     expect(find.textContaining('Pushmeldingen zijn in deze versie van de app niet ingesteld'), findsOneWidget);
     final media = find.widgetWithText(SwitchListTile, 'Nieuwe lezingen');
     expect(tester.widget<SwitchListTile>(media).value, isFalse);
@@ -52,11 +52,11 @@ void main() {
     await pumpApp(tester, backend: backend, location: '/profiel', tokenStore: signedInStore(backend));
 
     await tapVisible(tester, find.widgetWithText(TextButton, 'Ontvolgen'));
-    expect(find.text('Noeroel Islam ontvolgen?'), findsOneWidget);
+    expect(find.text('Mijn Ummah ontvolgen?'), findsOneWidget);
     await tester.tap(find.widgetWithText(FilledButton, 'Ontvolgen'));
     await settle(tester);
     expect(backend.requestsTo('DELETE', '/me/follows/$mosqueId'), hasLength(1));
-    expect(find.text('Volg Noeroel Islam'), findsOneWidget);
+    expect(find.text('Volg Mijn Ummah'), findsOneWidget);
   });
 
   testWidgets('toont de eigen komende aanmeldingen', (tester) async {
@@ -72,7 +72,7 @@ void main() {
             'eventStartsAt': '2030-11-08T18:30:00Z',
             'mosqueId': mosqueId,
             'mosqueSlug': slug,
-            'mosqueName': 'Noeroel Islam',
+            'mosqueName': 'Mijn Ummah',
             'status': 'CONFIRMED',
             'registeredAt': '2026-10-01T10:00:00Z',
           },

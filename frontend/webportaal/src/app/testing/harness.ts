@@ -80,8 +80,8 @@ export function spyOnRouter() {
 
 export const MOSQUE: AdminMosque = {
   id: 'm-1',
-  slug: 'noeroel-islam',
-  name: 'Noeroel Islam',
+  slug: 'mijn-ummah',
+  name: 'Mijn Ummah',
   description: 'Testmoskee',
   address: { street: 'Straat 1', postalCode: '1234 AB', city: 'Voorbeeldstad', countryCode: 'NL' },
   contact: { email: 'info@example.org', phone: null, websiteUrl: null },

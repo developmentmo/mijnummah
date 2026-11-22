@@ -112,8 +112,8 @@ describe('MosqueCreatePage', () => {
 
   it('meldt een slug die al bestaat en een geblokkeerde beheerder', async () => {
     const { fixture, el, input } = await render();
-    typeInto(input('name'), 'Noeroel Islam');
-    typeInto(input('slug'), 'noeroel-islam');
+    typeInto(input('name'), 'Mijn Ummah');
+    typeInto(input('slug'), 'mijn-ummah');
     typeInto(input('adminName'), 'Bestuur');
     typeInto(input('adminEmail'), 'bestuur@example.org');
     buttonByText(el, 'Moskee registreren').click();

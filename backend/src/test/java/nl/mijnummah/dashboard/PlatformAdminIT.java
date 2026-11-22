@@ -38,12 +38,12 @@ class PlatformAdminIT extends AbstractIntegrationTest {
 
     @Test
     void registeringAMosqueMakesASlugSettingsAndInvitesItsFirstAdministrator() {
-        ApiResponse created = register(Map.of("details", Map.of("name", "Moskee Noeroel-Islam (Den Haag)"),
+        ApiResponse created = register(Map.of("details", Map.of("name", "Moskee Mijn-Ummah (Den Haag)"),
                 "firstAdministrator", Map.of("email", "Bestuur@Example.com", "displayName", "Bestuur"),
                 "settings", Map.of("registrationsEnabled", false, "pushEnabled", true)));
         assertThat(created.status()).as(created.body().toString()).isEqualTo(201);
         JsonNode mosque = created.body().get("mosque");
-        assertThat(mosque.get("slug").asString()).isEqualTo("moskee-noeroel-islam-den-haag");
+        assertThat(mosque.get("slug").asString()).isEqualTo("moskee-mijn-ummah-den-haag");
         assertThat(mosque.get("status").asString()).isEqualTo("ACTIVE");
         assertThat(created.body().get("settings").get("registrationsEnabled").asBoolean()).isFalse();
         assertThat(created.body().get("firstAdministrator").get("invited").asBoolean()).isTrue();
@@ -59,8 +59,8 @@ class PlatformAdminIT extends AbstractIntegrationTest {
         assertThat(api.get("/api/v1/admin/mosques/" + mosqueId + "/settings", token).body()
                 .get("registrationsEnabled").asBoolean()).isFalse();
 
-        ApiResponse sameName = register(Map.of("details", Map.of("name", "Moskee Noeroel Islam Den Haag")));
-        assertThat(sameName.body().get("mosque").get("slug").asString()).isEqualTo("moskee-noeroel-islam-den-haag-2");
+        ApiResponse sameName = register(Map.of("details", Map.of("name", "Moskee Mijn Ummah Den Haag")));
+        assertThat(sameName.body().get("mosque").get("slug").asString()).isEqualTo("moskee-mijn-ummah-den-haag-2");
         assertThat(sameName.body().get("firstAdministrator").isNull()).isTrue();
     }
 

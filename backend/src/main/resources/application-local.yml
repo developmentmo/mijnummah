@@ -22,15 +22,15 @@ mijnummah:
   # The Angular admin portal in development (ng serve).
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:4200}
-  # Local first start: a platform admin and the Noeroel Islam mosque, so the API is usable right away.
+  # Local first start: a platform admin and the Mijn Ummah mosque, so the API is usable right away.
   bootstrap:
     admin:
       email: ${BOOTSTRAP_ADMIN_EMAIL:admin@mijnummah.local}
       password: ${BOOTSTRAP_ADMIN_PASSWORD:lokaal-wachtwoord-123}
       display-name: ${BOOTSTRAP_ADMIN_DISPLAY_NAME:Lokale beheerder}
     mosque:
-      slug: ${BOOTSTRAP_MOSQUE_SLUG:noeroel-islam}
-      name: ${BOOTSTRAP_MOSQUE_NAME:Noeroel Islam}
+      slug: ${BOOTSTRAP_MOSQUE_SLUG:mijn-ummah}
+      name: ${BOOTSTRAP_MOSQUE_NAME:Mijn Ummah}
       city: ${BOOTSTRAP_MOSQUE_CITY:}
       admin-email: ${BOOTSTRAP_MOSQUE_ADMIN_EMAIL:admin@mijnummah.local}
   # No real email or push service locally: both are written to the log (clearly marked "not sent").

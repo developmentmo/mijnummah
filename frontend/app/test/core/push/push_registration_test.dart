@@ -26,7 +26,7 @@ void main() {
       httpClient: backend.client,
       cache: SharedPreferencesResponseCache(await SharedPreferences.getInstance()),
     );
-    registration = PushRegistration(api, push, mosqueSlug: 'noeroel-islam');
+    registration = PushRegistration(api, push, mosqueSlug: 'mijn-ummah');
   });
 
   tearDown(() => registration.dispose());
@@ -43,7 +43,7 @@ void main() {
     push.current = PushPermission.granted;
     await registration.signedIn();
     expect(registered(), [
-      {'token': 'fcm-token-1', 'platform': 'ANDROID', 'mosqueSlug': 'noeroel-islam'},
+      {'token': 'fcm-token-1', 'platform': 'ANDROID', 'mosqueSlug': 'mijn-ummah'},
     ]);
   });
 
@@ -68,8 +68,8 @@ void main() {
     push.refreshToken('fcm-token-2');
     await Future<void>.delayed(Duration.zero);
     expect(registered(), [
-      {'token': 'fcm-token-1', 'platform': 'ANDROID', 'mosqueSlug': 'noeroel-islam'},
-      {'token': 'fcm-token-2', 'platform': 'ANDROID', 'mosqueSlug': 'noeroel-islam'},
+      {'token': 'fcm-token-1', 'platform': 'ANDROID', 'mosqueSlug': 'mijn-ummah'},
+      {'token': 'fcm-token-2', 'platform': 'ANDROID', 'mosqueSlug': 'mijn-ummah'},
     ]);
   });
 
@@ -108,7 +108,7 @@ void main() {
         cache: SharedPreferencesResponseCache(await SharedPreferences.getInstance()),
       ),
       const UnsupportedPushMessaging(),
-      mosqueSlug: 'noeroel-islam',
+      mosqueSlug: 'mijn-ummah',
     );
     await unsupported.signedIn();
     expect(await unsupported.enable(), PushPermission.denied);

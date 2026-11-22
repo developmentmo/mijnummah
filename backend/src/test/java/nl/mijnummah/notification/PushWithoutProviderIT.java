@@ -15,7 +15,7 @@ class PushWithoutProviderIT extends AbstractIntegrationTest {
 
     @Test
     void sendingIsUnavailableAndTheAudienceSaysSo() {
-        UUID mosqueId = mosque("noeroel-islam");
+        UUID mosqueId = mosque("mijn-ummah");
         Account admin = mosqueAdmin(mosqueId, "beheer");
         UUID id = UUID.fromString(api.post(adminPath(mosqueId, "announcements"), Map.of("title", "T", "body", "B"),
                 admin.token()).field("id"));

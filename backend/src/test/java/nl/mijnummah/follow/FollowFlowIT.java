@@ -18,7 +18,7 @@ class FollowFlowIT extends AbstractIntegrationTest {
 
     @BeforeEach
     void mosqueAndVisitor() {
-        mosqueId = mosque("noeroel-islam");
+        mosqueId = mosque("mijn-ummah");
         visitor = user("bezoeker");
     }
 
@@ -32,7 +32,7 @@ class FollowFlowIT extends AbstractIntegrationTest {
     void followIsIdempotentAndAllNotificationsAreOnByDefault() {
         ApiResponse first = api.put("/api/v1/me/follows/" + mosqueId, null, visitor.token());
         assertThat(first.status()).isEqualTo(200);
-        assertThat(first.field("mosqueSlug")).isEqualTo("noeroel-islam");
+        assertThat(first.field("mosqueSlug")).isEqualTo("mijn-ummah");
         assertThat(first.body().get("notifications").toString())
                 .isEqualTo("{\"ANNOUNCEMENTS\":true,\"EVENTS\":true,\"MEDIA\":true}");
 

@@ -8,7 +8,7 @@ import '../../helpers/test_app.dart';
 void main() {
   testWidgets('toont het profiel van de moskee met adres en contact', (tester) async {
     await pumpApp(tester, location: '/ontdekken');
-    expect(find.text('Noeroel Islam'), findsWidgets);
+    expect(find.text('Mijn Ummah'), findsWidgets);
     expect(find.text('Een moskee midden in de wijk.'), findsOneWidget);
     await tester.ensureVisible(find.text('Voorbeeldstraat 1, 1234 AB Voorbeeldstad'));
     expect(find.text('010 123 4567'), findsOneWidget);
@@ -21,7 +21,7 @@ void main() {
       ..on('GET', base, {
         'id': mosqueId,
         'slug': slug,
-        'name': 'Noeroel Islam',
+        'name': 'Mijn Ummah',
         'address': <String, Object?>{},
         'contact': <String, Object?>{},
       });

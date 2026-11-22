@@ -14,7 +14,7 @@ import nl.mijnummah.ApiTestClient.ApiResponse;
 
 class EventFlowIT extends AbstractIntegrationTest {
 
-    private static final String PUBLIC = "/api/v1/public/mosques/noeroel-islam/events";
+    private static final String PUBLIC = "/api/v1/public/mosques/mijn-ummah/events";
 
     private UUID mosqueId;
     private Account admin;
@@ -22,7 +22,7 @@ class EventFlowIT extends AbstractIntegrationTest {
 
     @BeforeEach
     void mosqueWithStaff() {
-        mosqueId = mosque("noeroel-islam");
+        mosqueId = mosque("mijn-ummah");
         admin = mosqueAdmin(mosqueId, "admin");
         editor = user("editor");
         grant(mosqueId, editor, "EDITOR");
@@ -164,7 +164,7 @@ class EventFlowIT extends AbstractIntegrationTest {
         ApiResponse registered = api.post(path, null, visitor.token());
         assertThat(registered.status()).isEqualTo(201);
         assertThat(registered.field("status")).isEqualTo("CONFIRMED");
-        assertThat(registered.field("mosqueSlug")).isEqualTo("noeroel-islam");
+        assertThat(registered.field("mosqueSlug")).isEqualTo("mijn-ummah");
 
         ApiResponse duplicate = api.post(path, null, visitor.token());
         assertThat(duplicate.status()).isEqualTo(409);

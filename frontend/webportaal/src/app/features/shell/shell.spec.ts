@@ -60,7 +60,7 @@ describe('Shell', () => {
     const headings = Array.from(
       fixture.nativeElement.querySelectorAll('nav h2') as NodeListOf<HTMLElement>,
     ).map(text);
-    expect(headings).toEqual(['Platform', 'Noeroel Islam']);
+    expect(headings).toEqual(['Platform', 'Mijn Ummah']);
     const labels = Array.from(
       fixture.nativeElement.querySelectorAll('nav a') as NodeListOf<HTMLElement>,
     ).map(text);

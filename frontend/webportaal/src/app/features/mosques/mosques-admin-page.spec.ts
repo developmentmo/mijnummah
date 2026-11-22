@@ -68,7 +68,7 @@ describe('MosquesAdminPage', () => {
   it('toont alle moskeeën met hun status en aantallen', async () => {
     const fixture = await render();
     const el: HTMLElement = fixture.nativeElement;
-    expect(text(el)).toContain('Noeroel Islam');
+    expect(text(el)).toContain('Mijn Ummah');
     expect(text(el)).toContain('voorbeeldmoskee');
     expect(text(el)).toContain('Actief');
     expect(text(el)).toContain('Inactief');
@@ -94,7 +94,7 @@ describe('MosquesAdminPage', () => {
     buttonByText(fixture.nativeElement, 'Deactiveren').click();
     await fixture.whenStable();
     expect(ask).toHaveBeenCalledWith(
-      expect.objectContaining({ title: 'Noeroel Islam deactiveren?', destructive: true }),
+      expect.objectContaining({ title: 'Mijn Ummah deactiveren?', destructive: true }),
     );
     const request = await respond(`${MOSQUES}/m-1/status`, { ...MOSQUE, status: 'INACTIVE' });
     expect(request.request.method).toBe('PATCH');
@@ -111,7 +111,7 @@ describe('MosquesAdminPage', () => {
     el.querySelectorAll('tbody tr')[0].querySelectorAll('button')[1].click();
     await fixture.whenStable();
     expect(ask).toHaveBeenCalledWith(
-      expect.objectContaining({ title: 'Noeroel Islam blokkeren?', destructive: true }),
+      expect.objectContaining({ title: 'Mijn Ummah blokkeren?', destructive: true }),
     );
     const request = await respond(`${MOSQUES}/m-1/status`, { ...MOSQUE, status: 'BLOCKED' });
     expect(request.request.body).toEqual({ status: 'BLOCKED' });
@@ -122,7 +122,7 @@ describe('MosquesAdminPage', () => {
     buttonByText(el, 'Blokkade opheffen').click();
     await fixture.whenStable();
     expect(ask).toHaveBeenLastCalledWith(
-      expect.objectContaining({ title: 'Blokkade van Noeroel Islam opheffen?' }),
+      expect.objectContaining({ title: 'Blokkade van Mijn Ummah opheffen?' }),
     );
     const lifted = await respond(`${MOSQUES}/m-1/status`, MOSQUE);
     expect(lifted.request.body).toEqual({ status: 'ACTIVE' });

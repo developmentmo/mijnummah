@@ -22,13 +22,13 @@ SPRING_PROFILES_ACTIVE=local ./mvnw spring-boot:run  # API op http://localhost:8
 ```
 
 Het profiel `local` maakt bij de eerste start een platformbeheerder (`admin@mijnummah.local`, wachtwoord
-`lokaal-wachtwoord-123`) en de moskee **Noeroel Islam** (slug `noeroel-islam`) aan, met die beheerder als ADMIN.
+`lokaal-wachtwoord-123`) en de moskee **Mijn Ummah** (slug `mijn-ummah`) aan, met die beheerder als ADMIN.
 Dit zijn wegwerpgegevens voor een ontwikkelmachine; buiten `local` bestaan ze niet. In `local` staan e-mail en push op
 `log`: herstelcodes en pushmeldingen komen in het log en worden **niet** verstuurd (het portaal toont dan
 "Testomgeving").
 
 ```bash
-curl -s localhost:8082/api/v1/public/mosques/noeroel-islam
+curl -s localhost:8082/api/v1/public/mosques/mijn-ummah
 curl -s -X POST localhost:8082/api/v1/auth/login -H 'Content-Type: application/json' \
   -d '{"email":"admin@mijnummah.local","password":"lokaal-wachtwoord-123"}'
 ```

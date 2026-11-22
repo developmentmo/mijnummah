@@ -14,14 +14,14 @@ import nl.mijnummah.ApiTestClient.ApiResponse;
 
 class MediaFlowIT extends AbstractIntegrationTest {
 
-    private static final String PUBLIC = "/api/v1/public/mosques/noeroel-islam/media";
+    private static final String PUBLIC = "/api/v1/public/mosques/mijn-ummah/media";
 
     private UUID mosqueId;
     private Account editor;
 
     @BeforeEach
     void mosqueWithEditor() {
-        mosqueId = mosque("noeroel-islam");
+        mosqueId = mosque("mijn-ummah");
         mosqueAdmin(mosqueId, "admin");
         editor = user("editor");
         grant(mosqueId, editor, "EDITOR");

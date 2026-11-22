@@ -72,7 +72,7 @@ class AccountFlowIT extends AbstractIntegrationTest {
 
     @Test
     void deletingTheAccountRemovesItsPersonalDataAndFreesItsPlaces() {
-        UUID mosqueId = mosque("noeroel-islam");
+        UUID mosqueId = mosque("mijn-ummah");
         Account admin = mosqueAdmin(mosqueId, "beheer");
         Map<String, Object> body = new HashMap<>(eventBody("Lezing", inDays(5)));
         body.put("registrationEnabled", true);
@@ -83,7 +83,7 @@ class AccountFlowIT extends AbstractIntegrationTest {
         api.put("/api/v1/me/follows/" + mosqueId, null, visitor.token());
         api.put("/api/v1/me/follows/" + mosqueId + "/notifications", Map.of("events", false), visitor.token());
         api.put("/api/v1/me/devices",
-                Map.of("token", "token-van-bezoeker", "platform", "ANDROID", "mosqueSlug", "noeroel-islam"),
+                Map.of("token", "token-van-bezoeker", "platform", "ANDROID", "mosqueSlug", "mijn-ummah"),
                 visitor.token());
         assertThat(api.post("/api/v1/events/" + eventId + "/registrations", null, visitor.token()).status())
                 .isEqualTo(201);
@@ -111,7 +111,7 @@ class AccountFlowIT extends AbstractIntegrationTest {
 
     @Test
     void administratorsCannotDeleteTheirOwnAccount() {
-        UUID mosqueId = mosque("noeroel-islam");
+        UUID mosqueId = mosque("mijn-ummah");
         Account admin = mosqueAdmin(mosqueId, "beheer");
 
         ApiResponse blocked = api.post("/api/v1/me/deletion", Map.of("password", PASSWORD), admin.token());

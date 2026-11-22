@@ -12,7 +12,7 @@ public final class Slugs {
     private Slugs() {
     }
 
-    /** "Moskee Noeroel-Islam (Den Haag)" becomes "moskee-noeroel-islam-den-haag"; "moskee" when nothing is left. */
+    /** "Moskee Mijn-Ummah (Den Haag)" becomes "moskee-mijn-ummah-den-haag"; "moskee" when nothing is left. */
     public static String fromName(String name) {
         String ascii = Normalizer.normalize(name == null ? "" : name, Normalizer.Form.NFD)
                 .replaceAll("\\p{M}+", "")

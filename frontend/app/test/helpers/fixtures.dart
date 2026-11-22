@@ -2,13 +2,13 @@
 library;
 
 const mosqueId = '11111111-1111-1111-1111-111111111111';
-const slug = 'noeroel-islam';
+const slug = 'mijn-ummah';
 const base = '/public/mosques/$slug';
 
 Map<String, Object?> mosqueJson({String? description = 'Een moskee midden in de wijk.'}) => {
   'id': mosqueId,
   'slug': slug,
-  'name': 'Noeroel Islam',
+  'name': 'Mijn Ummah',
   'description': description,
   'address': {'street': 'Voorbeeldstraat 1', 'postalCode': '1234 AB', 'city': 'Voorbeeldstad', 'countryCode': 'NL'},
   'contact': {'email': 'info@example.org', 'phone': '010 123 4567', 'websiteUrl': 'https://example.org'},
@@ -113,7 +113,7 @@ Map<String, Object?> tokensJson({String access = 'access-1', String refresh = 'r
 Map<String, Object?> followJson({bool announcements = true, bool events = true, bool media = false}) => {
   'mosqueId': mosqueId,
   'mosqueSlug': slug,
-  'mosqueName': 'Noeroel Islam',
+  'mosqueName': 'Mijn Ummah',
   'followedSince': '2026-09-01T10:00:00Z',
   'notifications': {'ANNOUNCEMENTS': announcements, 'EVENTS': events, 'MEDIA': media},
 };

@@ -53,7 +53,7 @@ class RetentionIT extends AbstractIntegrationTest {
 
     @Test
     void registrationsAreForgottenAYearAfterTheEventButTheEventStays() {
-        UUID mosqueId = mosque("noeroel-islam");
+        UUID mosqueId = mosque("mijn-ummah");
         Account admin = mosqueAdmin(mosqueId, "beheer");
         Map<String, Object> body = new HashMap<>(eventBody("Lezing", inDays(5)));
         body.put("registrationEnabled", true);
@@ -72,9 +72,9 @@ class RetentionIT extends AbstractIntegrationTest {
 
     @Test
     void devicesTheAppStoppedReportingAreRemoved() {
-        mosque("noeroel-islam");
+        mosque("mijn-ummah");
         Account visitor = user("toestel");
-        api.put("/api/v1/me/devices", Map.of("token", "token-1", "platform", "ANDROID", "mosqueSlug", "noeroel-islam"),
+        api.put("/api/v1/me/devices", Map.of("token", "token-1", "platform", "ANDROID", "mosqueSlug", "mijn-ummah"),
                 visitor.token());
 
         pushRetention.purgeDevices(Instant.now().plus(Duration.ofDays(269)));
@@ -86,7 +86,7 @@ class RetentionIT extends AbstractIntegrationTest {
 
     @Test
     void aNotificationStillSendingAfterHalfAnHourIsMarkedFailedOnce() {
-        UUID mosqueId = mosque("noeroel-islam");
+        UUID mosqueId = mosque("mijn-ummah");
         Account admin = mosqueAdmin(mosqueId, "beheer");
         UUID notificationId = UUID.randomUUID();
         jdbc.update("""

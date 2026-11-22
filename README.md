@@ -3,8 +3,7 @@
 Eén islamitisch communityplatform voor alle aangesloten moskeeën: **één mobiele app** (Flutter) waarin gebruikers
 moskeeën ontdekken, volgen en hun activiteiten, lezingen en nieuws zien, een **beheerportaal** (Angular) voor de
 platformbeheerder en voor elke moskee een eigen afgeschermde beheeromgeving, en een gedeelde backend (Spring Boot,
-PostgreSQL). Elke moskee is een tenant; een nieuwe moskee toevoegen is configuratie, geen nieuwe app. De eerste
-pilotmoskee is **Noeroel Islam**.
+PostgreSQL). Elke moskee is een tenant; een nieuwe moskee toevoegen is configuratie, geen nieuwe app.
 
 | Map | Inhoud |
 |---|---|
