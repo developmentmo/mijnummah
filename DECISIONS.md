@@ -668,3 +668,20 @@ Belangrijke architectuur- en ontwerpbeslissingen. Status: **Voorgesteld** (wacht
   cachebaar. Toestellen per gebruiker voorkomen dat iemand voor elke moskee een apart token nodig heeft.
 - **Gevolg:** Een gebruiker die een moskee ontvolgt, krijgt haar meldingen niet meer, maar zijn toestel blijft
   aangemeld voor de andere moskeeën. Gelezen-status van meldingen is een latere uitbreiding.
+
+## D-061 — Pilot via het portaal, testmoskeeën via de API
+
+- **Status:** Besloten (fase E)
+- **Besluit:**
+  - Een moskee aansluiten gebeurt alleen via de portalen (of dezelfde API). Er komt geen moskee, naam of instelling
+    van een echte moskee in code, configuratie of migraties; de echte pilotmoskee is gegevens in de database.
+  - Het profiel `local` maakt geen moskee meer aan. `BOOTSTRAP_MOSQUE_*` blijft bestaan voor wie bij de eerste start
+    toch een moskee wil, maar is niet nodig.
+  - Testgegevens zet een script klaar dat alleen de publieke beheer-API gebruikt (`tools/demo/seed-demo.mjs`), met
+    verzonnen moskeeën. Het script maakt alleen aan en slaat bestaande moskeeën over.
+  - `PilotOnboardingIT` legt de stappen van de testhandleiding vast als integratietest, zodat een wijziging die het
+    aansluiten van een moskee breekt in CI rood wordt.
+- **Waarom:** Zo bewijst de pilot dat een nieuwe moskee geen ontwikkelaar nodig heeft, en blijft er geen
+  moskeespecifieke code achter (masterprompt). Een script via de API test bovendien dezelfde paden als het portaal,
+  in plaats van SQL die regels zou omzeilen.
+- **Gevolg:** Een verse lokale omgeving heeft geen moskeeën; draai het script of registreer er een in het portaal.

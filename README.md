@@ -24,7 +24,8 @@ docker compose up -d --build
 ```
 
 Portaal op http://localhost:4200 (inloggen als `admin@mijnummah.local`, wachtwoord `lokaal-wachtwoord-123`), API op
-http://localhost:8082. Na codewijzigingen opnieuw `docker compose up -d --build`; stoppen met `docker compose down`.
+http://localhost:8082. Er staan nog geen moskeeën klaar: registreer er een in het portaal, of zet testmoskeeën klaar
+met [tools/demo](tools/demo/README.md). Een pilot doorlopen: [TESTHANDLEIDING.md](TESTHANDLEIDING.md). Na codewijzigingen opnieuw `docker compose up -d --build`; stoppen met `docker compose down`.
 Wie aan de backend of het portaal ontwikkelt, start alleen de database (`docker compose up -d postgres`) en draait de
 rest zoals in de README van [backend](backend/README.md) en [portaal](frontend/webportaal/README.md).
 

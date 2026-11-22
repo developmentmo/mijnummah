@@ -29,8 +29,8 @@ moskeeën. Het herontwerp (plan in `herontwerp/plan.md` in de projectbestanden) 
 | A | Fundament: Liquibase, één merk, moskeestatus, auditlog, afbeeldingsopslag | Voltooid (PR #15 gemerged) |
 | B | Superuser-portaal | Voltooid (PR #16 gemerged) |
 | C | Moskeebeheerportaal | Voltooid (PR #17 gemerged) |
-| D | Centrale mobiele app | Geïmplementeerd; PR wacht op beoordeling |
-| E | Pilot Noeroel Islam als eerste tenant via het portaal | Nog niet begonnen |
+| D | Centrale mobiele app | Voltooid (PR #18 gemerged) |
+| E | Pilot: eerste moskee via het portaal, tweede zonder code, securitytests, testhandleiding | Geïmplementeerd; PR wacht op beoordeling |
 | F | Productie (alleen met expliciete toestemming) | Nog niet begonnen |
 
 ## Fase A — Fundament omzetten
@@ -134,6 +134,31 @@ Niet gedaan of afwijkend:
 - Filteren op regio is filteren op plaats; er is geen regio-indeling.
 - De periodefilters rekenen in de tijdzone van het toestel.
 - Geen browser- of toestel-end-to-end-tests; wel widgettests (app) en integratietests (backend).
+
+## Fase E — Pilot
+
+Gebouwd (D-061):
+
+- `PilotOnboardingIT`: een moskee sluit volledig via de API van de portalen aan (beheerder maakt zelf een account,
+  platformbeheerder registreert de moskee, beheerder richt profiel, logo, omslag, gebedstijden en een redacteur in,
+  redacteur en beheerder publiceren content), de app toont haar aan bezoekers en volgers; een tweede moskee sluit op
+  dezelfde manier aan en de twee blijven gescheiden.
+- Securitytests: `TenantIsolationIT` dekt nu ook de routes van fase C en D (dashboard, instellingen, afbeeldingen,
+  archiveren, eigen pushberichten, auditlog); nieuw `TokenSecurityIT` (andere sleutel, geen handtekening, verlopen,
+  andere uitgever, onbekend of geblokkeerd account, rolclaims in het token geven geen rechten).
+- `tools/demo/seed-demo.mjs`: zet testmoskeeën met beheerders, afbeeldingen en content klaar via dezelfde API;
+  overslaan wat al bestaat, wachtwoorden alleen uit de omgeving. Lokaal geprobeerd tegen een lege database: twee
+  moskeeën met 6 activiteiten, 3 video's en 3 aankondigingen; een tweede run slaat beide over.
+- Het profiel `local` maakt geen moskee meer aan, alleen de platformbeheerder.
+- [TESTHANDLEIDING.md](TESTHANDLEIDING.md): de pilot stap voor stap in portaal en app, de tweede moskee, handmatige
+  beveiligingscontroles en een feedbackformulier.
+
+Niet gedaan of afwijkend:
+
+- De echte pilotmoskee staat niet in de repository; die registreer je met de handleiding in het portaal. De
+  testgegevens gebruiken verzonnen moskeeën.
+- Feedback verzamelen en de app op echte toestellen testen gebeurt met de handleiding, buiten de repository.
+- Geen penetratietest door een externe partij en geen geautomatiseerde browsertests.
 
 ---
 
