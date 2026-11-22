@@ -23,7 +23,7 @@ interface Card {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [MatButton, PageHeader, RouterLink, Skeleton, StatePlaceholder, StatusMessage],
   template: `
-    <mu-page-header heading="Platform" subtitle="Overzicht van alle moskeeën op MijnUmmah.">
+    <mu-page-header heading="Platform" subtitle="Overzicht van alle moskeeën op Mijn Ummah.">
       <a matButton="filled" routerLink="/platform/moskeeen/nieuw">Moskee registreren</a>
     </mu-page-header>
 

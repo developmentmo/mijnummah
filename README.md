@@ -1,4 +1,4 @@
-# MijnUmmah
+# Mijn Ummah
 
 Eén islamitisch communityplatform voor alle aangesloten moskeeën: **één mobiele app** (Flutter) waarin gebruikers
 moskeeën ontdekken, volgen en hun activiteiten, lezingen en nieuws zien, een **beheerportaal** (Angular) voor de

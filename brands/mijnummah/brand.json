@@ -1,7 +1,7 @@
 {
   "$schema": "../brand.schema.json",
   "slug": "mijnummah",
-  "name": "MijnUmmah",
+  "name": "Mijn Ummah",
   "android": {
     "applicationId": "nl.mijnummah.app"
   },

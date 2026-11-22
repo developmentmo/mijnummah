@@ -42,6 +42,6 @@ class PasswordResetCodesTest {
         assertThat(PasswordResetMailer.text(invitation, "https://beheer.example.nl"))
                 .contains("ABCD-EFGH", "72 uur", "https://beheer.example.nl/wachtwoord-instellen");
         assertThat(PasswordResetMailer.text(invitation, "")).doesNotContain("http").contains("Wachtwoord instellen");
-        assertThat(PasswordResetMailer.subject(invitation)).isEqualTo("Je account bij MijnUmmah");
+        assertThat(PasswordResetMailer.subject(invitation)).isEqualTo("Je account bij Mijn Ummah");
     }
 }

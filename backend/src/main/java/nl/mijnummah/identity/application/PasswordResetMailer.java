@@ -41,7 +41,7 @@ class PasswordResetMailer {
     static String subject(PasswordResetCodeIssued issued) {
         return switch (issued.kind()) {
             case SELF_SERVICE -> "Je code om je wachtwoord te herstellen";
-            case INVITATION -> "Je account bij MijnUmmah";
+            case INVITATION -> "Je account bij Mijn Ummah";
             case BY_ADMINISTRATOR -> "Je code om een nieuw wachtwoord in te stellen";
         };
     }
@@ -67,7 +67,7 @@ class PasswordResetMailer {
             case INVITATION -> """
                     Salaam %s,
 
-                    Er is een account voor je aangemaakt bij MijnUmmah. Kies je eigen wachtwoord met deze code,
+                    Er is een account voor je aangemaakt bij Mijn Ummah. Kies je eigen wachtwoord met deze code,
                     %s:
 
                         %s
@@ -80,7 +80,7 @@ class PasswordResetMailer {
             case BY_ADMINISTRATOR -> """
                     Salaam %s,
 
-                    De beheerder van MijnUmmah heeft voor je een code aangevraagd om een nieuw wachtwoord in te
+                    De beheerder van Mijn Ummah heeft voor je een code aangevraagd om een nieuw wachtwoord in te
                     stellen. Vul de code in %s:
 
                         %s

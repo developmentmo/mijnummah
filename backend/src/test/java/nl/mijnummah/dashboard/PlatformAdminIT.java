@@ -50,7 +50,7 @@ class PlatformAdminIT extends AbstractIntegrationTest {
         UUID mosqueId = UUID.fromString(mosque.get("id").asString());
 
         MailMessage invitation = awaitEmail("bestuur@example.com");
-        assertThat(invitation.subject()).isEqualTo("Je account bij MijnUmmah");
+        assertThat(invitation.subject()).isEqualTo("Je account bij Mijn Ummah");
         ApiResponse chosen = api.post("/api/v1/auth/password-reset/confirm", Map.of("email", "bestuur@example.com",
                 "code", codeIn(invitation), "newPassword", "een eigen wachtwoord"));
         assertThat(chosen.status()).isEqualTo(200);

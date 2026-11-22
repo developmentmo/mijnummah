@@ -3,5 +3,5 @@
 /** Het merk van het platform. Zie design/README.md. */
 export const BRAND = {
   slug: 'mijnummah',
-  name: 'MijnUmmah',
+  name: 'Mijn Ummah',
 } as const;

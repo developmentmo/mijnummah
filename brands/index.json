@@ -1,4 +1,4 @@
 {
-  "$description": "Het merk van het platform (MijnUmmah) dat in de repository is toegepast en dat CI controleert. Er is één app voor alle moskeeën; de identiteit van een moskee (naam, logo, omslagfoto) komt uit de backend.",
+  "$description": "Het merk van het platform (Mijn Ummah) dat in de repository is toegepast en dat CI controleert. Er is één app voor alle moskeeën; de identiteit van een moskee (naam, logo, omslagfoto) komt uit de backend.",
   "default": "mijnummah"
 }

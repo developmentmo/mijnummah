@@ -170,7 +170,7 @@ Changesets zijn alleen vooruit en worden nooit achteraf gewijzigd; Liquibase con
 
 ## Release van de app
 
-Er is één app voor alle moskeeën: MijnUmmah, `nl.mijnummah.app` (D-053). De workflow
+Er is één app voor alle moskeeën: Mijn Ummah, `nl.mijnummah.app` (D-053). De workflow
 [Release-app](.github/workflows/release-app.yml) start alleen met de hand (Actions > Release-app > Run workflow, met
 het platform). Hij draait de tests, bouwt met `API_BASE_URL` en de Firebase-instellingen uit de GitHub Environment
 `productie`, tekent (Android) en levert het bestand als artifact. **Hij uploadt niets naar Play Console of App Store

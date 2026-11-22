@@ -1,4 +1,4 @@
-# Implementatieplan — MijnUmmah (platform voor alle moskeeën)
+# Implementatieplan — Mijn Ummah (platform voor alle moskeeën)
 
 Dit document beschrijft alle fases, hun acceptatiecriteria, afhankelijkheden en de voortgang.
 Beslissingen en hun onderbouwing staan in [DECISIONS.md](DECISIONS.md).
@@ -21,7 +21,7 @@ uit het masterprompt (code, tests, build, regressies, documentatie, beperkingen,
 | 7 | Voorbereiding white-label automatisering | Voltooid en goedgekeurd (PR #10 gemerged; CI groen, ook Android en iOS per merk) |
 | 8 | Latere uitbreidingen (niet implementeren) | Gedocumenteerd in EXTENSIONS.md; wacht op beoordeling |
 
-Sinds 21 november 2026 geldt een nieuwe masterprompt: één centrale MijnUmmah-app en een portaal voor superuser en
+Sinds 21 november 2026 geldt een nieuwe masterprompt: één centrale Mijn Ummah-app en een portaal voor superuser en
 moskeeën. Het herontwerp (plan in `herontwerp/plan.md` in de projectbestanden) loopt in fases A t/m F:
 
 | Fase | Onderwerp | Status |

@@ -555,16 +555,16 @@ Belangrijke architectuur- en ontwerpbeslissingen. Status: **Voorgesteld** (wacht
 - **Gevolg:** Een bestaande database met `flyway_schema_history` wordt niet automatisch overgenomen. Er is nog geen
   productie; een lokale database maak je opnieuw aan (`docker compose down -v`, dat wist de lokale gegevens).
 
-## D-053 — Eén MijnUmmah-app; white-label verwijderd
+## D-053 — Eén Mijn Ummah-app; white-label verwijderd
 
 - **Status:** Besloten (fase A); vervangt D-013, D-046 en D-047, en deels D-049 en D-051
-- **Besluit:** Er is één app, MijnUmmah (`nl.mijnummah.app`), met één merk in `brands/mijnummah/`. Een moskee is
+- **Besluit:** Er is één app, Mijn Ummah (`nl.mijnummah.app`), met één merk in `brands/mijnummah/`. Een moskee is
   gegevens in de backend (naam, contact, logo, omslagfoto), geen eigen app-build. `WHITE_LABEL.md`, de
   merken `noeroel-islam` en `voorbeeldmoskee` en de CI-matrix per merk zijn verwijderd.
 - **Waarom:** De masterprompt vraagt één centrale app waarin gebruikers moskeeën ontdekken en volgen. Een app per
   moskee vraagt per moskee store-accounts, sleutels en releases.
 - **Gevolg:** Tot fase D toont de app nog één moskee, standaard de pilot (`MOSQUE_SLUG`, alleen een standaardwaarde
-  in `app_config.dart`, geen eigen code voor die moskee). De kleuren van de pilot zijn het MijnUmmah-palet geworden.
+  in `app_config.dart`, geen eigen code voor die moskee). De kleuren van de pilot zijn het Mijn Ummah-palet geworden.
 
 ## D-054 — Moskeestatus actief, inactief of geblokkeerd
 

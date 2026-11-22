@@ -5,7 +5,7 @@ import { ThemeService } from '../../core/theme/theme.service';
 
 export type BrandLogoVariant = 'horizontal' | 'compact';
 
-/** Het MijnUmmah-logo in de variant die bij het actieve thema past (zie BRAND_GUIDELINES.md). */
+/** Het Mijn Ummah-logo in de variant die bij het actieve thema past (zie BRAND_GUIDELINES.md). */
 @Component({
   selector: 'mu-brand-logo',
   changeDetection: ChangeDetectionStrategy.OnPush,

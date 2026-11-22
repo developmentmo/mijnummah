@@ -1,11 +1,11 @@
-# Huisstijl MijnUmmah
+# Huisstijl Mijn Ummah
 
-Deze richtlijnen beschrijven de huisstijl van MijnUmmah: de app voor alle aangesloten moskeeën en het beheerportaal.
+Deze richtlijnen beschrijven de huisstijl van Mijn Ummah: de app voor alle aangesloten moskeeën en het beheerportaal.
 De merkkleuren, naam en het beeldmerk staan in [`brands/mijnummah/`](brands/mijnummah/brand.json); al het andere
 (typografie, maten, status- en neutrale kleuren) in [`design/tokens/tokens.json`](design/tokens/tokens.json). Pas
 waarden daar aan en draai `node tools/brand/brand.mjs apply`; nooit rechtstreeks in de app of het portaal.
 
-Moskeeën hebben geen eigen app of eigen huisstijl van de app. Hun identiteit binnen MijnUmmah bestaat uit hun naam,
+Moskeeën hebben geen eigen app of eigen huisstijl van de app. Hun identiteit binnen Mijn Ummah bestaat uit hun naam,
 logo en omslagfoto, die zij zelf in het portaal beheren (zie hoofdstuk 6).
 
 **Merkbelofte:** één app, alle moskeeën, één verbonden ummah.
@@ -21,7 +21,7 @@ patronen, goud alleen als accent.
 Het beeldmerk is een **achtpuntige ster** uit twee vierkanten, een klassiek motief uit de islamitische geometrie,
 getekend als lijn zodat het rustig blijft. De twee vierkanten zijn in elkaar gevlochten: moskeeën die samen één
 geheel vormen. In het midden staat een **gouden punt**: het gedeelde middelpunt van de gemeenschap. De woordmark
-**MijnUmmah** is gezet in Fraunces SemiBold en omgezet naar paden.
+**Mijn Ummah** is gezet in Fraunces SemiBold en omgezet naar paden.
 
 ### Varianten
 
@@ -189,7 +189,7 @@ portaal op `/`.
 ### Identiteit van een moskee
 
 - Elke moskee toont in de app haar eigen **logo** en **omslagfoto** (geüpload in het portaal, JPEG of PNG). Die
-  staan altijd binnen de MijnUmmah-schermen: kleuren, typografie en navigatie blijven die van MijnUmmah.
+  staan altijd binnen de Mijn Ummah-schermen: kleuren, typografie en navigatie blijven die van Mijn Ummah.
 - Logo: bij voorkeur vierkant en op een transparante of lichte achtergrond, minimaal 512 × 512 px.
 - Omslagfoto: liggend (ongeveer 3:1 of 16:9), minimaal 1600 px breed, zonder tekst erin; tekst komt uit de app.
 - Zonder logo toont de app een neutrale plaatshouder in de huisstijl, nooit het logo van een andere moskee.

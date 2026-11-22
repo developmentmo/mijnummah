@@ -66,7 +66,7 @@ Alles via omgevingsvariabelen; er staan geen geheimen in de repository. Zie [.en
 | `FORWARD_HEADERS_STRATEGY` | nee | `framework` achter een vertrouwde reverse proxy |
 | `MAIL_PROVIDER` | nee | `none` (standaard: wachtwoordherstel geeft `503`), `smtp`, of `log` (alleen lokaal: e-mail naar het log) |
 | `PORTAL_URL` | nee | Adres van het portaal, voor de link in uitnodigingen en herstel-e-mails (bijv. `https://beheer.example.nl`); leeg: geen link, alleen de code |
-| `MAIL_FROM` | bij `smtp` | Afzender van de herstel-e-mail, bijvoorbeeld `MijnUmmah <noreply@example.org>` |
+| `MAIL_FROM` | bij `smtp` | Afzender van de herstel-e-mail, bijvoorbeeld `Mijn Ummah <noreply@example.org>` |
 | `SPRING_MAIL_HOST`, `SPRING_MAIL_PORT`, `SPRING_MAIL_USERNAME`, `SPRING_MAIL_PASSWORD` | bij `smtp` | SMTP-server; voor STARTTLS ook `SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE=true` |
 | `PUSH_PROVIDER` | nee | `none` (standaard: verzenden geeft `503`), `fcm`, of `log` (alleen lokaal: meldingen naar het log) |
 | `FCM_PROJECT_ID` | bij `fcm` | Project-ID van het Firebase-project |
