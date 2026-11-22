@@ -1,6 +1,7 @@
 package nl.mijnummah.event.api;
 
 import java.time.Instant;
+import java.util.UUID;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -14,7 +15,8 @@ import nl.mijnummah.event.domain.Visibility;
 
 /**
  * Create or replace an event. Times are ISO-8601 instants with offset, e.g. 2026-11-06T18:30:00+01:00. Omitted
- * booleans are false; an omitted visibility is PUBLIC.
+ * booleans are false; an omitted visibility is PUBLIC. {@code imageId} is an image uploaded via
+ * {@code POST /admin/mosques/{mosqueId}/images}; {@code imageUrl} an external https image.
  */
 record EventRequest(
         @NotBlank @Size(max = 150) String title,
@@ -24,12 +26,13 @@ record EventRequest(
         Instant endsAt,
         @Size(max = 200) String location,
         @Size(max = 500) @Pattern(regexp = "^https://\\S+$", message = "must be an https URL") String imageUrl,
+        UUID imageId,
         Visibility visibility,
         Boolean registrationEnabled,
         @Min(1) Integer capacity) {
 
     EventDetails toDetails() {
-        return new EventDetails(title, description, category, startsAt, endsAt, location, imageUrl, visibility,
+        return new EventDetails(title, description, category, startsAt, endsAt, location, imageUrl, imageId, visibility,
                 Boolean.TRUE.equals(registrationEnabled), capacity);
     }
 }

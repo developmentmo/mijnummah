@@ -22,7 +22,7 @@ class MediaPushTextTest {
 
     private static MediaDetails details(MediaCategory category, String speaker) {
         return new MediaDetails("Titel", null, speaker, category,
-                new VideoReference(VideoProviderType.YOUTUBE, "dQw4w9WgXcQ"), null, null, null, null,
+                new VideoReference(VideoProviderType.YOUTUBE, "dQw4w9WgXcQ"), null, null, null, null, null,
                 Visibility.PUBLIC);
     }
 }

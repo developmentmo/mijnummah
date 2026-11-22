@@ -104,6 +104,20 @@ class AdminEventController {
         return EventResponse.Admin.from(eventService.cancel(actor, mosqueId, eventId));
     }
 
+    @PostMapping("/{eventId}/archive")
+    @Operation(summary = "Archiveren: verborgen in de app, aanmeldingen blijven bewaard")
+    EventResponse.Admin archive(@AuthenticationPrincipal AuthenticatedUser actor, @PathVariable UUID mosqueId,
+                                @PathVariable UUID eventId) {
+        return EventResponse.Admin.from(eventService.archive(actor, mosqueId, eventId));
+    }
+
+    @PostMapping("/{eventId}/restore")
+    @Operation(summary = "Uit het archief halen: terug naar gepubliceerd of geannuleerd")
+    EventResponse.Admin restore(@AuthenticationPrincipal AuthenticatedUser actor, @PathVariable UUID mosqueId,
+                                @PathVariable UUID eventId) {
+        return EventResponse.Admin.from(eventService.restore(actor, mosqueId, eventId));
+    }
+
     @PostMapping("/{eventId}/push")
     @ResponseStatus(HttpStatus.ACCEPTED)
     @Operation(summary = "Pushmelding versturen naar volgers (alleen ADMIN, één keer per activiteit)",

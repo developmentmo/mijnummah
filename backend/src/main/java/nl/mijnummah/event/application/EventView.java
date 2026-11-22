@@ -14,12 +14,12 @@ import nl.mijnummah.event.domain.EventStatus;
  *                       in admin views
  */
 public record EventView(UUID id, UUID mosqueId, EventDetails details, EventStatus status, Instant publishedAt,
-                        Instant cancelledAt, Instant createdAt, Instant updatedAt, long confirmedRegistrations,
+                        Instant cancelledAt, Instant archivedAt, Instant createdAt, Instant updatedAt, long confirmedRegistrations,
                         Boolean registeredByMe) {
 
     static EventView of(Event event, long confirmedRegistrations, Boolean registeredByMe) {
         return new EventView(event.getId(), event.getMosqueId(), event.details(), event.getStatus(),
-                event.getPublishedAt(), event.getCancelledAt(), event.getCreatedAt(), event.getUpdatedAt(),
+                event.getPublishedAt(), event.getCancelledAt(), event.getArchivedAt(), event.getCreatedAt(), event.getUpdatedAt(),
                 confirmedRegistrations, registeredByMe);
     }
 

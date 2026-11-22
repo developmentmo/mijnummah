@@ -18,10 +18,11 @@ record MosqueDetailsRequest(
         @Email @Size(max = 254) String email,
         @Size(max = 30) String phone,
         @Size(max = 500) @Pattern(regexp = "^https?://\\S+$", message = "must be an http(s) URL") String websiteUrl,
+        @Size(max = 500) @Pattern(regexp = "^https?://\\S+$", message = "must be an http(s) URL") String prayerTimesUrl,
         @Size(max = 50) String timeZone) {
 
     MosqueDetails toDetails() {
         return new MosqueDetails(name, description, street, postalCode, city, countryCode, email, phone, websiteUrl,
-                timeZone);
+                prayerTimesUrl, timeZone);
     }
 }

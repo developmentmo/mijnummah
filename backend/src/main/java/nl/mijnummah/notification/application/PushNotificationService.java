@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
@@ -18,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import nl.mijnummah.common.audit.AuditEvent;
 import nl.mijnummah.follow.FollowerDirectory;
+import nl.mijnummah.follow.NotificationTopic;
 import nl.mijnummah.identity.AuthenticatedUser;
 import nl.mijnummah.identity.UserDirectory;
 import nl.mijnummah.mosque.MosqueAccessService;
@@ -30,6 +32,7 @@ import nl.mijnummah.notification.PushNotConfiguredException;
 import nl.mijnummah.notification.PushNotificationView;
 import nl.mijnummah.notification.PushNotifications;
 import nl.mijnummah.notification.PushRequest;
+import nl.mijnummah.notification.PushTarget;
 import nl.mijnummah.notification.domain.PushDevice;
 import nl.mijnummah.notification.domain.PushNotification;
 import nl.mijnummah.notification.infrastructure.PushDeviceRepository;
@@ -72,20 +75,11 @@ public class PushNotificationService implements PushNotifications {
     @Override
     @Transactional
     public PushNotificationView send(AuthenticatedUser actor, PushRequest request) {
-        access.require(actor, request.mosqueId(), MosquePermission.SEND_NOTIFICATIONS);
-        if (!gateway.configured()) {
-            throw new PushNotConfiguredException();
-        }
-        if (!mosques.settings(request.mosqueId()).pushEnabled()) {
-            throw new PushDisabledForMosqueException();
-        }
+        requireSendable(actor, request.mosqueId());
         if (notifications.existsByContentTypeAndContentId(request.contentType(), request.contentId())) {
             throw new PushAlreadySentException();
         }
-        List<String> tokens = devices.findByMosqueIdAndUserIdIn(request.mosqueId(),
-                recipients(request.mosqueId(), request.contentType())).stream()
-                .map(PushDevice::getToken)
-                .toList();
+        List<String> tokens = tokens(request.mosqueId(), Set.of(request.contentType().topic()));
         PushNotification notification = PushNotification.start(request, tokens.size(), actor.id(),
                 Instant.now(clock));
         try {
@@ -94,7 +88,45 @@ public class PushNotificationService implements PushNotifications {
             // sent concurrently (double click): the unique constraint keeps it at one
             throw new PushAlreadySentException();
         }
-        events.publishEvent(AuditEvent.of(actor.id(), request.mosqueId(), "PUSH_SENT", "PUSH_NOTIFICATION",
+        return accepted(actor, notification, tokens);
+    }
+
+    /**
+     * Sends a free message (title and text written by the administrator) to the chosen followers of the mosque.
+     * Same rules as {@link #send}: ADMIN only, push configured and switched on for the mosque.
+     */
+    @Transactional
+    public PushNotificationView sendMessage(AuthenticatedUser actor, UUID mosqueId, String title, String body,
+                                            PushTarget audience) {
+        requireSendable(actor, mosqueId);
+        List<String> tokens = tokens(mosqueId, audience.topics());
+        PushNotification notification = PushNotification.message(mosqueId,
+                PushRequest.shorten(title.strip(), PushRequest.MAX_TITLE_LENGTH),
+                PushRequest.shorten(body.strip(), PushRequest.MAX_BODY_LENGTH), audience, tokens.size(), actor.id(),
+                Instant.now(clock));
+        notifications.saveAndFlush(notification);
+        return accepted(actor, notification, tokens);
+    }
+
+    private void requireSendable(AuthenticatedUser actor, UUID mosqueId) {
+        access.require(actor, mosqueId, MosquePermission.SEND_NOTIFICATIONS);
+        if (!gateway.configured()) {
+            throw new PushNotConfiguredException();
+        }
+        if (!mosques.settings(mosqueId).pushEnabled()) {
+            throw new PushDisabledForMosqueException();
+        }
+    }
+
+    private List<String> tokens(UUID mosqueId, Set<NotificationTopic> topics) {
+        Set<UUID> recipients = recipients(mosqueId, topics);
+        return recipients.isEmpty() ? List.of() : devices.findByMosqueIdAndUserIdIn(mosqueId, recipients).stream()
+                .map(PushDevice::getToken)
+                .toList();
+    }
+
+    private PushNotificationView accepted(AuthenticatedUser actor, PushNotification notification, List<String> tokens) {
+        events.publishEvent(AuditEvent.of(actor.id(), notification.getMosqueId(), "PUSH_SENT", "PUSH_NOTIFICATION",
                 notification.getId()));
         if (!tokens.isEmpty()) {
             events.publishEvent(new PushNotificationAccepted(notification.getId(), message(notification), tokens));
@@ -121,23 +153,45 @@ public class PushNotificationService implements PushNotifications {
     /** How many people and devices a notification of this type would reach now. */
     @Transactional(readOnly = true)
     public PushAudience audience(AuthenticatedUser actor, UUID mosqueId, PushContentType contentType) {
+        return audience(actor, mosqueId, Set.of(contentType.topic()));
+    }
+
+    /** How many people and devices a free message to this audience would reach now. */
+    @Transactional(readOnly = true)
+    public PushAudience audience(AuthenticatedUser actor, UUID mosqueId, PushTarget target) {
+        return audience(actor, mosqueId, target.topics());
+    }
+
+    private PushAudience audience(AuthenticatedUser actor, UUID mosqueId, Set<NotificationTopic> topics) {
         access.require(actor, mosqueId, MosquePermission.MANAGE_CONTENT);
-        Set<UUID> recipients = recipients(mosqueId, contentType);
+        Set<UUID> recipients = recipients(mosqueId, topics);
         long deviceCount = recipients.isEmpty() ? 0 : devices.countByMosqueIdAndUserIdIn(mosqueId, recipients);
         return new PushAudience(gateway.configured(), gateway.simulated(),
                 mosques.settings(mosqueId).pushEnabled(), recipients.size(),
                 Math.toIntExact(deviceCount));
     }
 
-    private Set<UUID> recipients(UUID mosqueId, PushContentType contentType) {
-        return users.activeAmong(followers.followersToNotify(mosqueId, contentType.topic()));
+    /** Active followers who receive notifications about at least one of the topics. */
+    private Set<UUID> recipients(UUID mosqueId, Set<NotificationTopic> topics) {
+        Set<UUID> followerIds = new HashSet<>();
+        for (NotificationTopic topic : topics) {
+            followerIds.addAll(followers.followersToNotify(mosqueId, topic));
+        }
+        return followerIds.isEmpty() ? Set.of() : users.activeAmong(followerIds);
     }
 
     /** The data tells the app which screen to open when the notification is tapped. */
     static PushMessage message(PushNotification notification) {
+        String type = notification.getContentType().name().toLowerCase(Locale.ROOT);
+        String mosqueId = notification.getMosqueId().toString();
+        if (notification.getContentId() == null) {
+            // A free message: the app opens the mosque.
+            return new PushMessage(notification.getTitle(), notification.getBody(),
+                    Map.of("type", type, "mosqueId", mosqueId));
+        }
         return new PushMessage(notification.getTitle(), notification.getBody(), Map.of(
-                "type", notification.getContentType().name().toLowerCase(Locale.ROOT),
+                "type", type,
                 "id", notification.getContentId().toString(),
-                "mosqueId", notification.getMosqueId().toString()));
+                "mosqueId", mosqueId));
     }
 }

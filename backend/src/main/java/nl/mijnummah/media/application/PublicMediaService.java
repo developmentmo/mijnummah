@@ -1,5 +1,7 @@
 package nl.mijnummah.media.application;
 
+import java.time.Clock;
+import java.time.Instant;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -16,7 +18,6 @@ import org.springframework.transaction.annotation.Transactional;
 import nl.mijnummah.identity.AuthenticatedUser;
 import nl.mijnummah.media.domain.MediaCategory;
 import nl.mijnummah.media.domain.MediaItem;
-import nl.mijnummah.media.domain.MediaStatus;
 import nl.mijnummah.media.domain.Visibility;
 import nl.mijnummah.media.infrastructure.MediaItemRepository;
 import nl.mijnummah.media.infrastructure.MediaSpecifications;
@@ -33,11 +34,13 @@ public class PublicMediaService {
     private final MediaItemRepository items;
     private final MediaViews views;
     private final MosqueDirectory mosques;
+    private final Clock clock;
 
-    public PublicMediaService(MediaItemRepository items, MediaViews views, MosqueDirectory mosques) {
+    public PublicMediaService(MediaItemRepository items, MediaViews views, MosqueDirectory mosques, Clock clock) {
         this.items = items;
         this.views = views;
         this.mosques = mosques;
+        this.clock = clock;
     }
 
     @Transactional(readOnly = true)
@@ -72,15 +75,15 @@ public class PublicMediaService {
     private MediaItem load(String mosqueSlug, UUID mediaId, AuthenticatedUser viewer) {
         MosqueRef mosque = mosques.requireActiveBySlug(mosqueSlug);
         return items.findByIdAndMosqueId(mediaId, mosque.id())
-                .filter(item -> item.getStatus() == MediaStatus.PUBLISHED)
+                .filter(item -> item.isLive(Instant.now(clock)))
                 .filter(item -> visibleTo(viewer).contains(item.getVisibility()))
                 .orElseThrow(MediaNotFound::exception);
     }
 
-    private static Specification<MediaItem> visibleIn(UUID mosqueId, AuthenticatedUser viewer) {
+    private Specification<MediaItem> visibleIn(UUID mosqueId, AuthenticatedUser viewer) {
         return Specification.allOf(
                 MediaSpecifications.ofMosque(mosqueId),
-                MediaSpecifications.status(MediaStatus.PUBLISHED),
+                MediaSpecifications.liveAt(Instant.now(clock)),
                 MediaSpecifications.visibilityIn(visibleTo(viewer)));
     }
 

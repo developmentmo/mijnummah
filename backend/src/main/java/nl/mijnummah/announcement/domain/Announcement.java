@@ -39,6 +39,9 @@ public class Announcement {
     @Column(name = "published_at")
     private Instant publishedAt;
 
+    @Column(name = "image_id")
+    private UUID imageId;
+
     @Column(name = "expires_at")
     private Instant expiresAt;
 
@@ -103,6 +106,7 @@ public class Announcement {
         body = details.body();
         featured = details.featured();
         expiresAt = details.expiresAt();
+        imageId = details.imageId();
         touch(actorId, now);
     }
 
@@ -112,7 +116,7 @@ public class Announcement {
     }
 
     public AnnouncementDetails details() {
-        return new AnnouncementDetails(title, body, featured, expiresAt);
+        return new AnnouncementDetails(title, body, featured, expiresAt, imageId);
     }
 
     public UUID getId() {

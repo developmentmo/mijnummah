@@ -4,7 +4,10 @@ import java.time.LocalDate;
 import java.util.Objects;
 import java.util.UUID;
 
-/** The editable fields of a media item. Text is trimmed; blank optional fields become null. */
+/**
+ * The editable fields of a media item. Text is trimmed; blank optional fields become null. The thumbnail is an
+ * uploaded image of the same mosque ({@code thumbnailImageId}) or an external https image ({@code thumbnailUrl}).
+ */
 public record MediaDetails(
         String title,
         String description,
@@ -12,6 +15,7 @@ public record MediaDetails(
         MediaCategory category,
         VideoReference video,
         String thumbnailUrl,
+        UUID thumbnailImageId,
         Integer durationSeconds,
         LocalDate recordedOn,
         UUID relatedEventId,

@@ -37,6 +37,7 @@ import nl.mijnummah.notification.PushNotificationView;
 import nl.mijnummah.notification.PushNotifications;
 import nl.mijnummah.notification.PushRequest;
 import nl.mijnummah.notification.PushText;
+import nl.mijnummah.storage.ImageStorage;
 
 /**
  * Event management for administrators and editors of a mosque. Every method first checks
@@ -54,18 +55,20 @@ public class EventAdminService {
     private final MosqueAccessService access;
     private final MosqueDirectory mosques;
     private final PushNotifications push;
+    private final ImageStorage images;
     private final ApplicationEventPublisher audit;
     private final Clock clock;
 
     public EventAdminService(EventRepository events, EventRegistrationRepository registrations, EventViews views,
                              MosqueAccessService access, MosqueDirectory mosques, PushNotifications push,
-                             ApplicationEventPublisher audit, Clock clock) {
+                             ImageStorage images, ApplicationEventPublisher audit, Clock clock) {
         this.events = events;
         this.registrations = registrations;
         this.views = views;
         this.access = access;
         this.mosques = mosques;
         this.push = push;
+        this.images = images;
         this.audit = audit;
         this.clock = clock;
     }
@@ -91,6 +94,7 @@ public class EventAdminService {
     @Transactional
     public EventView create(AuthenticatedUser actor, UUID mosqueId, EventDetails details) {
         access.require(actor, mosqueId, MosquePermission.MANAGE_CONTENT);
+        requireOwnImage(details, mosqueId);
         Event event = events.save(Event.draft(mosqueId, details, actor.id(), Instant.now(clock)));
         audit.publishEvent(AuditEvent.of(actor.id(), mosqueId, "EVENT_CREATED", "EVENT", event.getId()));
         return views.of(event, null);
@@ -99,6 +103,7 @@ public class EventAdminService {
     @Transactional
     public EventView update(AuthenticatedUser actor, UUID mosqueId, UUID eventId, EventDetails details) {
         access.require(actor, mosqueId, MosquePermission.MANAGE_CONTENT);
+        requireOwnImage(details, mosqueId);
         Event event = load(mosqueId, eventId);
         long confirmed = registrations.countByEventIdAndStatus(eventId, RegistrationStatus.CONFIRMED);
         if (details.capacity() != null && details.capacity() < confirmed) {
@@ -141,6 +146,25 @@ public class EventAdminService {
         return views.of(event, null);
     }
 
+    /** Hides a published or cancelled event from the app; registrations are kept. */
+    @Transactional
+    public EventView archive(AuthenticatedUser actor, UUID mosqueId, UUID eventId) {
+        access.require(actor, mosqueId, MosquePermission.MANAGE_CONTENT);
+        Event event = load(mosqueId, eventId);
+        event.archive(actor.id(), Instant.now(clock));
+        audit.publishEvent(AuditEvent.of(actor.id(), mosqueId, "EVENT_ARCHIVED", "EVENT", eventId));
+        return views.of(event, null);
+    }
+
+    @Transactional
+    public EventView restore(AuthenticatedUser actor, UUID mosqueId, UUID eventId) {
+        access.require(actor, mosqueId, MosquePermission.MANAGE_CONTENT);
+        Event event = load(mosqueId, eventId);
+        event.restore(actor.id(), Instant.now(clock));
+        audit.publishEvent(AuditEvent.of(actor.id(), mosqueId, "EVENT_RESTORED", "EVENT", eventId));
+        return views.of(event, null);
+    }
+
     /** Only drafts without any registration history can be deleted; published events are cancelled instead. */
     @Transactional
     public void delete(AuthenticatedUser actor, UUID mosqueId, UUID eventId) {
@@ -179,6 +203,12 @@ public class EventAdminService {
         // Java's Dutch abbreviations end with a dot ("za.", "nov."); the app and portal write them without.
         String when = PUSH_DATE.format(details.startsAt().atZone(zone)).replace(".", "");
         return details.location() == null ? when : when + " · " + details.location();
+    }
+
+    private void requireOwnImage(EventDetails details, UUID mosqueId) {
+        if (details.imageId() != null) {
+            images.requireOwnedBy(details.imageId(), mosqueId);
+        }
     }
 
     private Event load(UUID mosqueId, UUID eventId) {

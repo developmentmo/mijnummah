@@ -6,5 +6,6 @@ public enum MediaCategory {
     QURAN,
     COURSE,
     YOUTH,
+    RECORDED_EVENT,
     OTHER
 }

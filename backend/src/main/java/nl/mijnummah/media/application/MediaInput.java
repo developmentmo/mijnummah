@@ -8,6 +8,6 @@ import nl.mijnummah.media.domain.Visibility;
 
 /** What an administrator submits; {@code videoUrl} is resolved to a provider reference by the service. */
 public record MediaInput(String title, String description, String speaker, MediaCategory category, String videoUrl,
-                         String thumbnailUrl, Integer durationSeconds, LocalDate recordedOn, UUID relatedEventId,
+                         String thumbnailUrl, UUID thumbnailImageId, Integer durationSeconds, LocalDate recordedOn, UUID relatedEventId,
                          Visibility visibility) {
 }

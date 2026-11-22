@@ -37,8 +37,8 @@ class DatabaseConstraintsIT extends AbstractIntegrationTest {
                 "select count(*) from databasechangelog where exectype = 'EXECUTED'", Integer.class);
         String latest = jdbc.queryForObject(
                 "select id from databasechangelog order by orderexecuted desc limit 1", String.class);
-        assertThat(applied).isEqualTo(18);
-        assertThat(latest).isEqualTo("018-app-user-last-login");
+        assertThat(applied).isEqualTo(19);
+        assertThat(latest).isEqualTo("019-mosque-portal-content");
     }
 
     @Test

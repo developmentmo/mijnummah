@@ -45,6 +45,9 @@ public class Event {
     @Column(name = "image_url", length = 500)
     private String imageUrl;
 
+    @Column(name = "image_id")
+    private UUID imageId;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "visibility", nullable = false, length = 20)
     private Visibility visibility;
@@ -64,6 +67,9 @@ public class Event {
 
     @Column(name = "cancelled_at")
     private Instant cancelledAt;
+
+    @Column(name = "archived_at")
+    private Instant archivedAt;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
@@ -134,6 +140,30 @@ public class Event {
         touch(actorId, now);
     }
 
+    /** Hides a published or cancelled event from the app; a draft is deleted instead. */
+    public void archive(UUID actorId, Instant now) {
+        if (status == EventStatus.ARCHIVED) {
+            return;
+        }
+        if (status == EventStatus.DRAFT) {
+            throw new EventRuleViolationException("EVENT_NOT_PUBLISHED",
+                    "Only a published or cancelled event can be archived. Delete a draft instead.");
+        }
+        status = EventStatus.ARCHIVED;
+        archivedAt = now;
+        touch(actorId, now);
+    }
+
+    /** Back to how it was before archiving: cancelled when it was cancelled, otherwise published. */
+    public void restore(UUID actorId, Instant now) {
+        if (status != EventStatus.ARCHIVED) {
+            return;
+        }
+        status = cancelledAt != null ? EventStatus.CANCELLED : EventStatus.PUBLISHED;
+        archivedAt = null;
+        touch(actorId, now);
+    }
+
     public boolean isPubliclyListed() {
         return status == EventStatus.PUBLISHED || status == EventStatus.CANCELLED;
     }
@@ -151,6 +181,9 @@ public class Event {
         if (status == EventStatus.CANCELLED) {
             throw new EventRuleViolationException("EVENT_CANCELLED", "This event has been cancelled.");
         }
+        if (status == EventStatus.ARCHIVED) {
+            throw new EventRuleViolationException("EVENT_ARCHIVED", "This event is archived. Restore it first.");
+        }
     }
 
     private void apply(EventDetails details, UUID actorId, Instant now) {
@@ -161,6 +194,7 @@ public class Event {
         endsAt = details.endsAt();
         location = details.location();
         imageUrl = details.imageUrl();
+        imageId = details.imageId();
         visibility = details.visibility();
         registrationEnabled = details.registrationEnabled();
         capacity = details.capacity();
@@ -173,7 +207,7 @@ public class Event {
     }
 
     public EventDetails details() {
-        return new EventDetails(title, description, category, startsAt, endsAt, location, imageUrl, visibility,
+        return new EventDetails(title, description, category, startsAt, endsAt, location, imageUrl, imageId, visibility,
                 registrationEnabled, capacity);
     }
 
@@ -215,6 +249,10 @@ public class Event {
 
     public Instant getCancelledAt() {
         return cancelledAt;
+    }
+
+    public Instant getArchivedAt() {
+        return archivedAt;
     }
 
     public Instant getCreatedAt() {

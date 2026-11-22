@@ -1,5 +1,6 @@
 package nl.mijnummah.media.api;
 
+import java.time.Instant;
 import java.util.UUID;
 
 import jakarta.validation.Valid;
@@ -75,10 +76,16 @@ class AdminMediaController {
     }
 
     @PostMapping("/{mediaId}/publish")
-    @Operation(summary = "Publiceren")
+    @Operation(summary = "Publiceren, optioneel met publicatiedatum",
+            description = "publishedAt in het verleden (oudere opname) of in de toekomst (gepland, hooguit een jaar): "
+                    + "het item verschijnt dan pas op dat moment in de app. Zonder: nu, of de eerdere datum.")
     MediaResponse.Admin publish(@AuthenticationPrincipal AuthenticatedUser actor, @PathVariable UUID mosqueId,
-                                @PathVariable UUID mediaId) {
-        return MediaResponse.Admin.from(mediaService.publish(actor, mosqueId, mediaId));
+                                @PathVariable UUID mediaId, @RequestBody(required = false) PublishRequest request) {
+        return MediaResponse.Admin.from(mediaService.publish(actor, mosqueId, mediaId,
+                request == null ? null : request.publishedAt()));
+    }
+
+    record PublishRequest(Instant publishedAt) {
     }
 
     @PostMapping("/{mediaId}/unpublish")

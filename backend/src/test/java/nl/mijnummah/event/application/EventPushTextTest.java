@@ -27,6 +27,6 @@ class EventPushTextTest {
 
     private static EventDetails details(Instant startsAt, String location) {
         return new EventDetails("Lezing", null, EventCategory.LECTURE, startsAt, startsAt.plusSeconds(3600), location,
-                null, Visibility.PUBLIC, false, null);
+                null, null, Visibility.PUBLIC, false, null);
     }
 }

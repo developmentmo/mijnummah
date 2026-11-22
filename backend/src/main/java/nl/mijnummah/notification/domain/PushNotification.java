@@ -16,8 +16,9 @@ import nl.mijnummah.notification.PushContentType;
 import nl.mijnummah.notification.PushNotificationView;
 import nl.mijnummah.notification.PushRequest;
 import nl.mijnummah.notification.PushStatus;
+import nl.mijnummah.notification.PushTarget;
 
-/** A push notification about one content item, with delivery counts. */
+/** A push notification about one content item, or a free message to a chosen audience, with delivery counts. */
 @Entity
 @Table(name = "push_notification")
 public class PushNotification {
@@ -32,8 +33,12 @@ public class PushNotification {
     @Column(name = "content_type", nullable = false, updatable = false, length = 20)
     private PushContentType contentType;
 
-    @Column(name = "content_id", nullable = false, updatable = false)
+    @Column(name = "content_id", updatable = false)
     private UUID contentId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "audience", updatable = false, length = 20)
+    private PushTarget audience;
 
     @Column(name = "title", nullable = false, updatable = false, length = PushRequest.MAX_TITLE_LENGTH)
     private String title;
@@ -73,13 +78,29 @@ public class PushNotification {
 
     /** Accepted for sending to {@code recipientCount} devices. */
     public static PushNotification start(PushRequest request, int recipientCount, UUID createdBy, Instant now) {
-        PushNotification notification = new PushNotification();
-        notification.id = UUID.randomUUID();
-        notification.mosqueId = request.mosqueId();
+        PushNotification notification = accepted(request.mosqueId(), request.title(), request.body(), recipientCount,
+                createdBy, now);
         notification.contentType = request.contentType();
         notification.contentId = request.contentId();
-        notification.title = request.title();
-        notification.body = request.body();
+        return notification;
+    }
+
+    /** A free message (title and body already shortened to the limits) to {@code recipientCount} devices. */
+    public static PushNotification message(UUID mosqueId, String title, String body, PushTarget audience,
+                                           int recipientCount, UUID createdBy, Instant now) {
+        PushNotification notification = accepted(mosqueId, title, body, recipientCount, createdBy, now);
+        notification.contentType = PushContentType.MESSAGE;
+        notification.audience = Objects.requireNonNull(audience, "audience");
+        return notification;
+    }
+
+    private static PushNotification accepted(UUID mosqueId, String title, String body, int recipientCount,
+                                             UUID createdBy, Instant now) {
+        PushNotification notification = new PushNotification();
+        notification.id = UUID.randomUUID();
+        notification.mosqueId = Objects.requireNonNull(mosqueId, "mosqueId");
+        notification.title = Objects.requireNonNull(title, "title");
+        notification.body = Objects.requireNonNull(body, "body");
         notification.status = PushStatus.SENDING;
         notification.recipientCount = recipientCount;
         notification.createdBy = Objects.requireNonNull(createdBy, "createdBy");
@@ -110,7 +131,7 @@ public class PushNotification {
     }
 
     public PushNotificationView view() {
-        return new PushNotificationView(id, mosqueId, contentType, contentId, title, body, status, recipientCount,
+        return new PushNotificationView(id, mosqueId, contentType, contentId, audience, title, body, status, recipientCount,
                 deliveredCount, failedCount, createdAt, completedAt);
     }
 

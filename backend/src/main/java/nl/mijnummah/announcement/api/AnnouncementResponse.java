@@ -4,23 +4,33 @@ import java.time.Instant;
 import java.util.UUID;
 
 import nl.mijnummah.announcement.application.AnnouncementView;
+import nl.mijnummah.announcement.domain.AnnouncementDetails;
 import nl.mijnummah.announcement.domain.AnnouncementStatus;
+import nl.mijnummah.storage.ImageStorage;
 
-record AnnouncementResponse(UUID id, String title, String body, boolean featured, Instant publishedAt,
-                            Instant expiresAt) {
+/** An announcement; {@code imageUrl} is the path of its image from the API base, or null. */
+record AnnouncementResponse(UUID id, String title, String body, boolean featured, String imageUrl,
+                            Instant publishedAt, Instant expiresAt) {
 
     static AnnouncementResponse from(AnnouncementView view) {
         var d = view.details();
-        return new AnnouncementResponse(view.id(), d.title(), d.body(), d.featured(), view.publishedAt(), d.expiresAt());
+        return new AnnouncementResponse(view.id(), d.title(), d.body(), d.featured(), imageUrl(d), view.publishedAt(),
+                d.expiresAt());
     }
 
-    record Admin(UUID id, UUID mosqueId, String title, String body, boolean featured, AnnouncementStatus status,
-                 boolean expired, Instant publishedAt, Instant expiresAt, Instant createdAt, Instant updatedAt) {
+    static String imageUrl(AnnouncementDetails details) {
+        return details.imageId() == null ? null : ImageStorage.publicPath(details.imageId());
+    }
+
+    record Admin(UUID id, UUID mosqueId, String title, String body, boolean featured, String imageUrl, UUID imageId,
+                 AnnouncementStatus status, boolean expired, Instant publishedAt, Instant expiresAt,
+                 Instant createdAt, Instant updatedAt) {
 
         static Admin from(AnnouncementView view) {
             var d = view.details();
-            return new Admin(view.id(), view.mosqueId(), d.title(), d.body(), d.featured(), view.status(),
-                    view.expired(), view.publishedAt(), d.expiresAt(), view.createdAt(), view.updatedAt());
+            return new Admin(view.id(), view.mosqueId(), d.title(), d.body(), d.featured(), AnnouncementResponse.imageUrl(d), d.imageId(),
+                    view.status(), view.expired(), view.publishedAt(), d.expiresAt(), view.createdAt(),
+                    view.updatedAt());
         }
     }
 }
