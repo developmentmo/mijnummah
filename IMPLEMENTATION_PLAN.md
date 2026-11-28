@@ -30,8 +30,8 @@ moskeeën. Het herontwerp (plan in `herontwerp/plan.md` in de projectbestanden) 
 | B | Superuser-portaal | Voltooid (PR #16 gemerged) |
 | C | Moskeebeheerportaal | Voltooid (PR #17 gemerged) |
 | D | Centrale mobiele app | Voltooid (PR #18 gemerged) |
-| E | Pilot: eerste moskee via het portaal, tweede zonder code, securitytests, testhandleiding | Geïmplementeerd; PR wacht op beoordeling |
-| F | Productie (alleen met expliciete toestemming) | Nog niet begonnen |
+| E | Pilot: eerste moskee via het portaal, tweede zonder code, securitytests, testhandleiding | Voltooid (PR #19 gemerged) |
+| F | Productie (alleen met expliciete toestemming) | Voorbereiding geïmplementeerd; PR wacht op beoordeling. Livegang zelf door de eigenaar met GOLIVE.md |
 
 ## Fase A — Fundament omzetten
 
@@ -134,6 +134,36 @@ Niet gedaan of afwijkend:
 - Filteren op regio is filteren op plaats; er is geen regio-indeling.
 - De periodefilters rekenen in de tijdzone van het toestel.
 - Geen browser- of toestel-end-to-end-tests; wel widgettests (app) en integratietests (backend).
+
+## Fase F — Productie
+
+Gebouwd (D-062), zonder iets live te zetten:
+
+- Caddy als service in de productiestack (profiel `caddy`): HTTPS met automatische certificaten en HSTS. CI start
+  Caddy met `*.localhost` en test API en portaal via HTTPS.
+- `deploy/preflight.sh`: controleert `.env` (verplichte waarden, lengte van geheimen, `https://`-adressen die bij de
+  domeinen passen, SMTP, Firebase-sleutel en de rechten daarvan, Swagger uit, bootstrapwachtwoord weg) en toont alleen
+  namen.
+- `deploy/deploy.sh <tag>`: preflight, back-up, tag uitchecken, bouwen, wachten op healthchecks, rooktest via HTTPS,
+  `IMAGE_TAG` bijwerken; bij een fout de vorige tag als terugweg.
+- `deploy/check.sh` (bewaking uit cron met een externe ping-dienst) en `deploy/offsite-backup.sh` (restic naar S3
+  in de EU, met terughalen).
+- Openbare privacyverklaring op `/privacy` in het portaal, als concept met de open punten tussen [haken]; link op de
+  inlogpagina.
+- [store/](store/): teksten, Data safety, privacylabels, gegevens voor App Review, screenshotplan en
+  release-opmerkingen. App-versie 1.0.0.
+- [GOLIVE.md](GOLIVE.md): wat te kiezen en te regelen, en de livegang stap voor stap.
+- CI controleert de scripts in `deploy/` met shellcheck.
+
+Niet gedaan of afwijkend:
+
+- Niets live gezet: er is geen server, domein, SMTP-dienst, Firebase-project of store-account. Dat regelt de
+  eigenaar met GOLIVE.md.
+- `deploy.sh`, `check.sh` en `offsite-backup.sh` zijn getest met een echte backend maar nagebootste Docker; Caddy met
+  Let's Encrypt en restic draaien pas op de echte server (en Caddy met `*.localhost` in CI).
+- Screenshots voor de stores nog niet gemaakt (vragen echte content op productie).
+- De privacyverklaring is een concept: grondslag art. 9 AVG, rechtspersoon en dienstverleners moeten worden
+  ingevuld.
 
 ## Fase E — Pilot
 

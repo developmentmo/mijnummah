@@ -3,19 +3,23 @@
 Hoe het platform in productie draait: configuratie, geheimen, eerste start, back-ups en herstel, logging en
 monitoring, healthchecks en de release- en rollbackprocedure. Bestanden staan in [`deploy/`](deploy/).
 
-Stand: fase 6 (11 oktober 2026). Er is nog geen productieomgeving; de stack is lokaal en in CI gedraaid (zie
-"Wat is getest").
+Stand: fase F (28 november 2026). Er is nog geen productieomgeving; de stack is lokaal en in CI gedraaid (zie
+"Wat is getest"). Het stappenplan voor de livegang, inclusief wat je moet kiezen en regelen, staat in
+[GOLIVE.md](GOLIVE.md).
 
 ## Opzet
 
 Eén Linux-server (VPS) met Docker en Docker Compose. Voor de pilot is één server genoeg.
 
 ```
-internet ──HTTPS──> reverse proxy op de server (Caddy/nginx/Traefik, TLS-certificaten)
-                      ├── api.<domein>     -> 127.0.0.1:8080  backend (Spring Boot)
-                      └── beheer.<domein>  -> 127.0.0.1:8081  webportaal (nginx)
+internet ──HTTPS──> caddy (in de stack, poort 80 en 443, certificaten van Let's Encrypt)
+                      ├── api.<domein>     -> backend (Spring Boot), ook op 127.0.0.1:8080
+                      └── beheer.<domein>  -> webportaal (nginx), ook op 127.0.0.1:8081
                                              postgres (alleen in het Docker-netwerk)
 ```
+
+Staat er al een reverse proxy op de server, laat dan `caddy` weg uit `COMPOSE_PROFILES` en stuur die proxy naar
+`127.0.0.1:8080` en `127.0.0.1:8081`.
 
 - `backend/Dockerfile`: bouwt met Maven, draait op Temurin 21 JRE als gebruiker zonder rechten (uid 10001), met
   healthcheck op `/actuator/health/readiness`.
@@ -23,10 +27,13 @@ internet ──HTTPS──> reverse proxy op de server (Caddy/nginx/Traefik, TLS
   8080). `config.json` komt uit de omgevingsvariabele `API_BASE_URL`, dus één image voor elke omgeving. Beveiligings-
   headers en Content-Security-Policy met een nonce per verzoek staan in `frontend/webportaal/docker/`.
 - `deploy/docker-compose.prod.yml`: PostgreSQL 17, backend en portaal, met healthchecks, `restart: unless-stopped`,
-  logrotatie, en poorten alleen op `127.0.0.1`.
+  logrotatie, en poorten alleen op `127.0.0.1`. Met het profiel `caddy` ook Caddy op 80 en 443
+  (`deploy/Caddyfile`, met HSTS).
+- Scripts in `deploy/`: `preflight.sh` (controleert `.env`), `deploy.sh` (release live zetten), `backup.sh` en
+  `restore.sh`, `offsite-backup.sh` (versleutelde kopie buiten de server) en `check.sh` (bewaking).
 
-De Flutter-app wordt niet op de server gezet; die gaat via de App Store en Google Play (fase 7 en de lijst
-"Productieblokkades").
+De Flutter-app wordt niet op de server gezet; die gaat via de App Store en Google Play (zie "Release van de app" en
+[store/](store/)).
 
 ## Eerste installatie
 
@@ -43,25 +50,21 @@ De Flutter-app wordt niet op de server gezet; die gaat via de App Store en Googl
    ```
    Vul `.env` in (zie de tabel hieronder). Bij `PUSH_PROVIDER=fcm`: zet het serviceaccountbestand in
    `deploy/secrets/fcm-service-account.json` met `chmod 600`.
-5. Starten:
+5. Controleren en starten:
    ```sh
-   IMAGE_TAG=$(git describe --tags --always) docker compose -f docker-compose.prod.yml up -d --build --wait
+   ./preflight.sh
+   ./deploy.sh v1.0.0
    ```
-   Liquibase voert bij de eerste start alle changesets uit. Met `BOOTSTRAP_ADMIN_EMAIL` en `BOOTSTRAP_ADMIN_PASSWORD`
-   wordt de eerste platformbeheerder aangemaakt; haal het wachtwoord daarna uit `.env` en start opnieuw.
-6. Reverse proxy instellen met HTTPS. Voorbeeld met Caddy (`/etc/caddy/Caddyfile`):
-   ```
-   api.example.nl {
-       reverse_proxy 127.0.0.1:8080
-   }
-   beheer.example.nl {
-       reverse_proxy 127.0.0.1:8081
-   }
-   ```
-   Caddy haalt zelf certificaten op en zet `X-Forwarded-For`; de backend gebruikt die voor de limieten per IP
-   (`FORWARD_HEADERS_STRATEGY=framework` staat al in de compose). Zet bij een andere proxy HSTS aan
+   `preflight.sh` noemt alleen namen van instellingen, nooit waarden. `deploy.sh` checkt de tag uit, bouwt en start
+   de stack, wacht op de healthchecks en test API en portaal, ook via HTTPS. Liquibase voert bij de eerste start alle
+   changesets uit. Met `BOOTSTRAP_ADMIN_EMAIL` en `BOOTSTRAP_ADMIN_PASSWORD` wordt de eerste platformbeheerder
+   aangemaakt; haal het wachtwoord daarna uit `.env`.
+6. HTTPS: met `COMPOSE_PROFILES=caddy` doet Caddy in de stack dat, met certificaten van Let's Encrypt voor
+   `API_DOMAIN` en `PORTAL_DOMAIN`. Caddy zet `X-Forwarded-For` op het echte adres van de bezoeker; de backend
+   gebruikt dat voor de limieten per IP (`FORWARD_HEADERS_STRATEGY=framework`). Bij een eigen proxy: stuur die naar
+   `127.0.0.1:8080` en `127.0.0.1:8081`, laat hem `X-Forwarded-For` overschrijven (niet aanvullen) en zet HSTS aan
    (`Strict-Transport-Security: max-age=31536000`).
-7. Back-up inplannen (zie hieronder) en een eerste herstel testen.
+7. Back-up, externe back-up en bewaking inplannen (zie hieronder) en een eerste herstel testen.
 
 ## Configuratie
 
@@ -78,7 +81,11 @@ weigert te starten als een verplichte waarde ontbreekt of als een ontwikkelinste
 | `MAIL_PROVIDER`, `MAIL_FROM`, `SPRING_MAIL_*` | voor wachtwoordherstel en uitnodigingen | `none` of `smtp`. Met `none` zegt de app eerlijk dat herstel niet beschikbaar is, en kan het portaal geen accounts met uitnodiging aanmaken (wel met een tijdelijk wachtwoord) |
 | `PUSH_PROVIDER`, `FCM_PROJECT_ID`, `FCM_CREDENTIALS_FILE` | voor pushmeldingen | `none` of `fcm` |
 | `BOOTSTRAP_*` | alleen eerste start | Eerste platformbeheerder; optioneel een eerste moskee (meestal niet nodig: moskeeën sluiten aan via het portaal) |
-| `IMAGE_TAG` | nee | Versie van de images; gebruikt bij rollback |
+| `COMPOSE_PROFILES` | nee | `caddy` start Caddy voor HTTPS; leeg bij een eigen reverse proxy |
+| `API_DOMAIN`, `PORTAL_DOMAIN`, `ACME_EMAIL` | met Caddy | Domeinen zonder `https://` en het adres voor certificaatmeldingen. `API_BASE_URL` en `PORTAL_ORIGIN` zijn dan `https://` plus het domein |
+| `IMAGE_TAG` | nee | Versie die draait; `deploy.sh` zet hem |
+| `HEALTHCHECK_PING_URL`, `DISK_MAX_PERCENT`, `BACKUP_MAX_AGE_HOURS` | voor bewaking | Zie "Logging en monitoring" |
+| `RESTIC_REPOSITORY`, `RESTIC_PASSWORD`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `OFFSITE_KEEP_DAYS` | voor de externe back-up | Zie "Back-up en herstel" |
 | `LOG_FORMAT` | nee | `ecs` (standaard), `logstash` of `gelf` |
 | `RETENTION_*` | nee | Bewaartermijnen, zie `backend/.env.example` en `PRIVACY.md` |
 
@@ -105,9 +112,18 @@ volume, bijvoorbeeld `docker compose -f docker-compose.prod.yml exec -T backend 
 15 2 * * *  cd /opt/mijnummah/deploy && ./backup.sh >> backups/backup.log 2>&1
 ```
 
-Een back-up op dezelfde server beschermt niet tegen verlies van de server. Kopieer `backups/` dagelijks naar opslag
-buiten de server (bijvoorbeeld met `restic` of `rclone` naar een S3-bucket in de EU, versleuteld), met dezelfde
-bewaartermijn.
+**Externe back-up** (`deploy/offsite-backup.sh`): een back-up op dezelfde server beschermt niet tegen verlies van
+de server. Het script kopieert `BACKUP_DIR` versleuteld met restic (in een container, niets te installeren) naar
+`RESTIC_REPOSITORY`, bijvoorbeeld een S3-bucket in de EU, verwijdert snapshots ouder dan `OFFSITE_KEEP_DAYS` en
+controleert de repository. De eerste keer maakt het de repository aan. Zonder `RESTIC_PASSWORD` is de kopie niet te
+lezen: bewaar het ook in de wachtwoordkluis.
+
+```cron
+15 2 * * *  cd /opt/mijnummah/deploy && ./backup.sh >> backups/backup.log 2>&1 && ./offsite-backup.sh >> backups/backup.log 2>&1
+```
+
+Terughalen: `./offsite-backup.sh snapshots` toont wat er staat; `./offsite-backup.sh restore <nieuwe map>` zet de
+nieuwste snapshot in een lege map, daarna verder met `restore.sh`.
 
 **Herstel testen of voorbereiden** (`deploy/restore.sh`): zet een back-up in een nieuwe, lege database naast de
 live database. Het script weigert de live database en bestaande namen.
@@ -148,9 +164,16 @@ Test het herstel elk kwartaal en na elke grote wijziging.
 
   Details staan uit (`show-details: never`). Een kapotte of ontbrekende SMTP-server maakt de backend niet `DOWN`;
   mislukte herstel-e-mails staan in het log.
-- **Externe bewaking:** een uptime-dienst (bijvoorbeeld Uptime Kuma op een andere machine, of een dienst als
-  UptimeRobot) die elke minuut de twee health-adressen controleert en mailt bij een storing. Bewaak ook de schijfruimte
-  en of `backup.log` elke dag een nieuwe regel heeft.
+- **Bewaking** (`deploy/check.sh`, elke 5 minuten uit cron): controleert backend en portaal lokaal en via HTTPS,
+  de vrije schijfruimte (`DISK_MAX_PERCENT`, standaard 85) en of de nieuwste back-up jonger is dan
+  `BACKUP_MAX_AGE_HOURS` (standaard 26). Met `HEALTHCHECK_PING_URL` (bijvoorbeeld healthchecks.io) pingt het bij
+  succes en meldt het `<url>/fail` met de namen van de mislukte controles; die dienst mailt ook als de pings
+  wegblijven, dus als de hele server stil ligt.
+  ```cron
+  */5 * * * *  cd /opt/mijnummah/deploy && ./check.sh >> backups/check.log 2>&1
+  ```
+  Een tweede, onafhankelijke controle van buitenaf (UptimeRobot of Uptime Kuma op een andere machine op
+  `https://api.<domein>/actuator/health`) is een goede aanvulling.
 - **Pushmeldingen die blijven hangen** worden na 30 minuten automatisch als mislukt gemarkeerd (D-041); zie het log
   `Push notification ... was still sending after PT30M; marked as failed`.
 
@@ -158,12 +181,11 @@ Test het herstel elk kwartaal en na elke grote wijziging.
 
 Een release is een git-tag op `main` nadat CI groen is (backend, portaal, app, design en de containerjob).
 
-1. Tag: `git tag v0.6.0 && git push origin v0.6.0`.
-2. Op de server: back-up maken (`./backup.sh`).
-3. `git fetch --tags && git checkout v0.6.0`
-4. `IMAGE_TAG=v0.6.0 docker compose -f docker-compose.prod.yml up -d --build --wait`
-   (bewaar de tag ook in `.env` als `IMAGE_TAG=v0.6.0`).
-5. Controleer health, log in op het portaal, open de app.
+1. Tag: `git tag v1.0.1 && git push origin v1.0.1`.
+2. Op de server: `cd /opt/mijnummah/deploy && ./deploy.sh v1.0.1`. Het script controleert `.env`, maakt een
+   back-up, checkt de tag uit, bouwt en start, wacht op de healthchecks, doet een rooktest (ook via HTTPS) en zet
+   `IMAGE_TAG` in `.env`. Gaat er iets mis, dan stopt het en noemt het de vorige tag.
+3. Log in op het portaal en open de app.
 
 Liquibase voert nieuwe changesets uit bij het starten van de backend (`backend/src/main/resources/db/changelog/`).
 Changesets zijn alleen vooruit en worden nooit achteraf gewijzigd; Liquibase controleert dat met een checksum.
@@ -220,19 +242,27 @@ Daarna uploadt iemand met rechten in de store-account het bestand (eerst naar ee
 | Portaal weigert te starten met een ongeldige `API_BASE_URL` | Geslaagd lokaal |
 | `backup.sh` en `restore.sh` tegen de stack | Geslaagd lokaal: dump gemaakt en gecontroleerd, hersteld in een nieuwe database met dezelfde aantallen; live database en bestaande naam geweigerd |
 | Volledige Docker-build (Maven en npm in de container) | Lokaal niet mogelijk: de build-container heeft hier geen internet. CI-job "Containers en productiestack" bouwt beide images, start de stack, doet een rooktest en een back-up en herstel |
-| Echte server, TLS, DNS, externe back-upopslag, uptimebewaking | Niet getest: er is nog geen hosting |
+| `preflight.sh` met een lege, een complete en een foute `.env` (fase F) | Geslaagd lokaal: fouten en waarschuwingen alleen met namen, geen waarden |
+| `deploy.sh` tegen een echte backend, met nagebootste Docker Compose en git-tags (fase F) | Geslaagd lokaal: eerste installatie, release met back-up, onbekende tag, lokale wijzigingen, falende start en falende rooktest geven elk de juiste melding |
+| `check.sh` tegen een echte backend en een ping-ontvanger (fase F) | Geslaagd lokaal: `ok` met ping; portaal weg, volle schijf en oude back-up geven `/fail` met de namen |
+| `offsite-backup.sh` met nagebootste Docker (fase F) | Argumenten en weigeren van een niet-lege herstelmap gecontroleerd; restic zelf niet gedraaid (niet beschikbaar in deze omgeving) |
+| Caddy met HTTPS voor `*.localhost` in CI (fase F) | Nieuwe stap in de CI-job "Containers en productiestack" |
+| Echte server, TLS met Let's Encrypt, DNS, externe back-upopslag, uptimebewaking | Niet getest: er is nog geen hosting |
 
 ## Productieblokkades
 
-Wat nog moet gebeuren voordat de pilot live kan. Status per punt in `IMPLEMENTATION_PLAN.md`.
+Wat nog moet gebeuren voordat de pilot live kan; de volgorde en de stappen staan in [GOLIVE.md](GOLIVE.md).
 
 1. Hosting kiezen (EU), server inrichten, domeinen en DNS.
 2. SMTP-dienst kiezen en instellen; herstel-e-mail end-to-end testen.
 3. Firebase-project van het platform aanmaken met één Android- en één iOS-app `nl.mijnummah.app` (D-053),
    FCM-serviceaccount op de server, pushmeldingen testen op echte Android- en iOS-toestellen.
 4. Apple Developer-account: capability Push Notifications, APNs-sleutel in Firebase, signing (zie Release van de app).
-5. Google Play- en App Store-accounts, store-teksten, schermafbeeldingen en de privacyformulieren.
-6. Privacyverklaring op een vaste URL, verwerkersovereenkomsten, besluit over art. 9 AVG (zie `PRIVACY.md`).
-7. Externe back-upopslag en uptimebewaking inrichten; eerste hersteltest op de echte server.
+5. Google Play- en App Store-accounts; store-teksten en de antwoorden voor de privacyformulieren staan klaar in
+   [store/](store/), schermafbeeldingen nog maken.
+6. Privacyverklaring vaststellen (concept staat op `/privacy` in het portaal), verwerkersovereenkomsten, besluit
+   over art. 9 AVG (zie `PRIVACY.md`).
+7. Externe back-upopslag en bewaking inrichten (`offsite-backup.sh`, `check.sh`); eerste hersteltest op de echte
+   server.
 8. Release-builds van de app met de workflow Release-app: GitHub Environment `productie` met `API_BASE_URL`,
    sleutels en Firebase-instellingen (zie Release van de app).

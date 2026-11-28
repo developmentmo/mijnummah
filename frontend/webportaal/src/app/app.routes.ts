@@ -24,6 +24,12 @@ export const routes: Routes = [
     loadComponent: () => import('./features/auth/set-password-page').then((m) => m.SetPasswordPage),
   },
   {
+    // Openbaar, zonder inloggen: het adres voor de App Store, Google Play en de app (Profiel > Privacy).
+    path: 'privacy',
+    title: title('Privacyverklaring'),
+    loadComponent: () => import('./features/legal/privacy-page').then((m) => m.PrivacyPage),
+  },
+  {
     path: '',
     canActivate: [authGuard],
     loadComponent: () => import('./features/shell/shell').then((m) => m.Shell),
