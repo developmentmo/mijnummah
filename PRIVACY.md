@@ -132,8 +132,11 @@ is een voorstel; de moskee kan ze aanpassen zonder codewijziging.
    iets zeggen over godsdienst. De moskee moet besluiten op welke uitzondering zij zich beroept (bijvoorbeeld art. 9
    lid 2 sub a, uitdrukkelijke toestemming, of sub d, een organisatie op godsdienstig gebied voor personen met wie zij
    regelmatig contact heeft) en dit in de privacyverklaring opnemen. Juridisch advies aanbevolen.
-2. **Privacyverklaring** schrijven en publiceren op een vaste URL; die URL is nodig voor de App Store en Google Play
-   (inclusief de "Data safety"- en "App Privacy"-formulieren) en hoort in de app bij Profiel.
+2. **Privacyverklaring** vaststellen. Een concept op basis van dit document staat op de openbare pagina `/privacy`
+   van het beheerportaal (`frontend/webportaal/src/app/features/legal/privacy-page.ts`), met de open punten tussen
+   [haken] en de melding "Concept". Na vaststelling: `PRIVACY_STATEMENT_IS_CONCEPT` op `false` en het adres in
+   `brands/mijnummah/brand.json` (`links.privacyPolicyUrl`), zodat de app het bij Profiel toont. De antwoorden voor
+   de formulieren "Data safety" en "App Privacy" staan in `store/`. Houd de pagina en dit document gelijk.
 3. **Verwerkersovereenkomst** tussen moskee en platformbeheerder, en met de hostingpartij en SMTP-dienst.
 4. **Verwerkingsregister** van de moskee aanvullen met het overzicht hierboven.
 5. **Inactieve accounts:** nog geen automatische verwijdering. Voorstel: na 2 jaar zonder inloggen een e-mail en

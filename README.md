@@ -13,7 +13,8 @@ PostgreSQL). Elke moskee is een tenant; een nieuwe moskee toevoegen is configura
 | `brands/mijnummah/` | Het merk van de app: naam, ID's, kleuren, beeldmerk ([huisstijl](BRAND_GUIDELINES.md)) |
 | `tools/brand/` | Het merk controleren en toepassen op app en portaal |
 | [`design/`](design/README.md) | Design tokens, fonts, logo's en iconen |
-| [`deploy/`](DEPLOYMENT.md) | Productie-compose, back-up en herstel |
+| [`deploy/`](DEPLOYMENT.md) | Productie-compose met Caddy, release, back-up, herstel en bewaking |
+| [`store/`](store/README.md) | Teksten en formulieren voor Google Play en de App Store |
 
 ## Lokaal starten
 
@@ -31,5 +32,5 @@ rest zoals in de README van [backend](backend/README.md) en [portaal](frontend/w
 
 De repository is nog in opbouw. Zie [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) voor de fases en de
 voortgang, en [DECISIONS.md](DECISIONS.md) voor de architectuur- en ontwerpbeslissingen. Privacy en AVG:
-[PRIVACY.md](PRIVACY.md). Productie: [DEPLOYMENT.md](DEPLOYMENT.md). Latere uitbreidingen (lidmaatschap,
+[PRIVACY.md](PRIVACY.md). Productie: [DEPLOYMENT.md](DEPLOYMENT.md); livegang stap voor stap: [GOLIVE.md](GOLIVE.md). Latere uitbreidingen (lidmaatschap,
 live-streaming, betalingen): [EXTENSIONS.md](EXTENSIONS.md).

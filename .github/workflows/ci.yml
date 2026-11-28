@@ -152,6 +152,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Scripts in deploy/ controleren
+        run: shellcheck -S warning deploy/*.sh
       - name: Images bouwen
         run: |
           docker build -t mijnummah-backend:ci backend
@@ -166,6 +168,10 @@ jobs:
             echo "PORTAL_ORIGIN=http://localhost:8081"
             echo "API_BASE_URL=http://localhost:8080"
             echo "SECRETS_DIR=$RUNNER_TEMP/secrets"
+            # *.localhost: Caddy uses its own CA, so HTTPS works without Let's Encrypt.
+            echo "API_DOMAIN=api.localhost"
+            echo "PORTAL_DOMAIN=beheer.localhost"
+            echo "ACME_EMAIL=ci@example.com"
           } > "$RUNNER_TEMP/ci.env"
           mkdir -p "$RUNNER_TEMP/secrets"
           docker compose -f docker-compose.prod.yml --env-file "$RUNNER_TEMP/ci.env" -p ci up -d --no-build --wait --wait-timeout 180
@@ -180,6 +186,15 @@ jobs:
             BACKUP_DIR="$RUNNER_TEMP/backups" ./backup.sh
           COMPOSE="docker compose -f docker-compose.prod.yml --env-file $RUNNER_TEMP/ci.env -p ci" \
             ./restore.sh "$(ls "$RUNNER_TEMP"/backups/*.dump)" mijnummah_restore_check
+      - name: HTTPS via Caddy
+        working-directory: deploy
+        run: |
+          docker compose -f docker-compose.prod.yml --env-file "$RUNNER_TEMP/ci.env" -p ci --profile caddy up -d --no-build --wait caddy
+          resolve="--resolve api.localhost:443:127.0.0.1 --resolve beheer.localhost:443:127.0.0.1"
+          for i in $(seq 1 20); do curl -fsSk $resolve https://api.localhost/actuator/health && break; sleep 2; done
+          curl -fsSk $resolve https://api.localhost/actuator/health | grep -q '"UP"'
+          curl -fsSkI $resolve https://api.localhost/actuator/health | grep -qi 'strict-transport-security: max-age=31536000'
+          curl -fsSk $resolve https://beheer.localhost/healthz | grep -q '^ok'
       - name: Logs bij een fout
         if: failure()
         working-directory: deploy

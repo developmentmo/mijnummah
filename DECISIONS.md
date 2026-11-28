@@ -685,3 +685,26 @@ Belangrijke architectuur- en ontwerpbeslissingen. Status: **Voorgesteld** (wacht
   moskeespecifieke code achter (masterprompt). Een script via de API test bovendien dezelfde paden als het portaal,
   in plaats van SQL die regels zou omzeilen.
 - **Gevolg:** Een verse lokale omgeving heeft geen moskeeën; draai het script of registreer er een in het portaal.
+
+## D-062 — Productie: Caddy in de stack, scripts voor release, back-up en bewaking
+
+- **Status:** Besloten (fase F)
+- **Besluit:**
+  - HTTPS komt van Caddy als service in `deploy/docker-compose.prod.yml` (profiel `caddy`), met automatische
+    certificaten en HSTS. Backend en portaal blijven alleen op `127.0.0.1`; wie al een proxy heeft, laat het profiel
+    weg.
+  - Een release gaat live met `deploy/deploy.sh <tag>`: eerst `preflight.sh` (controleert `.env` op ontbrekende of
+    onveilige waarden, toont alleen namen), dan een back-up, de tag uitchecken, bouwen op de server, wachten op de
+    healthchecks en een rooktest via HTTPS. Geen image-registry: voor één server is bouwen op de server eenvoudiger
+    en er komen geen extra credentials bij.
+  - Externe back-up met restic in een container (`offsite-backup.sh`), versleuteld naar S3-opslag in de EU.
+  - Bewaking met `check.sh` uit cron plus een externe ping-dienst (healthchecks.io-stijl), zodat ook een server die
+    helemaal stilvalt een melding geeft. Geen eigen monitoringstack (Prometheus, Grafana) voor de pilot.
+  - De privacyverklaring is een openbare pagina van het portaal (`/privacy`), zodat er geen aparte website nodig is
+    voor de stores. Zolang de tekst niet is vastgesteld, staat er "Concept" boven.
+  - De livegang zelf (server, domeinen, accounts, stores) doet de eigenaar met [GOLIVE.md](GOLIVE.md); niets in de
+    repository zet iets live zonder die stap.
+- **Waarom:** Zo min mogelijk onderdelen voor één pilotserver, alles in de repository te controleren en in CI te
+  testen, en geen productie-actie zonder uitdrukkelijke toestemming (masterprompt).
+- **Gevolg:** Bij groei (meer servers, zero-downtime) komt er een image-registry en een andere deploy; de scripts
+  blijven dan bruikbaar voor back-up en bewaking.

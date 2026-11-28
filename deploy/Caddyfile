@@ -1,0 +1,26 @@
+# TLS reverse proxy for the production stack (docker compose --profile caddy). Caddy requests and renews the
+# certificates itself (Let's Encrypt); DNS for both domains must point at this server and ports 80 and 443 must be
+# open. Values come from deploy/.env, see DEPLOYMENT.md.
+{
+	email {$ACME_EMAIL}
+}
+
+(common) {
+	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		-Server
+	}
+	# Caddy replaces any X-Forwarded-For sent by the client with the real address; the backend uses it for its
+	# per-IP limits. Access logs (with IP addresses) are not written here; Caddy only logs errors.
+}
+
+{$API_DOMAIN} {
+	import common
+	reverse_proxy backend:8080
+}
+
+{$PORTAL_DOMAIN} {
+	import common
+	reverse_proxy webportaal:8080
+}
