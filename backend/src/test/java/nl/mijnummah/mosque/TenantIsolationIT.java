@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 
 import nl.mijnummah.AbstractIntegrationTest;
 import nl.mijnummah.ApiTestClient.ApiResponse;
+import nl.mijnummah.storage.TestImages;
 
 /**
  * The administrator of mosque A can read or change nothing of mosque B: not through B's routes (403), and not by
@@ -71,6 +72,40 @@ class TenantIsolationIT extends AbstractIntegrationTest {
             assertThat(attempt.status()).as(attempt.body().toString()).isEqualTo(403);
             assertThat(attempt.field("code")).isEqualTo("MOSQUE_ACCESS_DENIED");
         }
+    }
+
+    @Test
+    void theRoutesAddedForThePortalsAndTheCentralAppAreIsolatedToo() {
+        String token = adminA.token();
+        UUID imageOfA = UUID.fromString(api.upload("/api/v1/admin/mosques/" + mosqueA + "/images", "a.png",
+                TestImages.png(64, 64, false), token).field("id"));
+        List<ApiResponse> attempts = List.of(
+                api.get(adminPath(mosqueB, "dashboard"), token),
+                api.get("/api/v1/admin/mosques/" + mosqueB + "/settings", token),
+                api.put("/api/v1/admin/mosques/" + mosqueB + "/settings",
+                        Map.of("registrationsEnabled", false, "pushEnabled", false), token),
+                api.upload("/api/v1/admin/mosques/" + mosqueB + "/images", "x.png", TestImages.png(64, 64, false),
+                        token),
+                api.put("/api/v1/admin/mosques/" + mosqueB + "/images", Map.of("logoImageId", imageOfA.toString()),
+                        token),
+                api.post(adminPath(mosqueB, "events/" + eventB + "/archive"), null, token),
+                api.post(adminPath(mosqueB, "events/" + eventB + "/restore"), null, token),
+                api.post(adminPath(mosqueB, "events/" + eventB + "/unpublish"), null, token),
+                api.post(adminPath(mosqueB, "media/" + mediaB + "/unpublish"), null, token),
+                api.post(adminPath(mosqueB, "announcements/" + announcementB + "/unpublish"), null, token),
+                api.post(adminPath(mosqueB, "notifications"),
+                        Map.of("title", "Stiekem", "body", "Naar de volgers van B", "audience", "ALL_FOLLOWERS"), token),
+                api.get("/api/v1/admin/audit-log?mosqueId=" + mosqueB, token));
+        for (ApiResponse attempt : attempts) {
+            assertThat(attempt.status()).as(attempt.body().toString()).isEqualTo(403);
+        }
+        assertThat(api.post(adminPath(mosqueA, "events/" + eventB + "/archive"), null, token).status())
+                .isEqualTo(404);
+        assertThat(jdbc.queryForObject("select count(*) from push_notification", Integer.class)).isZero();
+        assertThat(jdbc.queryForObject("select count(*) from image where mosque_id = ?", Integer.class, mosqueB))
+                .isZero();
+        assertThat(api.get(adminPath(mosqueB, "events/" + eventB), adminB.token()).field("status"))
+                .isEqualTo("PUBLISHED");
     }
 
     @Test

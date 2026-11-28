@@ -77,7 +77,7 @@ weigert te starten als een verplichte waarde ontbreekt of als een ontwikkelinste
 | `API_BASE_URL` | ja | Adres van de backend voor het portaal, bijv. `https://api.example.nl` |
 | `MAIL_PROVIDER`, `MAIL_FROM`, `SPRING_MAIL_*` | voor wachtwoordherstel en uitnodigingen | `none` of `smtp`. Met `none` zegt de app eerlijk dat herstel niet beschikbaar is, en kan het portaal geen accounts met uitnodiging aanmaken (wel met een tijdelijk wachtwoord) |
 | `PUSH_PROVIDER`, `FCM_PROJECT_ID`, `FCM_CREDENTIALS_FILE` | voor pushmeldingen | `none` of `fcm` |
-| `BOOTSTRAP_*` | alleen eerste start | Eerste platformbeheerder en eerste moskee |
+| `BOOTSTRAP_*` | alleen eerste start | Eerste platformbeheerder; optioneel een eerste moskee (meestal niet nodig: moskeeën sluiten aan via het portaal) |
 | `IMAGE_TAG` | nee | Versie van de images; gebruikt bij rollback |
 | `LOG_FORMAT` | nee | `ecs` (standaard), `logstash` of `gelf` |
 | `RETENTION_*` | nee | Bewaartermijnen, zie `backend/.env.example` en `PRIVACY.md` |

@@ -1,0 +1,61 @@
+{
+  "_toelichting": "Verzonnen testmoskeeën voor een lokale of test-omgeving. Niet gebruiken in productie. Datums zijn dagen vanaf vandaag.",
+  "mosques": [
+    {
+      "slug": "testmoskee-al-amal",
+      "details": {
+        "name": "Testmoskee Al-Amal",
+        "description": "Een verzonnen moskee om de app en de portalen mee te testen. Elke vrijdag gebed, in het weekend lessen voor kinderen.",
+        "street": "Teststraat 1",
+        "postalCode": "3500 AA",
+        "city": "Utrecht",
+        "countryCode": "NL",
+        "email": "info@al-amal.test",
+        "phone": "030 000 0000",
+        "websiteUrl": "https://al-amal.test",
+        "prayerTimesUrl": "https://al-amal.test/gebedstijden"
+      },
+      "color": [21, 101, 82],
+      "admin": { "email": "beheer@al-amal.test", "displayName": "Beheerder Al-Amal" },
+      "editor": { "email": "redactie@al-amal.test", "displayName": "Redactie Al-Amal" },
+      "events": [
+        { "title": "Kennismakingsavond", "category": "COMMUNITY", "inDays": 3, "hours": 2, "location": "Grote zaal", "registrationEnabled": true, "capacity": 40 },
+        { "title": "Lezing over geduld", "category": "LECTURE", "inDays": 6, "hours": 1.5, "location": "Gebedsruimte" },
+        { "title": "Koranles voor kinderen", "category": "CLASS", "inDays": 9, "hours": 2, "location": "Leslokaal" },
+        { "title": "Jongerenavond (alleen voor leden van de app)", "category": "YOUTH", "inDays": 12, "hours": 2, "location": "Jongerenruimte", "visibility": "REGISTERED_USERS" }
+      ],
+      "media": [
+        { "title": "Lezing: het belang van geduld", "category": "LECTURE", "speaker": "Imam Test", "videoId": "aaaaaaaaaaa" },
+        { "title": "Vrijdagpreek: familie", "category": "KHUTBAH", "speaker": "Imam Test", "videoId": "bbbbbbbbbbb" }
+      ],
+      "announcements": [
+        { "title": "Welkom in de app", "body": "Vanaf nu vind je onze activiteiten, lezingen en nieuws in Mijn Ummah.", "featured": true },
+        { "title": "Nieuwe lestijden", "body": "De lessen voor kinderen beginnen vanaf volgende week een half uur later." }
+      ]
+    },
+    {
+      "slug": "testmoskee-as-salam",
+      "details": {
+        "name": "Testmoskee As-Salam",
+        "description": "Een tweede verzonnen moskee, toegevoegd zonder codewijziging, om te controleren dat moskeeën gescheiden blijven.",
+        "street": "Proefweg 10",
+        "postalCode": "3000 AB",
+        "city": "Rotterdam",
+        "countryCode": "NL",
+        "email": "info@as-salam.test"
+      },
+      "color": [46, 74, 140],
+      "admin": { "email": "beheer@as-salam.test", "displayName": "Beheerder As-Salam" },
+      "events": [
+        { "title": "Open dag", "category": "COMMUNITY", "inDays": 4, "hours": 4, "location": "Hele moskee" },
+        { "title": "Tafsir-les", "category": "LECTURE", "inDays": 8, "hours": 1, "location": "Gebedsruimte" }
+      ],
+      "media": [
+        { "title": "Tafsir van soera Al-Asr", "category": "LECTURE", "speaker": "Ustadh Proef", "videoId": "ccccccccccc" }
+      ],
+      "announcements": [
+        { "title": "Iftar in de moskee", "body": "Iedereen is welkom bij de gezamenlijke iftar. Neem gerust iets mee." }
+      ]
+    }
+  ]
+}
